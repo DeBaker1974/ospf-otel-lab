@@ -116,10 +116,24 @@ Your setup uses three distinct pipelines flowing into **Elastic Cloud .**
 **•**	**Targets:** All 7 Routers (172.20.20.23 \- .29) on **UDP 161**.  
 **•**	**Data Types:**  
 **•**	System Uptime, Memory.  
-**•**	Interface Stats (In/Out Bytes, Errors).  
+**•**	Interface Stats (see below).  
 **•**	LLDP Neighbors.  
-**•**	TCP/UDP/IP/ARP Stats (Specific to csr28).  
+**•**	TCP/UDP/IP/ARP Stats.  
 **•**	**Destination:** Elastic Cloud (Indices: metrics-snmp.\*).
+
+| Metric | OID | Description | Type |
+|--------|-----|-------------|------|
+| `network.interface.in.bytes` | 1.3.6.1.2.1.31.1.1.1.6 | Bytes received (64-bit HC) | Counter |
+| `network.interface.out.bytes` | 1.3.6.1.2.1.31.1.1.1.10 | Bytes transmitted (64-bit HC) | Counter |
+| `network.interface.in.ucast.packets` | 1.3.6.1.2.1.2.2.1.11 | Unicast packets received | Counter |
+| `network.interface.out.ucast.packets` | 1.3.6.1.2.1.2.2.1.17 | Unicast packets transmitted | Counter |
+| `network.interface.in.errors` | 1.3.6.1.2.1.2.2.1.14 | Inbound errors | Counter |
+| `network.interface.out.errors` | 1.3.6.1.2.1.2.2.1.20 | Outbound errors | Counter |
+| `network.interface.in.discards` | 1.3.6.1.2.1.2.2.1.13 | Inbound discards | Counter |
+| `network.interface.out.discards` | 1.3.6.1.2.1.2.2.1.19 | Outbound discards | Counter |
+| `network.interface.admin.status` | 1.3.6.1.2.1.2.2.1.7 | Admin status (1=up, 2=down) | Gauge |
+| `network.interface.status` | 1.3.6.1.2.1.2.2.1.8 | Oper status (1=up, 2=down) | Gauge |
+| `network.interface.speed` | 1.3.6.1.2.1.31.1.1.1.15 | Interface speed (bps) | Gauge |
 
 #### *\*\*Pipeline 2: NetFlow (Traffic Analysis)\*\**
 
