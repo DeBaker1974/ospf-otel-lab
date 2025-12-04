@@ -10,6 +10,10 @@ The primary focus is on comprehensive network observability, integrating three d
 * **NetFlow (Traffic Analysis):** Exported from all routers and collected by an **Elastic Agent**.  
 * **SNMP Traps (Events/Logs):** Sent from csr23 and processed by **Logstash**.
 
+Use case implemented:
+- Simulate SNMP Traps for CSR23 (eth1 down/up). Recover the trap in elastic.
+- Simulate CSR23 down/up. Visualize the status in the "CSR23 - Interface Status" dashboard
+
 ![Lab Topology](Images/lab-topology.jpg)
 
 # Quick Start:
@@ -24,16 +28,12 @@ The primary focus is on comprehensive network observability, integrating three d
   - Elasticsearch endpoint and Api Key  
   - Fleet Url and Token from a policy  
 - Run the following scripts:
-
   - cd ospf-otel-lab/scripts
-
   - chmod \+x \*
-
   - ./install-lab-prereqs.sh
-
   - ./configure-elasticsearch.sh
-
   - ./complete-setup.sh
+- Import the kibana dashboard "CSR23 - Interface Status"
 
 ### 1\. High-Level Architecture
 
