@@ -38,7 +38,7 @@ filter {
     '
   }
 
-  # Map source IP to router name (ALL ROUTERS)
+  # Map source IP to router name
   ruby {
     code => '
       host = event.get("host")
@@ -126,8 +126,8 @@ output {
   }
 
   elasticsearch {
-    hosts => ["https://gcp-telco-9-3-55a713.es.us-west2.gcp.elastic-cloud.com:443"]
-    api_key => "RzhSdXc1b0I4Y3k0Mlh5WG91WWE6UEI0blZXNk85Yk80R2lURXBzNllEZw=="
+    hosts => ["https://network-demo-f289e8.es.us-central1.gcp.cloud.es.io:443"]
+    api_key => "aEFZNHJwb0I5TXhyMmdZdVBHQmU6Z0E1cElQYlgyeFJtQmQwRzFlcHNlQQ=="
     data_stream => true
     data_stream_type => "logs"
     data_stream_dataset => "snmp.trap"

@@ -1922,89 +1922,105 @@ receivers:
             resource_attributes: ["host.name", "lldp.neighbor.id"]
 
 # ========================================
-# Processors (simplified - no data_stream)
+# Processors
 # ========================================
 processors:
+  resource/system:
+    attributes:
+      - { key: data_stream.type, action: upsert, value: metrics }
+      - { key: data_stream.dataset, action: upsert, value: system }
+      - { key: data_stream.namespace, action: upsert, value: prod }
+  
+  resource/memory:
+    attributes:
+      - { key: data_stream.type, action: upsert, value: metrics }
+      - { key: data_stream.dataset, action: upsert, value: memory }
+      - { key: data_stream.namespace, action: upsert, value: prod }
+  
+  resource/interface:
+    attributes:
+      - { key: data_stream.type, action: upsert, value: metrics }
+      - { key: data_stream.dataset, action: upsert, value: interface }
+      - { key: data_stream.namespace, action: upsert, value: prod }
+  
+  resource/ipstats:
+    attributes:
+      - { key: data_stream.type, action: upsert, value: metrics }
+      - { key: data_stream.dataset, action: upsert, value: ipstats }
+      - { key: data_stream.namespace, action: upsert, value: prod }
+  
+  resource/tcp:
+    attributes:
+      - { key: data_stream.type, action: upsert, value: metrics }
+      - { key: data_stream.dataset, action: upsert, value: tcp }
+      - { key: data_stream.namespace, action: upsert, value: prod }
+  
+  resource/udp:
+    attributes:
+      - { key: data_stream.type, action: upsert, value: metrics }
+      - { key: data_stream.dataset, action: upsert, value: udp }
+      - { key: data_stream.namespace, action: upsert, value: prod }
+  
+  resource/arp:
+    attributes:
+      - { key: data_stream.type, action: upsert, value: metrics }
+      - { key: data_stream.dataset, action: upsert, value: arp }
+      - { key: data_stream.namespace, action: upsert, value: prod }
+  
+  resource/lldp:
+    attributes:
+      - { key: data_stream.type, action: upsert, value: metrics }
+      - { key: data_stream.dataset, action: upsert, value: lldp }
+      - { key: data_stream.namespace, action: upsert, value: prod }
+  
   batch:
     timeout: 10s
     send_batch_size: 200
     send_batch_max_size: 500
 
 # ========================================
-# Exporters (with explicit metrics_index)
+# Exporters
 # ========================================
 exporters:
   elasticsearch/system:
-    endpoints: [ "https://gcp-telco-9-3-55a713.es.us-west2.gcp.elastic-cloud.com:443" ]
-    api_key: "RzhSdXc1b0I4Y3k0Mlh5WG91WWE6UEI0blZXNk85Yk80R2lURXBzNllEZw=="
-    mapping:
-      mode: ecs
-    metrics_dynamic_index:
-      enabled: false
-    metrics_index: "metrics-snmp.system-prod"
+    endpoints: [ "https://network-demo-f289e8.es.us-central1.gcp.cloud.es.io" ]
+    api_key: "TGhnd09Kb0JtdHpyTkExc3JfcXQ6R0NUVTZOcXIzQVZJR2hKRERwSHNWQQ=="
+    mapping: { mode: ecs }
   
   elasticsearch/memory:
-    endpoints: [ "https://gcp-telco-9-3-55a713.es.us-west2.gcp.elastic-cloud.com:443" ]
-    api_key: "RzhSdXc1b0I4Y3k0Mlh5WG91WWE6UEI0blZXNk85Yk80R2lURXBzNllEZw=="
-    mapping:
-      mode: ecs
-    metrics_dynamic_index:
-      enabled: false
-    metrics_index: "metrics-snmp.memory-prod"
+    endpoints: [ "https://network-demo-f289e8.es.us-central1.gcp.cloud.es.io" ]
+    api_key: "TGhnd09Kb0JtdHpyTkExc3JfcXQ6R0NUVTZOcXIzQVZJR2hKRERwSHNWQQ=="
+    mapping: { mode: ecs }
   
   elasticsearch/interface:
-    endpoints: [ "https://gcp-telco-9-3-55a713.es.us-west2.gcp.elastic-cloud.com:443" ]
-    api_key: "RzhSdXc1b0I4Y3k0Mlh5WG91WWE6UEI0blZXNk85Yk80R2lURXBzNllEZw=="
-    mapping:
-      mode: ecs
-    metrics_dynamic_index:
-      enabled: false
-    metrics_index: "metrics-snmp.interface-prod"
+    endpoints: [ "https://network-demo-f289e8.es.us-central1.gcp.cloud.es.io" ]
+    api_key: "TGhnd09Kb0JtdHpyTkExc3JfcXQ6R0NUVTZOcXIzQVZJR2hKRERwSHNWQQ=="
+    mapping: { mode: ecs }
   
   elasticsearch/ipstats:
-    endpoints: [ "https://gcp-telco-9-3-55a713.es.us-west2.gcp.elastic-cloud.com:443" ]
-    api_key: "RzhSdXc1b0I4Y3k0Mlh5WG91WWE6UEI0blZXNk85Yk80R2lURXBzNllEZw=="
-    mapping:
-      mode: ecs
-    metrics_dynamic_index:
-      enabled: false
-    metrics_index: "metrics-snmp.ipstats-prod"
+    endpoints: [ "https://network-demo-f289e8.es.us-central1.gcp.cloud.es.io" ]
+    api_key: "TGhnd09Kb0JtdHpyTkExc3JfcXQ6R0NUVTZOcXIzQVZJR2hKRERwSHNWQQ=="
+    mapping: { mode: ecs }
   
   elasticsearch/tcp:
-    endpoints: [ "https://gcp-telco-9-3-55a713.es.us-west2.gcp.elastic-cloud.com:443" ]
-    api_key: "RzhSdXc1b0I4Y3k0Mlh5WG91WWE6UEI0blZXNk85Yk80R2lURXBzNllEZw=="
-    mapping:
-      mode: ecs
-    metrics_dynamic_index:
-      enabled: false
-    metrics_index: "metrics-snmp.tcp-prod"
+    endpoints: [ "https://network-demo-f289e8.es.us-central1.gcp.cloud.es.io" ]
+    api_key: "TGhnd09Kb0JtdHpyTkExc3JfcXQ6R0NUVTZOcXIzQVZJR2hKRERwSHNWQQ=="
+    mapping: { mode: ecs }
   
   elasticsearch/udp:
-    endpoints: [ "https://gcp-telco-9-3-55a713.es.us-west2.gcp.elastic-cloud.com:443" ]
-    api_key: "RzhSdXc1b0I4Y3k0Mlh5WG91WWE6UEI0blZXNk85Yk80R2lURXBzNllEZw=="
-    mapping:
-      mode: ecs
-    metrics_dynamic_index:
-      enabled: false
-    metrics_index: "metrics-snmp.udp-prod"
+    endpoints: [ "https://network-demo-f289e8.es.us-central1.gcp.cloud.es.io" ]
+    api_key: "TGhnd09Kb0JtdHpyTkExc3JfcXQ6R0NUVTZOcXIzQVZJR2hKRERwSHNWQQ=="
+    mapping: { mode: ecs }
   
   elasticsearch/arp:
-    endpoints: [ "https://gcp-telco-9-3-55a713.es.us-west2.gcp.elastic-cloud.com:443" ]
-    api_key: "RzhSdXc1b0I4Y3k0Mlh5WG91WWE6UEI0blZXNk85Yk80R2lURXBzNllEZw=="
-    mapping:
-      mode: ecs
-    metrics_dynamic_index:
-      enabled: false
-    metrics_index: "metrics-snmp.arp-prod"
+    endpoints: [ "https://network-demo-f289e8.es.us-central1.gcp.cloud.es.io" ]
+    api_key: "TGhnd09Kb0JtdHpyTkExc3JfcXQ6R0NUVTZOcXIzQVZJR2hKRERwSHNWQQ=="
+    mapping: { mode: ecs }
   
   elasticsearch/lldp:
-    endpoints: [ "https://gcp-telco-9-3-55a713.es.us-west2.gcp.elastic-cloud.com:443" ]
-    api_key: "RzhSdXc1b0I4Y3k0Mlh5WG91WWE6UEI0blZXNk85Yk80R2lURXBzNllEZw=="
-    mapping:
-      mode: ecs
-    metrics_dynamic_index:
-      enabled: false
-    metrics_index: "metrics-snmp.lldp-prod"
+    endpoints: [ "https://network-demo-f289e8.es.us-central1.gcp.cloud.es.io" ]
+    api_key: "TGhnd09Kb0JtdHpyTkExc3JfcXQ6R0NUVTZOcXIzQVZJR2hKRERwSHNWQQ=="
+    mapping: { mode: ecs }
   
   debug:
     verbosity: detailed
@@ -2012,10 +2028,11 @@ exporters:
     sampling_thereafter: 200
 
 # ========================================
-# Service Pipelines (simplified processors)
+# Service Pipelines - ALL ROUTERS
 # ========================================
 service:
   pipelines:
+    # System metrics - ALL ROUTERS
     metrics/system:
       receivers:
         - snmp/csr23_system
@@ -2026,11 +2043,13 @@ service:
         - snmp/csr28_system
         - snmp/csr29_system
       processors:
+        - resource/system
         - batch
       exporters:
         - elasticsearch/system
         - debug
     
+    # Memory metrics - ALL ROUTERS
     metrics/memory:
       receivers:
         - snmp/csr23_memory
@@ -2041,11 +2060,13 @@ service:
         - snmp/csr28_memory
         - snmp/csr29_memory
       processors:
+        - resource/memory
         - batch
       exporters:
         - elasticsearch/memory
         - debug
     
+    # Interface metrics - ALL ROUTERS
     metrics/interface:
       receivers:
         - snmp/csr23_interface
@@ -2056,11 +2077,13 @@ service:
         - snmp/csr28_interface
         - snmp/csr29_interface
       processors:
+        - resource/interface
         - batch
       exporters:
         - elasticsearch/interface
         - debug
     
+    # IP statistics - ALL ROUTERS
     metrics/ipstats:
       receivers:
         - snmp/csr23_ipstats
@@ -2071,11 +2094,13 @@ service:
         - snmp/csr28_ipstats
         - snmp/csr29_ipstats
       processors:
+        - resource/ipstats
         - batch
       exporters:
         - elasticsearch/ipstats
         - debug
     
+    # TCP metrics - ALL ROUTERS
     metrics/tcp:
       receivers:
         - snmp/csr23_tcp
@@ -2086,11 +2111,13 @@ service:
         - snmp/csr28_tcp
         - snmp/csr29_tcp
       processors:
+        - resource/tcp
         - batch
       exporters:
         - elasticsearch/tcp
         - debug
     
+    # UDP metrics - ALL ROUTERS
     metrics/udp:
       receivers:
         - snmp/csr23_udp
@@ -2101,11 +2128,13 @@ service:
         - snmp/csr28_udp
         - snmp/csr29_udp
       processors:
+        - resource/udp
         - batch
       exporters:
         - elasticsearch/udp
         - debug
     
+    # ARP table - ALL ROUTERS
     metrics/arp:
       receivers:
         - snmp/csr23_arp
@@ -2116,11 +2145,13 @@ service:
         - snmp/csr28_arp
         - snmp/csr29_arp
       processors:
+        - resource/arp
         - batch
       exporters:
         - elasticsearch/arp
         - debug
     
+    # LLDP neighbors - ALL ROUTERS
     metrics/lldp:
       receivers:
         - snmp/csr23_lldp
@@ -2131,6 +2162,7 @@ service:
         - snmp/csr28_lldp
         - snmp/csr29_lldp
       processors:
+        - resource/lldp
         - batch
       exporters:
         - elasticsearch/lldp
@@ -2138,3 +2170,4 @@ service:
   
   telemetry:
     logs: { level: info }
+
