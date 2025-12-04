@@ -1,0 +1,21 @@
+id: elastic-agent-sw2
+
+outputs:
+  default:
+    type: elasticsearch
+    hosts:
+      - '${ES_ENDPOINT}'
+    api_key: '${ES_API_KEY}'
+
+fleet:
+  enabled: true
+  hosts:
+    - '${FLEET_URL}'
+  enrollment_token: '${FLEET_ENROLLMENT_TOKEN}'
+
+agent:
+  monitoring:
+    enabled: true
+    use_output: default
+    logs: true
+    metrics: true

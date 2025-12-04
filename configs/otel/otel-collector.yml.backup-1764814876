@@ -1,0 +1,4051 @@
+# ============================================
+# COMPREHENSIVE FRR SNMP Configuration v2.0
+# Full MIB Coverage: System, IF, IP, ICMP, TCP, UDP, OSPF, ARP, LLDP
+# Generated: 20251201-013637
+# ============================================
+
+receivers:
+
+  # ============================================
+  # csr23 (172.20.20.23) - FULL MIB COVERAGE
+  # ============================================
+
+  # --- System MIB (Extended) ---
+  snmp/csr23_system:
+    endpoint: udp://172.20.20.23:161
+    version: v2c
+    community: public
+    collection_interval: 30s
+    timeout: 10s
+    resource_attributes:
+      host.name: { scalar_oid: "1.3.6.1.2.1.1.5.0" }
+    metrics:
+      system.uptime:
+        unit: s
+        gauge: { value_type: double }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.1.3.0"
+            resource_attributes: ["host.name"]
+      system.services:
+        unit: "1"
+        gauge: { value_type: int }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.1.7.0"
+            resource_attributes: ["host.name"]
+
+  # --- Memory (HOST-RESOURCES-MIB) ---
+  snmp/csr23_memory:
+    endpoint: udp://172.20.20.23:161
+    version: v2c
+    community: public
+    collection_interval: 60s
+    timeout: 10s
+    resource_attributes:
+      host.name: { scalar_oid: "1.3.6.1.2.1.1.5.0" }
+    attributes:
+      memory.pool.name: { oid: "1.3.6.1.2.1.25.2.3.1.3" }
+    metrics:
+      system.memory.size:
+        unit: units
+        gauge: { value_type: int }
+        column_oids:
+          - oid: "1.3.6.1.2.1.25.2.3.1.5"
+            attributes: [ { name: memory.pool.name } ]
+            resource_attributes: ["host.name"]
+      system.memory.used:
+        unit: units
+        gauge: { value_type: int }
+        column_oids:
+          - oid: "1.3.6.1.2.1.25.2.3.1.6"
+            attributes: [ { name: memory.pool.name } ]
+            resource_attributes: ["host.name"]
+
+  # --- Interface MIB (Extended) ---
+  snmp/csr23_interface:
+    endpoint: udp://172.20.20.23:161
+    version: v2c
+    community: public
+    collection_interval: 15s
+    timeout: 10s
+    resource_attributes:
+      host.name: { scalar_oid: "1.3.6.1.2.1.1.5.0" }
+    attributes:
+      if.index: { oid: "1.3.6.1.2.1.2.2.1.1" }
+      if.name: { oid: "1.3.6.1.2.1.31.1.1.1.1" }
+      if.descr: { oid: "1.3.6.1.2.1.2.2.1.2" }
+    metrics:
+      # Bytes (64-bit counters)
+      network.interface.in.bytes:
+        unit: By
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        column_oids:
+          - oid: "1.3.6.1.2.1.31.1.1.1.6"
+            attributes: [ { name: if.index }, { name: if.name }, { name: if.descr } ]
+            resource_attributes: ["host.name"]
+      network.interface.out.bytes:
+        unit: By
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        column_oids:
+          - oid: "1.3.6.1.2.1.31.1.1.1.10"
+            attributes: [ { name: if.index }, { name: if.name }, { name: if.descr } ]
+            resource_attributes: ["host.name"]
+      # Packets
+      network.interface.in.packets:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        column_oids:
+          - oid: "1.3.6.1.2.1.2.2.1.11"
+            attributes: [ { name: if.index }, { name: if.name } ]
+            resource_attributes: ["host.name"]
+      network.interface.out.packets:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        column_oids:
+          - oid: "1.3.6.1.2.1.2.2.1.17"
+            attributes: [ { name: if.index }, { name: if.name } ]
+            resource_attributes: ["host.name"]
+      # Errors
+      network.interface.in.errors:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        column_oids:
+          - oid: "1.3.6.1.2.1.2.2.1.14"
+            attributes: [ { name: if.index }, { name: if.name } ]
+            resource_attributes: ["host.name"]
+      network.interface.out.errors:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        column_oids:
+          - oid: "1.3.6.1.2.1.2.2.1.20"
+            attributes: [ { name: if.index }, { name: if.name } ]
+            resource_attributes: ["host.name"]
+      # Discards
+      network.interface.in.discards:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        column_oids:
+          - oid: "1.3.6.1.2.1.2.2.1.13"
+            attributes: [ { name: if.index }, { name: if.name } ]
+            resource_attributes: ["host.name"]
+      network.interface.out.discards:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        column_oids:
+          - oid: "1.3.6.1.2.1.2.2.1.19"
+            attributes: [ { name: if.index }, { name: if.name } ]
+            resource_attributes: ["host.name"]
+      # Status
+      network.interface.oper.status:
+        unit: "1"
+        gauge: { value_type: int }
+        column_oids:
+          - oid: "1.3.6.1.2.1.2.2.1.8"
+            attributes: [ { name: if.index }, { name: if.name } ]
+            resource_attributes: ["host.name"]
+      network.interface.admin.status:
+        unit: "1"
+        gauge: { value_type: int }
+        column_oids:
+          - oid: "1.3.6.1.2.1.2.2.1.7"
+            attributes: [ { name: if.index }, { name: if.name } ]
+            resource_attributes: ["host.name"]
+      # Speed and MTU
+      network.interface.speed:
+        unit: "1"
+        gauge: { value_type: int }
+        column_oids:
+          - oid: "1.3.6.1.2.1.2.2.1.5"
+            attributes: [ { name: if.index }, { name: if.name } ]
+            resource_attributes: ["host.name"]
+      network.interface.mtu:
+        unit: By
+        gauge: { value_type: int }
+        column_oids:
+          - oid: "1.3.6.1.2.1.2.2.1.4"
+            attributes: [ { name: if.index }, { name: if.name } ]
+            resource_attributes: ["host.name"]
+
+  # --- IP-MIB (Extended) ---
+  snmp/csr23_ipstats:
+    endpoint: udp://172.20.20.23:161
+    version: v2c
+    community: public
+    collection_interval: 30s
+    timeout: 10s
+    resource_attributes:
+      host.name: { scalar_oid: "1.3.6.1.2.1.1.5.0" }
+    metrics:
+      network.ip.in.receives:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.4.3.0"
+            resource_attributes: ["host.name"]
+      network.ip.in.hdr.errors:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.4.4.0"
+            resource_attributes: ["host.name"]
+      network.ip.in.addr.errors:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.4.5.0"
+            resource_attributes: ["host.name"]
+      network.ip.forw.datagrams:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.4.6.0"
+            resource_attributes: ["host.name"]
+      network.ip.in.discards:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.4.8.0"
+            resource_attributes: ["host.name"]
+      network.ip.in.delivers:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.4.9.0"
+            resource_attributes: ["host.name"]
+      network.ip.out.requests:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.4.10.0"
+            resource_attributes: ["host.name"]
+      network.ip.out.discards:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.4.11.0"
+            resource_attributes: ["host.name"]
+      network.ip.out.no.routes:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.4.12.0"
+            resource_attributes: ["host.name"]
+      network.ip.reasm.reqds:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.4.14.0"
+            resource_attributes: ["host.name"]
+      network.ip.reasm.oks:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.4.15.0"
+            resource_attributes: ["host.name"]
+      network.ip.reasm.fails:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.4.16.0"
+            resource_attributes: ["host.name"]
+      network.ip.frag.oks:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.4.17.0"
+            resource_attributes: ["host.name"]
+      network.ip.frag.fails:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.4.18.0"
+            resource_attributes: ["host.name"]
+      network.ip.frag.creates:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.4.19.0"
+            resource_attributes: ["host.name"]
+
+  # --- ICMP-MIB ---
+  snmp/csr23_icmp:
+    endpoint: udp://172.20.20.23:161
+    version: v2c
+    community: public
+    collection_interval: 30s
+    timeout: 10s
+    resource_attributes:
+      host.name: { scalar_oid: "1.3.6.1.2.1.1.5.0" }
+    metrics:
+      network.icmp.in.msgs:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.5.1.0"
+            resource_attributes: ["host.name"]
+      network.icmp.in.errors:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.5.2.0"
+            resource_attributes: ["host.name"]
+      network.icmp.in.dest.unreachs:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.5.3.0"
+            resource_attributes: ["host.name"]
+      network.icmp.in.time.excds:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.5.4.0"
+            resource_attributes: ["host.name"]
+      network.icmp.in.echos:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.5.8.0"
+            resource_attributes: ["host.name"]
+      network.icmp.in.echo.reps:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.5.9.0"
+            resource_attributes: ["host.name"]
+      network.icmp.out.msgs:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.5.14.0"
+            resource_attributes: ["host.name"]
+      network.icmp.out.errors:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.5.15.0"
+            resource_attributes: ["host.name"]
+      network.icmp.out.dest.unreachs:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.5.16.0"
+            resource_attributes: ["host.name"]
+      network.icmp.out.echos:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.5.21.0"
+            resource_attributes: ["host.name"]
+      network.icmp.out.echo.reps:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.5.22.0"
+            resource_attributes: ["host.name"]
+
+  # --- TCP-MIB (Extended) ---
+  snmp/csr23_tcp:
+    endpoint: udp://172.20.20.23:161
+    version: v2c
+    community: public
+    collection_interval: 30s
+    timeout: 10s
+    resource_attributes:
+      host.name: { scalar_oid: "1.3.6.1.2.1.1.5.0" }
+    metrics:
+      network.tcp.active.opens:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.6.5.0"
+            resource_attributes: ["host.name"]
+      network.tcp.passive.opens:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.6.6.0"
+            resource_attributes: ["host.name"]
+      network.tcp.attempt.fails:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.6.7.0"
+            resource_attributes: ["host.name"]
+      network.tcp.estab.resets:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.6.8.0"
+            resource_attributes: ["host.name"]
+      network.tcp.curr.estab:
+        unit: "1"
+        gauge: { value_type: int }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.6.9.0"
+            resource_attributes: ["host.name"]
+      network.tcp.in.segs:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.6.10.0"
+            resource_attributes: ["host.name"]
+      network.tcp.out.segs:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.6.11.0"
+            resource_attributes: ["host.name"]
+      network.tcp.retrans.segs:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.6.12.0"
+            resource_attributes: ["host.name"]
+      network.tcp.in.errs:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.6.14.0"
+            resource_attributes: ["host.name"]
+      network.tcp.out.rsts:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.6.15.0"
+            resource_attributes: ["host.name"]
+
+  # --- UDP-MIB (Extended) ---
+  snmp/csr23_udp:
+    endpoint: udp://172.20.20.23:161
+    version: v2c
+    community: public
+    collection_interval: 30s
+    timeout: 10s
+    resource_attributes:
+      host.name: { scalar_oid: "1.3.6.1.2.1.1.5.0" }
+    metrics:
+      network.udp.in.datagrams:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.7.1.0"
+            resource_attributes: ["host.name"]
+      network.udp.no.ports:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.7.2.0"
+            resource_attributes: ["host.name"]
+      network.udp.in.errors:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.7.3.0"
+            resource_attributes: ["host.name"]
+      network.udp.out.datagrams:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.7.4.0"
+            resource_attributes: ["host.name"]
+
+  # --- OSPF-MIB (via FRR AgentX) ---
+  snmp/csr23_ospf:
+    endpoint: udp://172.20.20.23:161
+    version: v2c
+    community: public
+    collection_interval: 60s
+    timeout: 15s
+    resource_attributes:
+      host.name: { scalar_oid: "1.3.6.1.2.1.1.5.0" }
+    metrics:
+      network.ospf.admin.stat:
+        unit: "1"
+        gauge: { value_type: int }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.14.1.2.0"
+            resource_attributes: ["host.name"]
+      network.ospf.version.number:
+        unit: "1"
+        gauge: { value_type: int }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.14.1.3.0"
+            resource_attributes: ["host.name"]
+      network.ospf.area.bdr.rtr.status:
+        unit: "1"
+        gauge: { value_type: int }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.14.1.4.0"
+            resource_attributes: ["host.name"]
+      network.ospf.as.bdr.rtr.status:
+        unit: "1"
+        gauge: { value_type: int }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.14.1.5.0"
+            resource_attributes: ["host.name"]
+      network.ospf.extern.lsa.count:
+        unit: "1"
+        gauge: { value_type: int }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.14.1.6.0"
+            resource_attributes: ["host.name"]
+      network.ospf.extern.lsa.cksum.sum:
+        unit: "1"
+        gauge: { value_type: int }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.14.1.7.0"
+            resource_attributes: ["host.name"]
+      network.ospf.originate.new.lsas:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.14.1.9.0"
+            resource_attributes: ["host.name"]
+      network.ospf.rx.new.lsas:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.14.1.10.0"
+            resource_attributes: ["host.name"]
+
+  # --- ARP Table ---
+  snmp/csr23_arp:
+    endpoint: udp://172.20.20.23:161
+    version: v2c
+    community: public
+    collection_interval: 60s
+    timeout: 10s
+    resource_attributes:
+      host.name: { scalar_oid: "1.3.6.1.2.1.1.5.0" }
+    attributes:
+      arp.ifindex: { oid: "1.3.6.1.2.1.4.22.1.1" }
+      arp.ip: { oid: "1.3.6.1.2.1.4.22.1.3" }
+      arp.mac: { oid: "1.3.6.1.2.1.4.22.1.2" }
+    metrics:
+      network.arp.entry:
+        unit: "1"
+        gauge: { value_type: int }
+        column_oids:
+          - oid: "1.3.6.1.2.1.4.22.1.4"
+            attributes: [ { name: arp.ifindex }, { name: arp.ip }, { name: arp.mac } ]
+            resource_attributes: ["host.name"]
+
+  # --- LLDP-MIB ---
+  snmp/csr23_lldp:
+    endpoint: udp://172.20.20.23:161
+    version: v2c
+    community: public
+    collection_interval: 30s
+    timeout: 10s
+    resource_attributes:
+      host.name: { scalar_oid: "1.3.6.1.2.1.1.5.0" }
+    attributes:
+      network.lldp.rem.sysname: { oid: "1.0.8802.1.1.2.1.4.1.1.9" }
+    metrics:
+      network.lldp.neighbors:
+        unit: "1"
+        gauge: { value_type: int }
+        column_oids:
+          - oid: "1.0.8802.1.1.2.1.4.1.1.4"
+            attributes: [ { name: network.lldp.rem.sysname } ]
+            resource_attributes: ["host.name"]
+
+  # ============================================
+  # csr24 (172.20.20.24) - FULL MIB COVERAGE
+  # ============================================
+
+  # --- System MIB (Extended) ---
+  snmp/csr24_system:
+    endpoint: udp://172.20.20.24:161
+    version: v2c
+    community: public
+    collection_interval: 30s
+    timeout: 10s
+    resource_attributes:
+      host.name: { scalar_oid: "1.3.6.1.2.1.1.5.0" }
+    metrics:
+      system.uptime:
+        unit: s
+        gauge: { value_type: double }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.1.3.0"
+            resource_attributes: ["host.name"]
+      system.services:
+        unit: "1"
+        gauge: { value_type: int }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.1.7.0"
+            resource_attributes: ["host.name"]
+
+  # --- Memory (HOST-RESOURCES-MIB) ---
+  snmp/csr24_memory:
+    endpoint: udp://172.20.20.24:161
+    version: v2c
+    community: public
+    collection_interval: 60s
+    timeout: 10s
+    resource_attributes:
+      host.name: { scalar_oid: "1.3.6.1.2.1.1.5.0" }
+    attributes:
+      memory.pool.name: { oid: "1.3.6.1.2.1.25.2.3.1.3" }
+    metrics:
+      system.memory.size:
+        unit: units
+        gauge: { value_type: int }
+        column_oids:
+          - oid: "1.3.6.1.2.1.25.2.3.1.5"
+            attributes: [ { name: memory.pool.name } ]
+            resource_attributes: ["host.name"]
+      system.memory.used:
+        unit: units
+        gauge: { value_type: int }
+        column_oids:
+          - oid: "1.3.6.1.2.1.25.2.3.1.6"
+            attributes: [ { name: memory.pool.name } ]
+            resource_attributes: ["host.name"]
+
+  # --- Interface MIB (Extended) ---
+  snmp/csr24_interface:
+    endpoint: udp://172.20.20.24:161
+    version: v2c
+    community: public
+    collection_interval: 15s
+    timeout: 10s
+    resource_attributes:
+      host.name: { scalar_oid: "1.3.6.1.2.1.1.5.0" }
+    attributes:
+      if.index: { oid: "1.3.6.1.2.1.2.2.1.1" }
+      if.name: { oid: "1.3.6.1.2.1.31.1.1.1.1" }
+      if.descr: { oid: "1.3.6.1.2.1.2.2.1.2" }
+    metrics:
+      # Bytes (64-bit counters)
+      network.interface.in.bytes:
+        unit: By
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        column_oids:
+          - oid: "1.3.6.1.2.1.31.1.1.1.6"
+            attributes: [ { name: if.index }, { name: if.name }, { name: if.descr } ]
+            resource_attributes: ["host.name"]
+      network.interface.out.bytes:
+        unit: By
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        column_oids:
+          - oid: "1.3.6.1.2.1.31.1.1.1.10"
+            attributes: [ { name: if.index }, { name: if.name }, { name: if.descr } ]
+            resource_attributes: ["host.name"]
+      # Packets
+      network.interface.in.packets:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        column_oids:
+          - oid: "1.3.6.1.2.1.2.2.1.11"
+            attributes: [ { name: if.index }, { name: if.name } ]
+            resource_attributes: ["host.name"]
+      network.interface.out.packets:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        column_oids:
+          - oid: "1.3.6.1.2.1.2.2.1.17"
+            attributes: [ { name: if.index }, { name: if.name } ]
+            resource_attributes: ["host.name"]
+      # Errors
+      network.interface.in.errors:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        column_oids:
+          - oid: "1.3.6.1.2.1.2.2.1.14"
+            attributes: [ { name: if.index }, { name: if.name } ]
+            resource_attributes: ["host.name"]
+      network.interface.out.errors:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        column_oids:
+          - oid: "1.3.6.1.2.1.2.2.1.20"
+            attributes: [ { name: if.index }, { name: if.name } ]
+            resource_attributes: ["host.name"]
+      # Discards
+      network.interface.in.discards:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        column_oids:
+          - oid: "1.3.6.1.2.1.2.2.1.13"
+            attributes: [ { name: if.index }, { name: if.name } ]
+            resource_attributes: ["host.name"]
+      network.interface.out.discards:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        column_oids:
+          - oid: "1.3.6.1.2.1.2.2.1.19"
+            attributes: [ { name: if.index }, { name: if.name } ]
+            resource_attributes: ["host.name"]
+      # Status
+      network.interface.oper.status:
+        unit: "1"
+        gauge: { value_type: int }
+        column_oids:
+          - oid: "1.3.6.1.2.1.2.2.1.8"
+            attributes: [ { name: if.index }, { name: if.name } ]
+            resource_attributes: ["host.name"]
+      network.interface.admin.status:
+        unit: "1"
+        gauge: { value_type: int }
+        column_oids:
+          - oid: "1.3.6.1.2.1.2.2.1.7"
+            attributes: [ { name: if.index }, { name: if.name } ]
+            resource_attributes: ["host.name"]
+      # Speed and MTU
+      network.interface.speed:
+        unit: "1"
+        gauge: { value_type: int }
+        column_oids:
+          - oid: "1.3.6.1.2.1.2.2.1.5"
+            attributes: [ { name: if.index }, { name: if.name } ]
+            resource_attributes: ["host.name"]
+      network.interface.mtu:
+        unit: By
+        gauge: { value_type: int }
+        column_oids:
+          - oid: "1.3.6.1.2.1.2.2.1.4"
+            attributes: [ { name: if.index }, { name: if.name } ]
+            resource_attributes: ["host.name"]
+
+  # --- IP-MIB (Extended) ---
+  snmp/csr24_ipstats:
+    endpoint: udp://172.20.20.24:161
+    version: v2c
+    community: public
+    collection_interval: 30s
+    timeout: 10s
+    resource_attributes:
+      host.name: { scalar_oid: "1.3.6.1.2.1.1.5.0" }
+    metrics:
+      network.ip.in.receives:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.4.3.0"
+            resource_attributes: ["host.name"]
+      network.ip.in.hdr.errors:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.4.4.0"
+            resource_attributes: ["host.name"]
+      network.ip.in.addr.errors:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.4.5.0"
+            resource_attributes: ["host.name"]
+      network.ip.forw.datagrams:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.4.6.0"
+            resource_attributes: ["host.name"]
+      network.ip.in.discards:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.4.8.0"
+            resource_attributes: ["host.name"]
+      network.ip.in.delivers:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.4.9.0"
+            resource_attributes: ["host.name"]
+      network.ip.out.requests:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.4.10.0"
+            resource_attributes: ["host.name"]
+      network.ip.out.discards:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.4.11.0"
+            resource_attributes: ["host.name"]
+      network.ip.out.no.routes:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.4.12.0"
+            resource_attributes: ["host.name"]
+      network.ip.reasm.reqds:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.4.14.0"
+            resource_attributes: ["host.name"]
+      network.ip.reasm.oks:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.4.15.0"
+            resource_attributes: ["host.name"]
+      network.ip.reasm.fails:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.4.16.0"
+            resource_attributes: ["host.name"]
+      network.ip.frag.oks:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.4.17.0"
+            resource_attributes: ["host.name"]
+      network.ip.frag.fails:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.4.18.0"
+            resource_attributes: ["host.name"]
+      network.ip.frag.creates:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.4.19.0"
+            resource_attributes: ["host.name"]
+
+  # --- ICMP-MIB ---
+  snmp/csr24_icmp:
+    endpoint: udp://172.20.20.24:161
+    version: v2c
+    community: public
+    collection_interval: 30s
+    timeout: 10s
+    resource_attributes:
+      host.name: { scalar_oid: "1.3.6.1.2.1.1.5.0" }
+    metrics:
+      network.icmp.in.msgs:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.5.1.0"
+            resource_attributes: ["host.name"]
+      network.icmp.in.errors:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.5.2.0"
+            resource_attributes: ["host.name"]
+      network.icmp.in.dest.unreachs:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.5.3.0"
+            resource_attributes: ["host.name"]
+      network.icmp.in.time.excds:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.5.4.0"
+            resource_attributes: ["host.name"]
+      network.icmp.in.echos:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.5.8.0"
+            resource_attributes: ["host.name"]
+      network.icmp.in.echo.reps:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.5.9.0"
+            resource_attributes: ["host.name"]
+      network.icmp.out.msgs:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.5.14.0"
+            resource_attributes: ["host.name"]
+      network.icmp.out.errors:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.5.15.0"
+            resource_attributes: ["host.name"]
+      network.icmp.out.dest.unreachs:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.5.16.0"
+            resource_attributes: ["host.name"]
+      network.icmp.out.echos:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.5.21.0"
+            resource_attributes: ["host.name"]
+      network.icmp.out.echo.reps:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.5.22.0"
+            resource_attributes: ["host.name"]
+
+  # --- TCP-MIB (Extended) ---
+  snmp/csr24_tcp:
+    endpoint: udp://172.20.20.24:161
+    version: v2c
+    community: public
+    collection_interval: 30s
+    timeout: 10s
+    resource_attributes:
+      host.name: { scalar_oid: "1.3.6.1.2.1.1.5.0" }
+    metrics:
+      network.tcp.active.opens:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.6.5.0"
+            resource_attributes: ["host.name"]
+      network.tcp.passive.opens:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.6.6.0"
+            resource_attributes: ["host.name"]
+      network.tcp.attempt.fails:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.6.7.0"
+            resource_attributes: ["host.name"]
+      network.tcp.estab.resets:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.6.8.0"
+            resource_attributes: ["host.name"]
+      network.tcp.curr.estab:
+        unit: "1"
+        gauge: { value_type: int }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.6.9.0"
+            resource_attributes: ["host.name"]
+      network.tcp.in.segs:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.6.10.0"
+            resource_attributes: ["host.name"]
+      network.tcp.out.segs:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.6.11.0"
+            resource_attributes: ["host.name"]
+      network.tcp.retrans.segs:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.6.12.0"
+            resource_attributes: ["host.name"]
+      network.tcp.in.errs:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.6.14.0"
+            resource_attributes: ["host.name"]
+      network.tcp.out.rsts:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.6.15.0"
+            resource_attributes: ["host.name"]
+
+  # --- UDP-MIB (Extended) ---
+  snmp/csr24_udp:
+    endpoint: udp://172.20.20.24:161
+    version: v2c
+    community: public
+    collection_interval: 30s
+    timeout: 10s
+    resource_attributes:
+      host.name: { scalar_oid: "1.3.6.1.2.1.1.5.0" }
+    metrics:
+      network.udp.in.datagrams:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.7.1.0"
+            resource_attributes: ["host.name"]
+      network.udp.no.ports:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.7.2.0"
+            resource_attributes: ["host.name"]
+      network.udp.in.errors:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.7.3.0"
+            resource_attributes: ["host.name"]
+      network.udp.out.datagrams:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.7.4.0"
+            resource_attributes: ["host.name"]
+
+  # --- OSPF-MIB (via FRR AgentX) ---
+  snmp/csr24_ospf:
+    endpoint: udp://172.20.20.24:161
+    version: v2c
+    community: public
+    collection_interval: 60s
+    timeout: 15s
+    resource_attributes:
+      host.name: { scalar_oid: "1.3.6.1.2.1.1.5.0" }
+    metrics:
+      network.ospf.admin.stat:
+        unit: "1"
+        gauge: { value_type: int }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.14.1.2.0"
+            resource_attributes: ["host.name"]
+      network.ospf.version.number:
+        unit: "1"
+        gauge: { value_type: int }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.14.1.3.0"
+            resource_attributes: ["host.name"]
+      network.ospf.area.bdr.rtr.status:
+        unit: "1"
+        gauge: { value_type: int }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.14.1.4.0"
+            resource_attributes: ["host.name"]
+      network.ospf.as.bdr.rtr.status:
+        unit: "1"
+        gauge: { value_type: int }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.14.1.5.0"
+            resource_attributes: ["host.name"]
+      network.ospf.extern.lsa.count:
+        unit: "1"
+        gauge: { value_type: int }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.14.1.6.0"
+            resource_attributes: ["host.name"]
+      network.ospf.extern.lsa.cksum.sum:
+        unit: "1"
+        gauge: { value_type: int }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.14.1.7.0"
+            resource_attributes: ["host.name"]
+      network.ospf.originate.new.lsas:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.14.1.9.0"
+            resource_attributes: ["host.name"]
+      network.ospf.rx.new.lsas:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.14.1.10.0"
+            resource_attributes: ["host.name"]
+
+  # --- ARP Table ---
+  snmp/csr24_arp:
+    endpoint: udp://172.20.20.24:161
+    version: v2c
+    community: public
+    collection_interval: 60s
+    timeout: 10s
+    resource_attributes:
+      host.name: { scalar_oid: "1.3.6.1.2.1.1.5.0" }
+    attributes:
+      arp.ifindex: { oid: "1.3.6.1.2.1.4.22.1.1" }
+      arp.ip: { oid: "1.3.6.1.2.1.4.22.1.3" }
+      arp.mac: { oid: "1.3.6.1.2.1.4.22.1.2" }
+    metrics:
+      network.arp.entry:
+        unit: "1"
+        gauge: { value_type: int }
+        column_oids:
+          - oid: "1.3.6.1.2.1.4.22.1.4"
+            attributes: [ { name: arp.ifindex }, { name: arp.ip }, { name: arp.mac } ]
+            resource_attributes: ["host.name"]
+
+  # --- LLDP-MIB ---
+  snmp/csr24_lldp:
+    endpoint: udp://172.20.20.24:161
+    version: v2c
+    community: public
+    collection_interval: 30s
+    timeout: 10s
+    resource_attributes:
+      host.name: { scalar_oid: "1.3.6.1.2.1.1.5.0" }
+    attributes:
+      network.lldp.rem.sysname: { oid: "1.0.8802.1.1.2.1.4.1.1.9" }
+    metrics:
+      network.lldp.neighbors:
+        unit: "1"
+        gauge: { value_type: int }
+        column_oids:
+          - oid: "1.0.8802.1.1.2.1.4.1.1.4"
+            attributes: [ { name: network.lldp.rem.sysname } ]
+            resource_attributes: ["host.name"]
+
+  # ============================================
+  # csr25 (172.20.20.25) - FULL MIB COVERAGE
+  # ============================================
+
+  # --- System MIB (Extended) ---
+  snmp/csr25_system:
+    endpoint: udp://172.20.20.25:161
+    version: v2c
+    community: public
+    collection_interval: 30s
+    timeout: 10s
+    resource_attributes:
+      host.name: { scalar_oid: "1.3.6.1.2.1.1.5.0" }
+    metrics:
+      system.uptime:
+        unit: s
+        gauge: { value_type: double }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.1.3.0"
+            resource_attributes: ["host.name"]
+      system.services:
+        unit: "1"
+        gauge: { value_type: int }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.1.7.0"
+            resource_attributes: ["host.name"]
+
+  # --- Memory (HOST-RESOURCES-MIB) ---
+  snmp/csr25_memory:
+    endpoint: udp://172.20.20.25:161
+    version: v2c
+    community: public
+    collection_interval: 60s
+    timeout: 10s
+    resource_attributes:
+      host.name: { scalar_oid: "1.3.6.1.2.1.1.5.0" }
+    attributes:
+      memory.pool.name: { oid: "1.3.6.1.2.1.25.2.3.1.3" }
+    metrics:
+      system.memory.size:
+        unit: units
+        gauge: { value_type: int }
+        column_oids:
+          - oid: "1.3.6.1.2.1.25.2.3.1.5"
+            attributes: [ { name: memory.pool.name } ]
+            resource_attributes: ["host.name"]
+      system.memory.used:
+        unit: units
+        gauge: { value_type: int }
+        column_oids:
+          - oid: "1.3.6.1.2.1.25.2.3.1.6"
+            attributes: [ { name: memory.pool.name } ]
+            resource_attributes: ["host.name"]
+
+  # --- Interface MIB (Extended) ---
+  snmp/csr25_interface:
+    endpoint: udp://172.20.20.25:161
+    version: v2c
+    community: public
+    collection_interval: 15s
+    timeout: 10s
+    resource_attributes:
+      host.name: { scalar_oid: "1.3.6.1.2.1.1.5.0" }
+    attributes:
+      if.index: { oid: "1.3.6.1.2.1.2.2.1.1" }
+      if.name: { oid: "1.3.6.1.2.1.31.1.1.1.1" }
+      if.descr: { oid: "1.3.6.1.2.1.2.2.1.2" }
+    metrics:
+      # Bytes (64-bit counters)
+      network.interface.in.bytes:
+        unit: By
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        column_oids:
+          - oid: "1.3.6.1.2.1.31.1.1.1.6"
+            attributes: [ { name: if.index }, { name: if.name }, { name: if.descr } ]
+            resource_attributes: ["host.name"]
+      network.interface.out.bytes:
+        unit: By
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        column_oids:
+          - oid: "1.3.6.1.2.1.31.1.1.1.10"
+            attributes: [ { name: if.index }, { name: if.name }, { name: if.descr } ]
+            resource_attributes: ["host.name"]
+      # Packets
+      network.interface.in.packets:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        column_oids:
+          - oid: "1.3.6.1.2.1.2.2.1.11"
+            attributes: [ { name: if.index }, { name: if.name } ]
+            resource_attributes: ["host.name"]
+      network.interface.out.packets:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        column_oids:
+          - oid: "1.3.6.1.2.1.2.2.1.17"
+            attributes: [ { name: if.index }, { name: if.name } ]
+            resource_attributes: ["host.name"]
+      # Errors
+      network.interface.in.errors:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        column_oids:
+          - oid: "1.3.6.1.2.1.2.2.1.14"
+            attributes: [ { name: if.index }, { name: if.name } ]
+            resource_attributes: ["host.name"]
+      network.interface.out.errors:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        column_oids:
+          - oid: "1.3.6.1.2.1.2.2.1.20"
+            attributes: [ { name: if.index }, { name: if.name } ]
+            resource_attributes: ["host.name"]
+      # Discards
+      network.interface.in.discards:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        column_oids:
+          - oid: "1.3.6.1.2.1.2.2.1.13"
+            attributes: [ { name: if.index }, { name: if.name } ]
+            resource_attributes: ["host.name"]
+      network.interface.out.discards:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        column_oids:
+          - oid: "1.3.6.1.2.1.2.2.1.19"
+            attributes: [ { name: if.index }, { name: if.name } ]
+            resource_attributes: ["host.name"]
+      # Status
+      network.interface.oper.status:
+        unit: "1"
+        gauge: { value_type: int }
+        column_oids:
+          - oid: "1.3.6.1.2.1.2.2.1.8"
+            attributes: [ { name: if.index }, { name: if.name } ]
+            resource_attributes: ["host.name"]
+      network.interface.admin.status:
+        unit: "1"
+        gauge: { value_type: int }
+        column_oids:
+          - oid: "1.3.6.1.2.1.2.2.1.7"
+            attributes: [ { name: if.index }, { name: if.name } ]
+            resource_attributes: ["host.name"]
+      # Speed and MTU
+      network.interface.speed:
+        unit: "1"
+        gauge: { value_type: int }
+        column_oids:
+          - oid: "1.3.6.1.2.1.2.2.1.5"
+            attributes: [ { name: if.index }, { name: if.name } ]
+            resource_attributes: ["host.name"]
+      network.interface.mtu:
+        unit: By
+        gauge: { value_type: int }
+        column_oids:
+          - oid: "1.3.6.1.2.1.2.2.1.4"
+            attributes: [ { name: if.index }, { name: if.name } ]
+            resource_attributes: ["host.name"]
+
+  # --- IP-MIB (Extended) ---
+  snmp/csr25_ipstats:
+    endpoint: udp://172.20.20.25:161
+    version: v2c
+    community: public
+    collection_interval: 30s
+    timeout: 10s
+    resource_attributes:
+      host.name: { scalar_oid: "1.3.6.1.2.1.1.5.0" }
+    metrics:
+      network.ip.in.receives:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.4.3.0"
+            resource_attributes: ["host.name"]
+      network.ip.in.hdr.errors:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.4.4.0"
+            resource_attributes: ["host.name"]
+      network.ip.in.addr.errors:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.4.5.0"
+            resource_attributes: ["host.name"]
+      network.ip.forw.datagrams:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.4.6.0"
+            resource_attributes: ["host.name"]
+      network.ip.in.discards:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.4.8.0"
+            resource_attributes: ["host.name"]
+      network.ip.in.delivers:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.4.9.0"
+            resource_attributes: ["host.name"]
+      network.ip.out.requests:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.4.10.0"
+            resource_attributes: ["host.name"]
+      network.ip.out.discards:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.4.11.0"
+            resource_attributes: ["host.name"]
+      network.ip.out.no.routes:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.4.12.0"
+            resource_attributes: ["host.name"]
+      network.ip.reasm.reqds:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.4.14.0"
+            resource_attributes: ["host.name"]
+      network.ip.reasm.oks:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.4.15.0"
+            resource_attributes: ["host.name"]
+      network.ip.reasm.fails:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.4.16.0"
+            resource_attributes: ["host.name"]
+      network.ip.frag.oks:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.4.17.0"
+            resource_attributes: ["host.name"]
+      network.ip.frag.fails:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.4.18.0"
+            resource_attributes: ["host.name"]
+      network.ip.frag.creates:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.4.19.0"
+            resource_attributes: ["host.name"]
+
+  # --- ICMP-MIB ---
+  snmp/csr25_icmp:
+    endpoint: udp://172.20.20.25:161
+    version: v2c
+    community: public
+    collection_interval: 30s
+    timeout: 10s
+    resource_attributes:
+      host.name: { scalar_oid: "1.3.6.1.2.1.1.5.0" }
+    metrics:
+      network.icmp.in.msgs:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.5.1.0"
+            resource_attributes: ["host.name"]
+      network.icmp.in.errors:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.5.2.0"
+            resource_attributes: ["host.name"]
+      network.icmp.in.dest.unreachs:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.5.3.0"
+            resource_attributes: ["host.name"]
+      network.icmp.in.time.excds:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.5.4.0"
+            resource_attributes: ["host.name"]
+      network.icmp.in.echos:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.5.8.0"
+            resource_attributes: ["host.name"]
+      network.icmp.in.echo.reps:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.5.9.0"
+            resource_attributes: ["host.name"]
+      network.icmp.out.msgs:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.5.14.0"
+            resource_attributes: ["host.name"]
+      network.icmp.out.errors:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.5.15.0"
+            resource_attributes: ["host.name"]
+      network.icmp.out.dest.unreachs:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.5.16.0"
+            resource_attributes: ["host.name"]
+      network.icmp.out.echos:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.5.21.0"
+            resource_attributes: ["host.name"]
+      network.icmp.out.echo.reps:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.5.22.0"
+            resource_attributes: ["host.name"]
+
+  # --- TCP-MIB (Extended) ---
+  snmp/csr25_tcp:
+    endpoint: udp://172.20.20.25:161
+    version: v2c
+    community: public
+    collection_interval: 30s
+    timeout: 10s
+    resource_attributes:
+      host.name: { scalar_oid: "1.3.6.1.2.1.1.5.0" }
+    metrics:
+      network.tcp.active.opens:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.6.5.0"
+            resource_attributes: ["host.name"]
+      network.tcp.passive.opens:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.6.6.0"
+            resource_attributes: ["host.name"]
+      network.tcp.attempt.fails:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.6.7.0"
+            resource_attributes: ["host.name"]
+      network.tcp.estab.resets:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.6.8.0"
+            resource_attributes: ["host.name"]
+      network.tcp.curr.estab:
+        unit: "1"
+        gauge: { value_type: int }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.6.9.0"
+            resource_attributes: ["host.name"]
+      network.tcp.in.segs:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.6.10.0"
+            resource_attributes: ["host.name"]
+      network.tcp.out.segs:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.6.11.0"
+            resource_attributes: ["host.name"]
+      network.tcp.retrans.segs:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.6.12.0"
+            resource_attributes: ["host.name"]
+      network.tcp.in.errs:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.6.14.0"
+            resource_attributes: ["host.name"]
+      network.tcp.out.rsts:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.6.15.0"
+            resource_attributes: ["host.name"]
+
+  # --- UDP-MIB (Extended) ---
+  snmp/csr25_udp:
+    endpoint: udp://172.20.20.25:161
+    version: v2c
+    community: public
+    collection_interval: 30s
+    timeout: 10s
+    resource_attributes:
+      host.name: { scalar_oid: "1.3.6.1.2.1.1.5.0" }
+    metrics:
+      network.udp.in.datagrams:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.7.1.0"
+            resource_attributes: ["host.name"]
+      network.udp.no.ports:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.7.2.0"
+            resource_attributes: ["host.name"]
+      network.udp.in.errors:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.7.3.0"
+            resource_attributes: ["host.name"]
+      network.udp.out.datagrams:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.7.4.0"
+            resource_attributes: ["host.name"]
+
+  # --- OSPF-MIB (via FRR AgentX) ---
+  snmp/csr25_ospf:
+    endpoint: udp://172.20.20.25:161
+    version: v2c
+    community: public
+    collection_interval: 60s
+    timeout: 15s
+    resource_attributes:
+      host.name: { scalar_oid: "1.3.6.1.2.1.1.5.0" }
+    metrics:
+      network.ospf.admin.stat:
+        unit: "1"
+        gauge: { value_type: int }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.14.1.2.0"
+            resource_attributes: ["host.name"]
+      network.ospf.version.number:
+        unit: "1"
+        gauge: { value_type: int }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.14.1.3.0"
+            resource_attributes: ["host.name"]
+      network.ospf.area.bdr.rtr.status:
+        unit: "1"
+        gauge: { value_type: int }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.14.1.4.0"
+            resource_attributes: ["host.name"]
+      network.ospf.as.bdr.rtr.status:
+        unit: "1"
+        gauge: { value_type: int }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.14.1.5.0"
+            resource_attributes: ["host.name"]
+      network.ospf.extern.lsa.count:
+        unit: "1"
+        gauge: { value_type: int }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.14.1.6.0"
+            resource_attributes: ["host.name"]
+      network.ospf.extern.lsa.cksum.sum:
+        unit: "1"
+        gauge: { value_type: int }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.14.1.7.0"
+            resource_attributes: ["host.name"]
+      network.ospf.originate.new.lsas:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.14.1.9.0"
+            resource_attributes: ["host.name"]
+      network.ospf.rx.new.lsas:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.14.1.10.0"
+            resource_attributes: ["host.name"]
+
+  # --- ARP Table ---
+  snmp/csr25_arp:
+    endpoint: udp://172.20.20.25:161
+    version: v2c
+    community: public
+    collection_interval: 60s
+    timeout: 10s
+    resource_attributes:
+      host.name: { scalar_oid: "1.3.6.1.2.1.1.5.0" }
+    attributes:
+      arp.ifindex: { oid: "1.3.6.1.2.1.4.22.1.1" }
+      arp.ip: { oid: "1.3.6.1.2.1.4.22.1.3" }
+      arp.mac: { oid: "1.3.6.1.2.1.4.22.1.2" }
+    metrics:
+      network.arp.entry:
+        unit: "1"
+        gauge: { value_type: int }
+        column_oids:
+          - oid: "1.3.6.1.2.1.4.22.1.4"
+            attributes: [ { name: arp.ifindex }, { name: arp.ip }, { name: arp.mac } ]
+            resource_attributes: ["host.name"]
+
+  # --- LLDP-MIB ---
+  snmp/csr25_lldp:
+    endpoint: udp://172.20.20.25:161
+    version: v2c
+    community: public
+    collection_interval: 30s
+    timeout: 10s
+    resource_attributes:
+      host.name: { scalar_oid: "1.3.6.1.2.1.1.5.0" }
+    attributes:
+      network.lldp.rem.sysname: { oid: "1.0.8802.1.1.2.1.4.1.1.9" }
+    metrics:
+      network.lldp.neighbors:
+        unit: "1"
+        gauge: { value_type: int }
+        column_oids:
+          - oid: "1.0.8802.1.1.2.1.4.1.1.4"
+            attributes: [ { name: network.lldp.rem.sysname } ]
+            resource_attributes: ["host.name"]
+
+  # ============================================
+  # csr26 (172.20.20.26) - FULL MIB COVERAGE
+  # ============================================
+
+  # --- System MIB (Extended) ---
+  snmp/csr26_system:
+    endpoint: udp://172.20.20.26:161
+    version: v2c
+    community: public
+    collection_interval: 30s
+    timeout: 10s
+    resource_attributes:
+      host.name: { scalar_oid: "1.3.6.1.2.1.1.5.0" }
+    metrics:
+      system.uptime:
+        unit: s
+        gauge: { value_type: double }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.1.3.0"
+            resource_attributes: ["host.name"]
+      system.services:
+        unit: "1"
+        gauge: { value_type: int }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.1.7.0"
+            resource_attributes: ["host.name"]
+
+  # --- Memory (HOST-RESOURCES-MIB) ---
+  snmp/csr26_memory:
+    endpoint: udp://172.20.20.26:161
+    version: v2c
+    community: public
+    collection_interval: 60s
+    timeout: 10s
+    resource_attributes:
+      host.name: { scalar_oid: "1.3.6.1.2.1.1.5.0" }
+    attributes:
+      memory.pool.name: { oid: "1.3.6.1.2.1.25.2.3.1.3" }
+    metrics:
+      system.memory.size:
+        unit: units
+        gauge: { value_type: int }
+        column_oids:
+          - oid: "1.3.6.1.2.1.25.2.3.1.5"
+            attributes: [ { name: memory.pool.name } ]
+            resource_attributes: ["host.name"]
+      system.memory.used:
+        unit: units
+        gauge: { value_type: int }
+        column_oids:
+          - oid: "1.3.6.1.2.1.25.2.3.1.6"
+            attributes: [ { name: memory.pool.name } ]
+            resource_attributes: ["host.name"]
+
+  # --- Interface MIB (Extended) ---
+  snmp/csr26_interface:
+    endpoint: udp://172.20.20.26:161
+    version: v2c
+    community: public
+    collection_interval: 15s
+    timeout: 10s
+    resource_attributes:
+      host.name: { scalar_oid: "1.3.6.1.2.1.1.5.0" }
+    attributes:
+      if.index: { oid: "1.3.6.1.2.1.2.2.1.1" }
+      if.name: { oid: "1.3.6.1.2.1.31.1.1.1.1" }
+      if.descr: { oid: "1.3.6.1.2.1.2.2.1.2" }
+    metrics:
+      # Bytes (64-bit counters)
+      network.interface.in.bytes:
+        unit: By
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        column_oids:
+          - oid: "1.3.6.1.2.1.31.1.1.1.6"
+            attributes: [ { name: if.index }, { name: if.name }, { name: if.descr } ]
+            resource_attributes: ["host.name"]
+      network.interface.out.bytes:
+        unit: By
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        column_oids:
+          - oid: "1.3.6.1.2.1.31.1.1.1.10"
+            attributes: [ { name: if.index }, { name: if.name }, { name: if.descr } ]
+            resource_attributes: ["host.name"]
+      # Packets
+      network.interface.in.packets:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        column_oids:
+          - oid: "1.3.6.1.2.1.2.2.1.11"
+            attributes: [ { name: if.index }, { name: if.name } ]
+            resource_attributes: ["host.name"]
+      network.interface.out.packets:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        column_oids:
+          - oid: "1.3.6.1.2.1.2.2.1.17"
+            attributes: [ { name: if.index }, { name: if.name } ]
+            resource_attributes: ["host.name"]
+      # Errors
+      network.interface.in.errors:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        column_oids:
+          - oid: "1.3.6.1.2.1.2.2.1.14"
+            attributes: [ { name: if.index }, { name: if.name } ]
+            resource_attributes: ["host.name"]
+      network.interface.out.errors:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        column_oids:
+          - oid: "1.3.6.1.2.1.2.2.1.20"
+            attributes: [ { name: if.index }, { name: if.name } ]
+            resource_attributes: ["host.name"]
+      # Discards
+      network.interface.in.discards:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        column_oids:
+          - oid: "1.3.6.1.2.1.2.2.1.13"
+            attributes: [ { name: if.index }, { name: if.name } ]
+            resource_attributes: ["host.name"]
+      network.interface.out.discards:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        column_oids:
+          - oid: "1.3.6.1.2.1.2.2.1.19"
+            attributes: [ { name: if.index }, { name: if.name } ]
+            resource_attributes: ["host.name"]
+      # Status
+      network.interface.oper.status:
+        unit: "1"
+        gauge: { value_type: int }
+        column_oids:
+          - oid: "1.3.6.1.2.1.2.2.1.8"
+            attributes: [ { name: if.index }, { name: if.name } ]
+            resource_attributes: ["host.name"]
+      network.interface.admin.status:
+        unit: "1"
+        gauge: { value_type: int }
+        column_oids:
+          - oid: "1.3.6.1.2.1.2.2.1.7"
+            attributes: [ { name: if.index }, { name: if.name } ]
+            resource_attributes: ["host.name"]
+      # Speed and MTU
+      network.interface.speed:
+        unit: "1"
+        gauge: { value_type: int }
+        column_oids:
+          - oid: "1.3.6.1.2.1.2.2.1.5"
+            attributes: [ { name: if.index }, { name: if.name } ]
+            resource_attributes: ["host.name"]
+      network.interface.mtu:
+        unit: By
+        gauge: { value_type: int }
+        column_oids:
+          - oid: "1.3.6.1.2.1.2.2.1.4"
+            attributes: [ { name: if.index }, { name: if.name } ]
+            resource_attributes: ["host.name"]
+
+  # --- IP-MIB (Extended) ---
+  snmp/csr26_ipstats:
+    endpoint: udp://172.20.20.26:161
+    version: v2c
+    community: public
+    collection_interval: 30s
+    timeout: 10s
+    resource_attributes:
+      host.name: { scalar_oid: "1.3.6.1.2.1.1.5.0" }
+    metrics:
+      network.ip.in.receives:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.4.3.0"
+            resource_attributes: ["host.name"]
+      network.ip.in.hdr.errors:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.4.4.0"
+            resource_attributes: ["host.name"]
+      network.ip.in.addr.errors:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.4.5.0"
+            resource_attributes: ["host.name"]
+      network.ip.forw.datagrams:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.4.6.0"
+            resource_attributes: ["host.name"]
+      network.ip.in.discards:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.4.8.0"
+            resource_attributes: ["host.name"]
+      network.ip.in.delivers:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.4.9.0"
+            resource_attributes: ["host.name"]
+      network.ip.out.requests:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.4.10.0"
+            resource_attributes: ["host.name"]
+      network.ip.out.discards:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.4.11.0"
+            resource_attributes: ["host.name"]
+      network.ip.out.no.routes:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.4.12.0"
+            resource_attributes: ["host.name"]
+      network.ip.reasm.reqds:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.4.14.0"
+            resource_attributes: ["host.name"]
+      network.ip.reasm.oks:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.4.15.0"
+            resource_attributes: ["host.name"]
+      network.ip.reasm.fails:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.4.16.0"
+            resource_attributes: ["host.name"]
+      network.ip.frag.oks:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.4.17.0"
+            resource_attributes: ["host.name"]
+      network.ip.frag.fails:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.4.18.0"
+            resource_attributes: ["host.name"]
+      network.ip.frag.creates:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.4.19.0"
+            resource_attributes: ["host.name"]
+
+  # --- ICMP-MIB ---
+  snmp/csr26_icmp:
+    endpoint: udp://172.20.20.26:161
+    version: v2c
+    community: public
+    collection_interval: 30s
+    timeout: 10s
+    resource_attributes:
+      host.name: { scalar_oid: "1.3.6.1.2.1.1.5.0" }
+    metrics:
+      network.icmp.in.msgs:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.5.1.0"
+            resource_attributes: ["host.name"]
+      network.icmp.in.errors:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.5.2.0"
+            resource_attributes: ["host.name"]
+      network.icmp.in.dest.unreachs:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.5.3.0"
+            resource_attributes: ["host.name"]
+      network.icmp.in.time.excds:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.5.4.0"
+            resource_attributes: ["host.name"]
+      network.icmp.in.echos:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.5.8.0"
+            resource_attributes: ["host.name"]
+      network.icmp.in.echo.reps:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.5.9.0"
+            resource_attributes: ["host.name"]
+      network.icmp.out.msgs:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.5.14.0"
+            resource_attributes: ["host.name"]
+      network.icmp.out.errors:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.5.15.0"
+            resource_attributes: ["host.name"]
+      network.icmp.out.dest.unreachs:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.5.16.0"
+            resource_attributes: ["host.name"]
+      network.icmp.out.echos:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.5.21.0"
+            resource_attributes: ["host.name"]
+      network.icmp.out.echo.reps:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.5.22.0"
+            resource_attributes: ["host.name"]
+
+  # --- TCP-MIB (Extended) ---
+  snmp/csr26_tcp:
+    endpoint: udp://172.20.20.26:161
+    version: v2c
+    community: public
+    collection_interval: 30s
+    timeout: 10s
+    resource_attributes:
+      host.name: { scalar_oid: "1.3.6.1.2.1.1.5.0" }
+    metrics:
+      network.tcp.active.opens:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.6.5.0"
+            resource_attributes: ["host.name"]
+      network.tcp.passive.opens:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.6.6.0"
+            resource_attributes: ["host.name"]
+      network.tcp.attempt.fails:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.6.7.0"
+            resource_attributes: ["host.name"]
+      network.tcp.estab.resets:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.6.8.0"
+            resource_attributes: ["host.name"]
+      network.tcp.curr.estab:
+        unit: "1"
+        gauge: { value_type: int }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.6.9.0"
+            resource_attributes: ["host.name"]
+      network.tcp.in.segs:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.6.10.0"
+            resource_attributes: ["host.name"]
+      network.tcp.out.segs:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.6.11.0"
+            resource_attributes: ["host.name"]
+      network.tcp.retrans.segs:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.6.12.0"
+            resource_attributes: ["host.name"]
+      network.tcp.in.errs:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.6.14.0"
+            resource_attributes: ["host.name"]
+      network.tcp.out.rsts:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.6.15.0"
+            resource_attributes: ["host.name"]
+
+  # --- UDP-MIB (Extended) ---
+  snmp/csr26_udp:
+    endpoint: udp://172.20.20.26:161
+    version: v2c
+    community: public
+    collection_interval: 30s
+    timeout: 10s
+    resource_attributes:
+      host.name: { scalar_oid: "1.3.6.1.2.1.1.5.0" }
+    metrics:
+      network.udp.in.datagrams:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.7.1.0"
+            resource_attributes: ["host.name"]
+      network.udp.no.ports:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.7.2.0"
+            resource_attributes: ["host.name"]
+      network.udp.in.errors:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.7.3.0"
+            resource_attributes: ["host.name"]
+      network.udp.out.datagrams:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.7.4.0"
+            resource_attributes: ["host.name"]
+
+  # --- OSPF-MIB (via FRR AgentX) ---
+  snmp/csr26_ospf:
+    endpoint: udp://172.20.20.26:161
+    version: v2c
+    community: public
+    collection_interval: 60s
+    timeout: 15s
+    resource_attributes:
+      host.name: { scalar_oid: "1.3.6.1.2.1.1.5.0" }
+    metrics:
+      network.ospf.admin.stat:
+        unit: "1"
+        gauge: { value_type: int }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.14.1.2.0"
+            resource_attributes: ["host.name"]
+      network.ospf.version.number:
+        unit: "1"
+        gauge: { value_type: int }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.14.1.3.0"
+            resource_attributes: ["host.name"]
+      network.ospf.area.bdr.rtr.status:
+        unit: "1"
+        gauge: { value_type: int }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.14.1.4.0"
+            resource_attributes: ["host.name"]
+      network.ospf.as.bdr.rtr.status:
+        unit: "1"
+        gauge: { value_type: int }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.14.1.5.0"
+            resource_attributes: ["host.name"]
+      network.ospf.extern.lsa.count:
+        unit: "1"
+        gauge: { value_type: int }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.14.1.6.0"
+            resource_attributes: ["host.name"]
+      network.ospf.extern.lsa.cksum.sum:
+        unit: "1"
+        gauge: { value_type: int }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.14.1.7.0"
+            resource_attributes: ["host.name"]
+      network.ospf.originate.new.lsas:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.14.1.9.0"
+            resource_attributes: ["host.name"]
+      network.ospf.rx.new.lsas:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.14.1.10.0"
+            resource_attributes: ["host.name"]
+
+  # --- ARP Table ---
+  snmp/csr26_arp:
+    endpoint: udp://172.20.20.26:161
+    version: v2c
+    community: public
+    collection_interval: 60s
+    timeout: 10s
+    resource_attributes:
+      host.name: { scalar_oid: "1.3.6.1.2.1.1.5.0" }
+    attributes:
+      arp.ifindex: { oid: "1.3.6.1.2.1.4.22.1.1" }
+      arp.ip: { oid: "1.3.6.1.2.1.4.22.1.3" }
+      arp.mac: { oid: "1.3.6.1.2.1.4.22.1.2" }
+    metrics:
+      network.arp.entry:
+        unit: "1"
+        gauge: { value_type: int }
+        column_oids:
+          - oid: "1.3.6.1.2.1.4.22.1.4"
+            attributes: [ { name: arp.ifindex }, { name: arp.ip }, { name: arp.mac } ]
+            resource_attributes: ["host.name"]
+
+  # --- LLDP-MIB ---
+  snmp/csr26_lldp:
+    endpoint: udp://172.20.20.26:161
+    version: v2c
+    community: public
+    collection_interval: 30s
+    timeout: 10s
+    resource_attributes:
+      host.name: { scalar_oid: "1.3.6.1.2.1.1.5.0" }
+    attributes:
+      network.lldp.rem.sysname: { oid: "1.0.8802.1.1.2.1.4.1.1.9" }
+    metrics:
+      network.lldp.neighbors:
+        unit: "1"
+        gauge: { value_type: int }
+        column_oids:
+          - oid: "1.0.8802.1.1.2.1.4.1.1.4"
+            attributes: [ { name: network.lldp.rem.sysname } ]
+            resource_attributes: ["host.name"]
+
+  # ============================================
+  # csr27 (172.20.20.27) - FULL MIB COVERAGE
+  # ============================================
+
+  # --- System MIB (Extended) ---
+  snmp/csr27_system:
+    endpoint: udp://172.20.20.27:161
+    version: v2c
+    community: public
+    collection_interval: 30s
+    timeout: 10s
+    resource_attributes:
+      host.name: { scalar_oid: "1.3.6.1.2.1.1.5.0" }
+    metrics:
+      system.uptime:
+        unit: s
+        gauge: { value_type: double }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.1.3.0"
+            resource_attributes: ["host.name"]
+      system.services:
+        unit: "1"
+        gauge: { value_type: int }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.1.7.0"
+            resource_attributes: ["host.name"]
+
+  # --- Memory (HOST-RESOURCES-MIB) ---
+  snmp/csr27_memory:
+    endpoint: udp://172.20.20.27:161
+    version: v2c
+    community: public
+    collection_interval: 60s
+    timeout: 10s
+    resource_attributes:
+      host.name: { scalar_oid: "1.3.6.1.2.1.1.5.0" }
+    attributes:
+      memory.pool.name: { oid: "1.3.6.1.2.1.25.2.3.1.3" }
+    metrics:
+      system.memory.size:
+        unit: units
+        gauge: { value_type: int }
+        column_oids:
+          - oid: "1.3.6.1.2.1.25.2.3.1.5"
+            attributes: [ { name: memory.pool.name } ]
+            resource_attributes: ["host.name"]
+      system.memory.used:
+        unit: units
+        gauge: { value_type: int }
+        column_oids:
+          - oid: "1.3.6.1.2.1.25.2.3.1.6"
+            attributes: [ { name: memory.pool.name } ]
+            resource_attributes: ["host.name"]
+
+  # --- Interface MIB (Extended) ---
+  snmp/csr27_interface:
+    endpoint: udp://172.20.20.27:161
+    version: v2c
+    community: public
+    collection_interval: 15s
+    timeout: 10s
+    resource_attributes:
+      host.name: { scalar_oid: "1.3.6.1.2.1.1.5.0" }
+    attributes:
+      if.index: { oid: "1.3.6.1.2.1.2.2.1.1" }
+      if.name: { oid: "1.3.6.1.2.1.31.1.1.1.1" }
+      if.descr: { oid: "1.3.6.1.2.1.2.2.1.2" }
+    metrics:
+      # Bytes (64-bit counters)
+      network.interface.in.bytes:
+        unit: By
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        column_oids:
+          - oid: "1.3.6.1.2.1.31.1.1.1.6"
+            attributes: [ { name: if.index }, { name: if.name }, { name: if.descr } ]
+            resource_attributes: ["host.name"]
+      network.interface.out.bytes:
+        unit: By
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        column_oids:
+          - oid: "1.3.6.1.2.1.31.1.1.1.10"
+            attributes: [ { name: if.index }, { name: if.name }, { name: if.descr } ]
+            resource_attributes: ["host.name"]
+      # Packets
+      network.interface.in.packets:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        column_oids:
+          - oid: "1.3.6.1.2.1.2.2.1.11"
+            attributes: [ { name: if.index }, { name: if.name } ]
+            resource_attributes: ["host.name"]
+      network.interface.out.packets:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        column_oids:
+          - oid: "1.3.6.1.2.1.2.2.1.17"
+            attributes: [ { name: if.index }, { name: if.name } ]
+            resource_attributes: ["host.name"]
+      # Errors
+      network.interface.in.errors:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        column_oids:
+          - oid: "1.3.6.1.2.1.2.2.1.14"
+            attributes: [ { name: if.index }, { name: if.name } ]
+            resource_attributes: ["host.name"]
+      network.interface.out.errors:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        column_oids:
+          - oid: "1.3.6.1.2.1.2.2.1.20"
+            attributes: [ { name: if.index }, { name: if.name } ]
+            resource_attributes: ["host.name"]
+      # Discards
+      network.interface.in.discards:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        column_oids:
+          - oid: "1.3.6.1.2.1.2.2.1.13"
+            attributes: [ { name: if.index }, { name: if.name } ]
+            resource_attributes: ["host.name"]
+      network.interface.out.discards:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        column_oids:
+          - oid: "1.3.6.1.2.1.2.2.1.19"
+            attributes: [ { name: if.index }, { name: if.name } ]
+            resource_attributes: ["host.name"]
+      # Status
+      network.interface.oper.status:
+        unit: "1"
+        gauge: { value_type: int }
+        column_oids:
+          - oid: "1.3.6.1.2.1.2.2.1.8"
+            attributes: [ { name: if.index }, { name: if.name } ]
+            resource_attributes: ["host.name"]
+      network.interface.admin.status:
+        unit: "1"
+        gauge: { value_type: int }
+        column_oids:
+          - oid: "1.3.6.1.2.1.2.2.1.7"
+            attributes: [ { name: if.index }, { name: if.name } ]
+            resource_attributes: ["host.name"]
+      # Speed and MTU
+      network.interface.speed:
+        unit: "1"
+        gauge: { value_type: int }
+        column_oids:
+          - oid: "1.3.6.1.2.1.2.2.1.5"
+            attributes: [ { name: if.index }, { name: if.name } ]
+            resource_attributes: ["host.name"]
+      network.interface.mtu:
+        unit: By
+        gauge: { value_type: int }
+        column_oids:
+          - oid: "1.3.6.1.2.1.2.2.1.4"
+            attributes: [ { name: if.index }, { name: if.name } ]
+            resource_attributes: ["host.name"]
+
+  # --- IP-MIB (Extended) ---
+  snmp/csr27_ipstats:
+    endpoint: udp://172.20.20.27:161
+    version: v2c
+    community: public
+    collection_interval: 30s
+    timeout: 10s
+    resource_attributes:
+      host.name: { scalar_oid: "1.3.6.1.2.1.1.5.0" }
+    metrics:
+      network.ip.in.receives:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.4.3.0"
+            resource_attributes: ["host.name"]
+      network.ip.in.hdr.errors:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.4.4.0"
+            resource_attributes: ["host.name"]
+      network.ip.in.addr.errors:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.4.5.0"
+            resource_attributes: ["host.name"]
+      network.ip.forw.datagrams:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.4.6.0"
+            resource_attributes: ["host.name"]
+      network.ip.in.discards:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.4.8.0"
+            resource_attributes: ["host.name"]
+      network.ip.in.delivers:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.4.9.0"
+            resource_attributes: ["host.name"]
+      network.ip.out.requests:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.4.10.0"
+            resource_attributes: ["host.name"]
+      network.ip.out.discards:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.4.11.0"
+            resource_attributes: ["host.name"]
+      network.ip.out.no.routes:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.4.12.0"
+            resource_attributes: ["host.name"]
+      network.ip.reasm.reqds:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.4.14.0"
+            resource_attributes: ["host.name"]
+      network.ip.reasm.oks:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.4.15.0"
+            resource_attributes: ["host.name"]
+      network.ip.reasm.fails:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.4.16.0"
+            resource_attributes: ["host.name"]
+      network.ip.frag.oks:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.4.17.0"
+            resource_attributes: ["host.name"]
+      network.ip.frag.fails:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.4.18.0"
+            resource_attributes: ["host.name"]
+      network.ip.frag.creates:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.4.19.0"
+            resource_attributes: ["host.name"]
+
+  # --- ICMP-MIB ---
+  snmp/csr27_icmp:
+    endpoint: udp://172.20.20.27:161
+    version: v2c
+    community: public
+    collection_interval: 30s
+    timeout: 10s
+    resource_attributes:
+      host.name: { scalar_oid: "1.3.6.1.2.1.1.5.0" }
+    metrics:
+      network.icmp.in.msgs:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.5.1.0"
+            resource_attributes: ["host.name"]
+      network.icmp.in.errors:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.5.2.0"
+            resource_attributes: ["host.name"]
+      network.icmp.in.dest.unreachs:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.5.3.0"
+            resource_attributes: ["host.name"]
+      network.icmp.in.time.excds:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.5.4.0"
+            resource_attributes: ["host.name"]
+      network.icmp.in.echos:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.5.8.0"
+            resource_attributes: ["host.name"]
+      network.icmp.in.echo.reps:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.5.9.0"
+            resource_attributes: ["host.name"]
+      network.icmp.out.msgs:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.5.14.0"
+            resource_attributes: ["host.name"]
+      network.icmp.out.errors:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.5.15.0"
+            resource_attributes: ["host.name"]
+      network.icmp.out.dest.unreachs:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.5.16.0"
+            resource_attributes: ["host.name"]
+      network.icmp.out.echos:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.5.21.0"
+            resource_attributes: ["host.name"]
+      network.icmp.out.echo.reps:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.5.22.0"
+            resource_attributes: ["host.name"]
+
+  # --- TCP-MIB (Extended) ---
+  snmp/csr27_tcp:
+    endpoint: udp://172.20.20.27:161
+    version: v2c
+    community: public
+    collection_interval: 30s
+    timeout: 10s
+    resource_attributes:
+      host.name: { scalar_oid: "1.3.6.1.2.1.1.5.0" }
+    metrics:
+      network.tcp.active.opens:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.6.5.0"
+            resource_attributes: ["host.name"]
+      network.tcp.passive.opens:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.6.6.0"
+            resource_attributes: ["host.name"]
+      network.tcp.attempt.fails:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.6.7.0"
+            resource_attributes: ["host.name"]
+      network.tcp.estab.resets:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.6.8.0"
+            resource_attributes: ["host.name"]
+      network.tcp.curr.estab:
+        unit: "1"
+        gauge: { value_type: int }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.6.9.0"
+            resource_attributes: ["host.name"]
+      network.tcp.in.segs:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.6.10.0"
+            resource_attributes: ["host.name"]
+      network.tcp.out.segs:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.6.11.0"
+            resource_attributes: ["host.name"]
+      network.tcp.retrans.segs:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.6.12.0"
+            resource_attributes: ["host.name"]
+      network.tcp.in.errs:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.6.14.0"
+            resource_attributes: ["host.name"]
+      network.tcp.out.rsts:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.6.15.0"
+            resource_attributes: ["host.name"]
+
+  # --- UDP-MIB (Extended) ---
+  snmp/csr27_udp:
+    endpoint: udp://172.20.20.27:161
+    version: v2c
+    community: public
+    collection_interval: 30s
+    timeout: 10s
+    resource_attributes:
+      host.name: { scalar_oid: "1.3.6.1.2.1.1.5.0" }
+    metrics:
+      network.udp.in.datagrams:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.7.1.0"
+            resource_attributes: ["host.name"]
+      network.udp.no.ports:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.7.2.0"
+            resource_attributes: ["host.name"]
+      network.udp.in.errors:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.7.3.0"
+            resource_attributes: ["host.name"]
+      network.udp.out.datagrams:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.7.4.0"
+            resource_attributes: ["host.name"]
+
+  # --- OSPF-MIB (via FRR AgentX) ---
+  snmp/csr27_ospf:
+    endpoint: udp://172.20.20.27:161
+    version: v2c
+    community: public
+    collection_interval: 60s
+    timeout: 15s
+    resource_attributes:
+      host.name: { scalar_oid: "1.3.6.1.2.1.1.5.0" }
+    metrics:
+      network.ospf.admin.stat:
+        unit: "1"
+        gauge: { value_type: int }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.14.1.2.0"
+            resource_attributes: ["host.name"]
+      network.ospf.version.number:
+        unit: "1"
+        gauge: { value_type: int }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.14.1.3.0"
+            resource_attributes: ["host.name"]
+      network.ospf.area.bdr.rtr.status:
+        unit: "1"
+        gauge: { value_type: int }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.14.1.4.0"
+            resource_attributes: ["host.name"]
+      network.ospf.as.bdr.rtr.status:
+        unit: "1"
+        gauge: { value_type: int }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.14.1.5.0"
+            resource_attributes: ["host.name"]
+      network.ospf.extern.lsa.count:
+        unit: "1"
+        gauge: { value_type: int }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.14.1.6.0"
+            resource_attributes: ["host.name"]
+      network.ospf.extern.lsa.cksum.sum:
+        unit: "1"
+        gauge: { value_type: int }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.14.1.7.0"
+            resource_attributes: ["host.name"]
+      network.ospf.originate.new.lsas:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.14.1.9.0"
+            resource_attributes: ["host.name"]
+      network.ospf.rx.new.lsas:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.14.1.10.0"
+            resource_attributes: ["host.name"]
+
+  # --- ARP Table ---
+  snmp/csr27_arp:
+    endpoint: udp://172.20.20.27:161
+    version: v2c
+    community: public
+    collection_interval: 60s
+    timeout: 10s
+    resource_attributes:
+      host.name: { scalar_oid: "1.3.6.1.2.1.1.5.0" }
+    attributes:
+      arp.ifindex: { oid: "1.3.6.1.2.1.4.22.1.1" }
+      arp.ip: { oid: "1.3.6.1.2.1.4.22.1.3" }
+      arp.mac: { oid: "1.3.6.1.2.1.4.22.1.2" }
+    metrics:
+      network.arp.entry:
+        unit: "1"
+        gauge: { value_type: int }
+        column_oids:
+          - oid: "1.3.6.1.2.1.4.22.1.4"
+            attributes: [ { name: arp.ifindex }, { name: arp.ip }, { name: arp.mac } ]
+            resource_attributes: ["host.name"]
+
+  # --- LLDP-MIB ---
+  snmp/csr27_lldp:
+    endpoint: udp://172.20.20.27:161
+    version: v2c
+    community: public
+    collection_interval: 30s
+    timeout: 10s
+    resource_attributes:
+      host.name: { scalar_oid: "1.3.6.1.2.1.1.5.0" }
+    attributes:
+      network.lldp.rem.sysname: { oid: "1.0.8802.1.1.2.1.4.1.1.9" }
+    metrics:
+      network.lldp.neighbors:
+        unit: "1"
+        gauge: { value_type: int }
+        column_oids:
+          - oid: "1.0.8802.1.1.2.1.4.1.1.4"
+            attributes: [ { name: network.lldp.rem.sysname } ]
+            resource_attributes: ["host.name"]
+
+  # ============================================
+  # csr28 (172.20.20.28) - FULL MIB COVERAGE
+  # ============================================
+
+  # --- System MIB (Extended) ---
+  snmp/csr28_system:
+    endpoint: udp://172.20.20.28:161
+    version: v2c
+    community: public
+    collection_interval: 30s
+    timeout: 10s
+    resource_attributes:
+      host.name: { scalar_oid: "1.3.6.1.2.1.1.5.0" }
+    metrics:
+      system.uptime:
+        unit: s
+        gauge: { value_type: double }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.1.3.0"
+            resource_attributes: ["host.name"]
+      system.services:
+        unit: "1"
+        gauge: { value_type: int }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.1.7.0"
+            resource_attributes: ["host.name"]
+
+  # --- Memory (HOST-RESOURCES-MIB) ---
+  snmp/csr28_memory:
+    endpoint: udp://172.20.20.28:161
+    version: v2c
+    community: public
+    collection_interval: 60s
+    timeout: 10s
+    resource_attributes:
+      host.name: { scalar_oid: "1.3.6.1.2.1.1.5.0" }
+    attributes:
+      memory.pool.name: { oid: "1.3.6.1.2.1.25.2.3.1.3" }
+    metrics:
+      system.memory.size:
+        unit: units
+        gauge: { value_type: int }
+        column_oids:
+          - oid: "1.3.6.1.2.1.25.2.3.1.5"
+            attributes: [ { name: memory.pool.name } ]
+            resource_attributes: ["host.name"]
+      system.memory.used:
+        unit: units
+        gauge: { value_type: int }
+        column_oids:
+          - oid: "1.3.6.1.2.1.25.2.3.1.6"
+            attributes: [ { name: memory.pool.name } ]
+            resource_attributes: ["host.name"]
+
+  # --- Interface MIB (Extended) ---
+  snmp/csr28_interface:
+    endpoint: udp://172.20.20.28:161
+    version: v2c
+    community: public
+    collection_interval: 15s
+    timeout: 10s
+    resource_attributes:
+      host.name: { scalar_oid: "1.3.6.1.2.1.1.5.0" }
+    attributes:
+      if.index: { oid: "1.3.6.1.2.1.2.2.1.1" }
+      if.name: { oid: "1.3.6.1.2.1.31.1.1.1.1" }
+      if.descr: { oid: "1.3.6.1.2.1.2.2.1.2" }
+    metrics:
+      # Bytes (64-bit counters)
+      network.interface.in.bytes:
+        unit: By
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        column_oids:
+          - oid: "1.3.6.1.2.1.31.1.1.1.6"
+            attributes: [ { name: if.index }, { name: if.name }, { name: if.descr } ]
+            resource_attributes: ["host.name"]
+      network.interface.out.bytes:
+        unit: By
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        column_oids:
+          - oid: "1.3.6.1.2.1.31.1.1.1.10"
+            attributes: [ { name: if.index }, { name: if.name }, { name: if.descr } ]
+            resource_attributes: ["host.name"]
+      # Packets
+      network.interface.in.packets:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        column_oids:
+          - oid: "1.3.6.1.2.1.2.2.1.11"
+            attributes: [ { name: if.index }, { name: if.name } ]
+            resource_attributes: ["host.name"]
+      network.interface.out.packets:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        column_oids:
+          - oid: "1.3.6.1.2.1.2.2.1.17"
+            attributes: [ { name: if.index }, { name: if.name } ]
+            resource_attributes: ["host.name"]
+      # Errors
+      network.interface.in.errors:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        column_oids:
+          - oid: "1.3.6.1.2.1.2.2.1.14"
+            attributes: [ { name: if.index }, { name: if.name } ]
+            resource_attributes: ["host.name"]
+      network.interface.out.errors:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        column_oids:
+          - oid: "1.3.6.1.2.1.2.2.1.20"
+            attributes: [ { name: if.index }, { name: if.name } ]
+            resource_attributes: ["host.name"]
+      # Discards
+      network.interface.in.discards:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        column_oids:
+          - oid: "1.3.6.1.2.1.2.2.1.13"
+            attributes: [ { name: if.index }, { name: if.name } ]
+            resource_attributes: ["host.name"]
+      network.interface.out.discards:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        column_oids:
+          - oid: "1.3.6.1.2.1.2.2.1.19"
+            attributes: [ { name: if.index }, { name: if.name } ]
+            resource_attributes: ["host.name"]
+      # Status
+      network.interface.oper.status:
+        unit: "1"
+        gauge: { value_type: int }
+        column_oids:
+          - oid: "1.3.6.1.2.1.2.2.1.8"
+            attributes: [ { name: if.index }, { name: if.name } ]
+            resource_attributes: ["host.name"]
+      network.interface.admin.status:
+        unit: "1"
+        gauge: { value_type: int }
+        column_oids:
+          - oid: "1.3.6.1.2.1.2.2.1.7"
+            attributes: [ { name: if.index }, { name: if.name } ]
+            resource_attributes: ["host.name"]
+      # Speed and MTU
+      network.interface.speed:
+        unit: "1"
+        gauge: { value_type: int }
+        column_oids:
+          - oid: "1.3.6.1.2.1.2.2.1.5"
+            attributes: [ { name: if.index }, { name: if.name } ]
+            resource_attributes: ["host.name"]
+      network.interface.mtu:
+        unit: By
+        gauge: { value_type: int }
+        column_oids:
+          - oid: "1.3.6.1.2.1.2.2.1.4"
+            attributes: [ { name: if.index }, { name: if.name } ]
+            resource_attributes: ["host.name"]
+
+  # --- IP-MIB (Extended) ---
+  snmp/csr28_ipstats:
+    endpoint: udp://172.20.20.28:161
+    version: v2c
+    community: public
+    collection_interval: 30s
+    timeout: 10s
+    resource_attributes:
+      host.name: { scalar_oid: "1.3.6.1.2.1.1.5.0" }
+    metrics:
+      network.ip.in.receives:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.4.3.0"
+            resource_attributes: ["host.name"]
+      network.ip.in.hdr.errors:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.4.4.0"
+            resource_attributes: ["host.name"]
+      network.ip.in.addr.errors:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.4.5.0"
+            resource_attributes: ["host.name"]
+      network.ip.forw.datagrams:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.4.6.0"
+            resource_attributes: ["host.name"]
+      network.ip.in.discards:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.4.8.0"
+            resource_attributes: ["host.name"]
+      network.ip.in.delivers:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.4.9.0"
+            resource_attributes: ["host.name"]
+      network.ip.out.requests:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.4.10.0"
+            resource_attributes: ["host.name"]
+      network.ip.out.discards:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.4.11.0"
+            resource_attributes: ["host.name"]
+      network.ip.out.no.routes:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.4.12.0"
+            resource_attributes: ["host.name"]
+      network.ip.reasm.reqds:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.4.14.0"
+            resource_attributes: ["host.name"]
+      network.ip.reasm.oks:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.4.15.0"
+            resource_attributes: ["host.name"]
+      network.ip.reasm.fails:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.4.16.0"
+            resource_attributes: ["host.name"]
+      network.ip.frag.oks:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.4.17.0"
+            resource_attributes: ["host.name"]
+      network.ip.frag.fails:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.4.18.0"
+            resource_attributes: ["host.name"]
+      network.ip.frag.creates:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.4.19.0"
+            resource_attributes: ["host.name"]
+
+  # --- ICMP-MIB ---
+  snmp/csr28_icmp:
+    endpoint: udp://172.20.20.28:161
+    version: v2c
+    community: public
+    collection_interval: 30s
+    timeout: 10s
+    resource_attributes:
+      host.name: { scalar_oid: "1.3.6.1.2.1.1.5.0" }
+    metrics:
+      network.icmp.in.msgs:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.5.1.0"
+            resource_attributes: ["host.name"]
+      network.icmp.in.errors:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.5.2.0"
+            resource_attributes: ["host.name"]
+      network.icmp.in.dest.unreachs:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.5.3.0"
+            resource_attributes: ["host.name"]
+      network.icmp.in.time.excds:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.5.4.0"
+            resource_attributes: ["host.name"]
+      network.icmp.in.echos:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.5.8.0"
+            resource_attributes: ["host.name"]
+      network.icmp.in.echo.reps:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.5.9.0"
+            resource_attributes: ["host.name"]
+      network.icmp.out.msgs:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.5.14.0"
+            resource_attributes: ["host.name"]
+      network.icmp.out.errors:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.5.15.0"
+            resource_attributes: ["host.name"]
+      network.icmp.out.dest.unreachs:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.5.16.0"
+            resource_attributes: ["host.name"]
+      network.icmp.out.echos:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.5.21.0"
+            resource_attributes: ["host.name"]
+      network.icmp.out.echo.reps:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.5.22.0"
+            resource_attributes: ["host.name"]
+
+  # --- TCP-MIB (Extended) ---
+  snmp/csr28_tcp:
+    endpoint: udp://172.20.20.28:161
+    version: v2c
+    community: public
+    collection_interval: 30s
+    timeout: 10s
+    resource_attributes:
+      host.name: { scalar_oid: "1.3.6.1.2.1.1.5.0" }
+    metrics:
+      network.tcp.active.opens:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.6.5.0"
+            resource_attributes: ["host.name"]
+      network.tcp.passive.opens:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.6.6.0"
+            resource_attributes: ["host.name"]
+      network.tcp.attempt.fails:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.6.7.0"
+            resource_attributes: ["host.name"]
+      network.tcp.estab.resets:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.6.8.0"
+            resource_attributes: ["host.name"]
+      network.tcp.curr.estab:
+        unit: "1"
+        gauge: { value_type: int }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.6.9.0"
+            resource_attributes: ["host.name"]
+      network.tcp.in.segs:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.6.10.0"
+            resource_attributes: ["host.name"]
+      network.tcp.out.segs:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.6.11.0"
+            resource_attributes: ["host.name"]
+      network.tcp.retrans.segs:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.6.12.0"
+            resource_attributes: ["host.name"]
+      network.tcp.in.errs:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.6.14.0"
+            resource_attributes: ["host.name"]
+      network.tcp.out.rsts:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.6.15.0"
+            resource_attributes: ["host.name"]
+
+  # --- UDP-MIB (Extended) ---
+  snmp/csr28_udp:
+    endpoint: udp://172.20.20.28:161
+    version: v2c
+    community: public
+    collection_interval: 30s
+    timeout: 10s
+    resource_attributes:
+      host.name: { scalar_oid: "1.3.6.1.2.1.1.5.0" }
+    metrics:
+      network.udp.in.datagrams:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.7.1.0"
+            resource_attributes: ["host.name"]
+      network.udp.no.ports:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.7.2.0"
+            resource_attributes: ["host.name"]
+      network.udp.in.errors:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.7.3.0"
+            resource_attributes: ["host.name"]
+      network.udp.out.datagrams:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.7.4.0"
+            resource_attributes: ["host.name"]
+
+  # --- OSPF-MIB (via FRR AgentX) ---
+  snmp/csr28_ospf:
+    endpoint: udp://172.20.20.28:161
+    version: v2c
+    community: public
+    collection_interval: 60s
+    timeout: 15s
+    resource_attributes:
+      host.name: { scalar_oid: "1.3.6.1.2.1.1.5.0" }
+    metrics:
+      network.ospf.admin.stat:
+        unit: "1"
+        gauge: { value_type: int }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.14.1.2.0"
+            resource_attributes: ["host.name"]
+      network.ospf.version.number:
+        unit: "1"
+        gauge: { value_type: int }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.14.1.3.0"
+            resource_attributes: ["host.name"]
+      network.ospf.area.bdr.rtr.status:
+        unit: "1"
+        gauge: { value_type: int }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.14.1.4.0"
+            resource_attributes: ["host.name"]
+      network.ospf.as.bdr.rtr.status:
+        unit: "1"
+        gauge: { value_type: int }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.14.1.5.0"
+            resource_attributes: ["host.name"]
+      network.ospf.extern.lsa.count:
+        unit: "1"
+        gauge: { value_type: int }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.14.1.6.0"
+            resource_attributes: ["host.name"]
+      network.ospf.extern.lsa.cksum.sum:
+        unit: "1"
+        gauge: { value_type: int }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.14.1.7.0"
+            resource_attributes: ["host.name"]
+      network.ospf.originate.new.lsas:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.14.1.9.0"
+            resource_attributes: ["host.name"]
+      network.ospf.rx.new.lsas:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.14.1.10.0"
+            resource_attributes: ["host.name"]
+
+  # --- ARP Table ---
+  snmp/csr28_arp:
+    endpoint: udp://172.20.20.28:161
+    version: v2c
+    community: public
+    collection_interval: 60s
+    timeout: 10s
+    resource_attributes:
+      host.name: { scalar_oid: "1.3.6.1.2.1.1.5.0" }
+    attributes:
+      arp.ifindex: { oid: "1.3.6.1.2.1.4.22.1.1" }
+      arp.ip: { oid: "1.3.6.1.2.1.4.22.1.3" }
+      arp.mac: { oid: "1.3.6.1.2.1.4.22.1.2" }
+    metrics:
+      network.arp.entry:
+        unit: "1"
+        gauge: { value_type: int }
+        column_oids:
+          - oid: "1.3.6.1.2.1.4.22.1.4"
+            attributes: [ { name: arp.ifindex }, { name: arp.ip }, { name: arp.mac } ]
+            resource_attributes: ["host.name"]
+
+  # --- LLDP-MIB ---
+  snmp/csr28_lldp:
+    endpoint: udp://172.20.20.28:161
+    version: v2c
+    community: public
+    collection_interval: 30s
+    timeout: 10s
+    resource_attributes:
+      host.name: { scalar_oid: "1.3.6.1.2.1.1.5.0" }
+    attributes:
+      network.lldp.rem.sysname: { oid: "1.0.8802.1.1.2.1.4.1.1.9" }
+    metrics:
+      network.lldp.neighbors:
+        unit: "1"
+        gauge: { value_type: int }
+        column_oids:
+          - oid: "1.0.8802.1.1.2.1.4.1.1.4"
+            attributes: [ { name: network.lldp.rem.sysname } ]
+            resource_attributes: ["host.name"]
+
+  # ============================================
+  # csr29 (172.20.20.29) - FULL MIB COVERAGE
+  # ============================================
+
+  # --- System MIB (Extended) ---
+  snmp/csr29_system:
+    endpoint: udp://172.20.20.29:161
+    version: v2c
+    community: public
+    collection_interval: 30s
+    timeout: 10s
+    resource_attributes:
+      host.name: { scalar_oid: "1.3.6.1.2.1.1.5.0" }
+    metrics:
+      system.uptime:
+        unit: s
+        gauge: { value_type: double }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.1.3.0"
+            resource_attributes: ["host.name"]
+      system.services:
+        unit: "1"
+        gauge: { value_type: int }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.1.7.0"
+            resource_attributes: ["host.name"]
+
+  # --- Memory (HOST-RESOURCES-MIB) ---
+  snmp/csr29_memory:
+    endpoint: udp://172.20.20.29:161
+    version: v2c
+    community: public
+    collection_interval: 60s
+    timeout: 10s
+    resource_attributes:
+      host.name: { scalar_oid: "1.3.6.1.2.1.1.5.0" }
+    attributes:
+      memory.pool.name: { oid: "1.3.6.1.2.1.25.2.3.1.3" }
+    metrics:
+      system.memory.size:
+        unit: units
+        gauge: { value_type: int }
+        column_oids:
+          - oid: "1.3.6.1.2.1.25.2.3.1.5"
+            attributes: [ { name: memory.pool.name } ]
+            resource_attributes: ["host.name"]
+      system.memory.used:
+        unit: units
+        gauge: { value_type: int }
+        column_oids:
+          - oid: "1.3.6.1.2.1.25.2.3.1.6"
+            attributes: [ { name: memory.pool.name } ]
+            resource_attributes: ["host.name"]
+
+  # --- Interface MIB (Extended) ---
+  snmp/csr29_interface:
+    endpoint: udp://172.20.20.29:161
+    version: v2c
+    community: public
+    collection_interval: 15s
+    timeout: 10s
+    resource_attributes:
+      host.name: { scalar_oid: "1.3.6.1.2.1.1.5.0" }
+    attributes:
+      if.index: { oid: "1.3.6.1.2.1.2.2.1.1" }
+      if.name: { oid: "1.3.6.1.2.1.31.1.1.1.1" }
+      if.descr: { oid: "1.3.6.1.2.1.2.2.1.2" }
+    metrics:
+      # Bytes (64-bit counters)
+      network.interface.in.bytes:
+        unit: By
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        column_oids:
+          - oid: "1.3.6.1.2.1.31.1.1.1.6"
+            attributes: [ { name: if.index }, { name: if.name }, { name: if.descr } ]
+            resource_attributes: ["host.name"]
+      network.interface.out.bytes:
+        unit: By
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        column_oids:
+          - oid: "1.3.6.1.2.1.31.1.1.1.10"
+            attributes: [ { name: if.index }, { name: if.name }, { name: if.descr } ]
+            resource_attributes: ["host.name"]
+      # Packets
+      network.interface.in.packets:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        column_oids:
+          - oid: "1.3.6.1.2.1.2.2.1.11"
+            attributes: [ { name: if.index }, { name: if.name } ]
+            resource_attributes: ["host.name"]
+      network.interface.out.packets:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        column_oids:
+          - oid: "1.3.6.1.2.1.2.2.1.17"
+            attributes: [ { name: if.index }, { name: if.name } ]
+            resource_attributes: ["host.name"]
+      # Errors
+      network.interface.in.errors:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        column_oids:
+          - oid: "1.3.6.1.2.1.2.2.1.14"
+            attributes: [ { name: if.index }, { name: if.name } ]
+            resource_attributes: ["host.name"]
+      network.interface.out.errors:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        column_oids:
+          - oid: "1.3.6.1.2.1.2.2.1.20"
+            attributes: [ { name: if.index }, { name: if.name } ]
+            resource_attributes: ["host.name"]
+      # Discards
+      network.interface.in.discards:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        column_oids:
+          - oid: "1.3.6.1.2.1.2.2.1.13"
+            attributes: [ { name: if.index }, { name: if.name } ]
+            resource_attributes: ["host.name"]
+      network.interface.out.discards:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        column_oids:
+          - oid: "1.3.6.1.2.1.2.2.1.19"
+            attributes: [ { name: if.index }, { name: if.name } ]
+            resource_attributes: ["host.name"]
+      # Status
+      network.interface.oper.status:
+        unit: "1"
+        gauge: { value_type: int }
+        column_oids:
+          - oid: "1.3.6.1.2.1.2.2.1.8"
+            attributes: [ { name: if.index }, { name: if.name } ]
+            resource_attributes: ["host.name"]
+      network.interface.admin.status:
+        unit: "1"
+        gauge: { value_type: int }
+        column_oids:
+          - oid: "1.3.6.1.2.1.2.2.1.7"
+            attributes: [ { name: if.index }, { name: if.name } ]
+            resource_attributes: ["host.name"]
+      # Speed and MTU
+      network.interface.speed:
+        unit: "1"
+        gauge: { value_type: int }
+        column_oids:
+          - oid: "1.3.6.1.2.1.2.2.1.5"
+            attributes: [ { name: if.index }, { name: if.name } ]
+            resource_attributes: ["host.name"]
+      network.interface.mtu:
+        unit: By
+        gauge: { value_type: int }
+        column_oids:
+          - oid: "1.3.6.1.2.1.2.2.1.4"
+            attributes: [ { name: if.index }, { name: if.name } ]
+            resource_attributes: ["host.name"]
+
+  # --- IP-MIB (Extended) ---
+  snmp/csr29_ipstats:
+    endpoint: udp://172.20.20.29:161
+    version: v2c
+    community: public
+    collection_interval: 30s
+    timeout: 10s
+    resource_attributes:
+      host.name: { scalar_oid: "1.3.6.1.2.1.1.5.0" }
+    metrics:
+      network.ip.in.receives:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.4.3.0"
+            resource_attributes: ["host.name"]
+      network.ip.in.hdr.errors:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.4.4.0"
+            resource_attributes: ["host.name"]
+      network.ip.in.addr.errors:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.4.5.0"
+            resource_attributes: ["host.name"]
+      network.ip.forw.datagrams:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.4.6.0"
+            resource_attributes: ["host.name"]
+      network.ip.in.discards:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.4.8.0"
+            resource_attributes: ["host.name"]
+      network.ip.in.delivers:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.4.9.0"
+            resource_attributes: ["host.name"]
+      network.ip.out.requests:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.4.10.0"
+            resource_attributes: ["host.name"]
+      network.ip.out.discards:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.4.11.0"
+            resource_attributes: ["host.name"]
+      network.ip.out.no.routes:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.4.12.0"
+            resource_attributes: ["host.name"]
+      network.ip.reasm.reqds:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.4.14.0"
+            resource_attributes: ["host.name"]
+      network.ip.reasm.oks:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.4.15.0"
+            resource_attributes: ["host.name"]
+      network.ip.reasm.fails:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.4.16.0"
+            resource_attributes: ["host.name"]
+      network.ip.frag.oks:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.4.17.0"
+            resource_attributes: ["host.name"]
+      network.ip.frag.fails:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.4.18.0"
+            resource_attributes: ["host.name"]
+      network.ip.frag.creates:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.4.19.0"
+            resource_attributes: ["host.name"]
+
+  # --- ICMP-MIB ---
+  snmp/csr29_icmp:
+    endpoint: udp://172.20.20.29:161
+    version: v2c
+    community: public
+    collection_interval: 30s
+    timeout: 10s
+    resource_attributes:
+      host.name: { scalar_oid: "1.3.6.1.2.1.1.5.0" }
+    metrics:
+      network.icmp.in.msgs:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.5.1.0"
+            resource_attributes: ["host.name"]
+      network.icmp.in.errors:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.5.2.0"
+            resource_attributes: ["host.name"]
+      network.icmp.in.dest.unreachs:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.5.3.0"
+            resource_attributes: ["host.name"]
+      network.icmp.in.time.excds:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.5.4.0"
+            resource_attributes: ["host.name"]
+      network.icmp.in.echos:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.5.8.0"
+            resource_attributes: ["host.name"]
+      network.icmp.in.echo.reps:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.5.9.0"
+            resource_attributes: ["host.name"]
+      network.icmp.out.msgs:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.5.14.0"
+            resource_attributes: ["host.name"]
+      network.icmp.out.errors:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.5.15.0"
+            resource_attributes: ["host.name"]
+      network.icmp.out.dest.unreachs:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.5.16.0"
+            resource_attributes: ["host.name"]
+      network.icmp.out.echos:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.5.21.0"
+            resource_attributes: ["host.name"]
+      network.icmp.out.echo.reps:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.5.22.0"
+            resource_attributes: ["host.name"]
+
+  # --- TCP-MIB (Extended) ---
+  snmp/csr29_tcp:
+    endpoint: udp://172.20.20.29:161
+    version: v2c
+    community: public
+    collection_interval: 30s
+    timeout: 10s
+    resource_attributes:
+      host.name: { scalar_oid: "1.3.6.1.2.1.1.5.0" }
+    metrics:
+      network.tcp.active.opens:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.6.5.0"
+            resource_attributes: ["host.name"]
+      network.tcp.passive.opens:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.6.6.0"
+            resource_attributes: ["host.name"]
+      network.tcp.attempt.fails:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.6.7.0"
+            resource_attributes: ["host.name"]
+      network.tcp.estab.resets:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.6.8.0"
+            resource_attributes: ["host.name"]
+      network.tcp.curr.estab:
+        unit: "1"
+        gauge: { value_type: int }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.6.9.0"
+            resource_attributes: ["host.name"]
+      network.tcp.in.segs:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.6.10.0"
+            resource_attributes: ["host.name"]
+      network.tcp.out.segs:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.6.11.0"
+            resource_attributes: ["host.name"]
+      network.tcp.retrans.segs:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.6.12.0"
+            resource_attributes: ["host.name"]
+      network.tcp.in.errs:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.6.14.0"
+            resource_attributes: ["host.name"]
+      network.tcp.out.rsts:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.6.15.0"
+            resource_attributes: ["host.name"]
+
+  # --- UDP-MIB (Extended) ---
+  snmp/csr29_udp:
+    endpoint: udp://172.20.20.29:161
+    version: v2c
+    community: public
+    collection_interval: 30s
+    timeout: 10s
+    resource_attributes:
+      host.name: { scalar_oid: "1.3.6.1.2.1.1.5.0" }
+    metrics:
+      network.udp.in.datagrams:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.7.1.0"
+            resource_attributes: ["host.name"]
+      network.udp.no.ports:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.7.2.0"
+            resource_attributes: ["host.name"]
+      network.udp.in.errors:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.7.3.0"
+            resource_attributes: ["host.name"]
+      network.udp.out.datagrams:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.7.4.0"
+            resource_attributes: ["host.name"]
+
+  # --- OSPF-MIB (via FRR AgentX) ---
+  snmp/csr29_ospf:
+    endpoint: udp://172.20.20.29:161
+    version: v2c
+    community: public
+    collection_interval: 60s
+    timeout: 15s
+    resource_attributes:
+      host.name: { scalar_oid: "1.3.6.1.2.1.1.5.0" }
+    metrics:
+      network.ospf.admin.stat:
+        unit: "1"
+        gauge: { value_type: int }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.14.1.2.0"
+            resource_attributes: ["host.name"]
+      network.ospf.version.number:
+        unit: "1"
+        gauge: { value_type: int }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.14.1.3.0"
+            resource_attributes: ["host.name"]
+      network.ospf.area.bdr.rtr.status:
+        unit: "1"
+        gauge: { value_type: int }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.14.1.4.0"
+            resource_attributes: ["host.name"]
+      network.ospf.as.bdr.rtr.status:
+        unit: "1"
+        gauge: { value_type: int }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.14.1.5.0"
+            resource_attributes: ["host.name"]
+      network.ospf.extern.lsa.count:
+        unit: "1"
+        gauge: { value_type: int }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.14.1.6.0"
+            resource_attributes: ["host.name"]
+      network.ospf.extern.lsa.cksum.sum:
+        unit: "1"
+        gauge: { value_type: int }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.14.1.7.0"
+            resource_attributes: ["host.name"]
+      network.ospf.originate.new.lsas:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.14.1.9.0"
+            resource_attributes: ["host.name"]
+      network.ospf.rx.new.lsas:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.14.1.10.0"
+            resource_attributes: ["host.name"]
+
+  # --- ARP Table ---
+  snmp/csr29_arp:
+    endpoint: udp://172.20.20.29:161
+    version: v2c
+    community: public
+    collection_interval: 60s
+    timeout: 10s
+    resource_attributes:
+      host.name: { scalar_oid: "1.3.6.1.2.1.1.5.0" }
+    attributes:
+      arp.ifindex: { oid: "1.3.6.1.2.1.4.22.1.1" }
+      arp.ip: { oid: "1.3.6.1.2.1.4.22.1.3" }
+      arp.mac: { oid: "1.3.6.1.2.1.4.22.1.2" }
+    metrics:
+      network.arp.entry:
+        unit: "1"
+        gauge: { value_type: int }
+        column_oids:
+          - oid: "1.3.6.1.2.1.4.22.1.4"
+            attributes: [ { name: arp.ifindex }, { name: arp.ip }, { name: arp.mac } ]
+            resource_attributes: ["host.name"]
+
+  # --- LLDP-MIB ---
+  snmp/csr29_lldp:
+    endpoint: udp://172.20.20.29:161
+    version: v2c
+    community: public
+    collection_interval: 30s
+    timeout: 10s
+    resource_attributes:
+      host.name: { scalar_oid: "1.3.6.1.2.1.1.5.0" }
+    attributes:
+      network.lldp.rem.sysname: { oid: "1.0.8802.1.1.2.1.4.1.1.9" }
+    metrics:
+      network.lldp.neighbors:
+        unit: "1"
+        gauge: { value_type: int }
+        column_oids:
+          - oid: "1.0.8802.1.1.2.1.4.1.1.4"
+            attributes: [ { name: network.lldp.rem.sysname } ]
+            resource_attributes: ["host.name"]
+
+# ============================================
+# PROCESSORS
+# ============================================
+processors:
+  batch:
+    timeout: 10s
+    send_batch_size: 200
+
+# ============================================
+# EXPORTERS - Separate index per metric type
+# ============================================
+exporters:
+  elasticsearch/system:
+    endpoints: [ "https://gcp-telco-9-3-55a713.es.us-west2.gcp.elastic-cloud.com:443" ]
+    api_key: "RzhSdXc1b0I4Y3k0Mlh5WG91WWE6UEI0blZXNk85Yk80R2lURXBzNllEZw=="
+    mapping:
+      mode: ecs
+    metrics_dynamic_index:
+      enabled: false
+    metrics_index: "metrics-snmp.system-prod"
+
+  elasticsearch/memory:
+    endpoints: [ "https://gcp-telco-9-3-55a713.es.us-west2.gcp.elastic-cloud.com:443" ]
+    api_key: "RzhSdXc1b0I4Y3k0Mlh5WG91WWE6UEI0blZXNk85Yk80R2lURXBzNllEZw=="
+    mapping:
+      mode: ecs
+    metrics_dynamic_index:
+      enabled: false
+    metrics_index: "metrics-snmp.memory-prod"
+
+  elasticsearch/interface:
+    endpoints: [ "https://gcp-telco-9-3-55a713.es.us-west2.gcp.elastic-cloud.com:443" ]
+    api_key: "RzhSdXc1b0I4Y3k0Mlh5WG91WWE6UEI0blZXNk85Yk80R2lURXBzNllEZw=="
+    mapping:
+      mode: ecs
+    metrics_dynamic_index:
+      enabled: false
+    metrics_index: "metrics-snmp.interface-prod"
+
+  elasticsearch/ipstats:
+    endpoints: [ "https://gcp-telco-9-3-55a713.es.us-west2.gcp.elastic-cloud.com:443" ]
+    api_key: "RzhSdXc1b0I4Y3k0Mlh5WG91WWE6UEI0blZXNk85Yk80R2lURXBzNllEZw=="
+    mapping:
+      mode: ecs
+    metrics_dynamic_index:
+      enabled: false
+    metrics_index: "metrics-snmp.ipstats-prod"
+
+  elasticsearch/icmp:
+    endpoints: [ "https://gcp-telco-9-3-55a713.es.us-west2.gcp.elastic-cloud.com:443" ]
+    api_key: "RzhSdXc1b0I4Y3k0Mlh5WG91WWE6UEI0blZXNk85Yk80R2lURXBzNllEZw=="
+    mapping:
+      mode: ecs
+    metrics_dynamic_index:
+      enabled: false
+    metrics_index: "metrics-snmp.icmp-prod"
+
+  elasticsearch/tcp:
+    endpoints: [ "https://gcp-telco-9-3-55a713.es.us-west2.gcp.elastic-cloud.com:443" ]
+    api_key: "RzhSdXc1b0I4Y3k0Mlh5WG91WWE6UEI0blZXNk85Yk80R2lURXBzNllEZw=="
+    mapping:
+      mode: ecs
+    metrics_dynamic_index:
+      enabled: false
+    metrics_index: "metrics-snmp.tcp-prod"
+
+  elasticsearch/udp:
+    endpoints: [ "https://gcp-telco-9-3-55a713.es.us-west2.gcp.elastic-cloud.com:443" ]
+    api_key: "RzhSdXc1b0I4Y3k0Mlh5WG91WWE6UEI0blZXNk85Yk80R2lURXBzNllEZw=="
+    mapping:
+      mode: ecs
+    metrics_dynamic_index:
+      enabled: false
+    metrics_index: "metrics-snmp.udp-prod"
+
+  elasticsearch/ospf:
+    endpoints: [ "https://gcp-telco-9-3-55a713.es.us-west2.gcp.elastic-cloud.com:443" ]
+    api_key: "RzhSdXc1b0I4Y3k0Mlh5WG91WWE6UEI0blZXNk85Yk80R2lURXBzNllEZw=="
+    mapping:
+      mode: ecs
+    metrics_dynamic_index:
+      enabled: false
+    metrics_index: "metrics-snmp.ospf-prod"
+
+  elasticsearch/arp:
+    endpoints: [ "https://gcp-telco-9-3-55a713.es.us-west2.gcp.elastic-cloud.com:443" ]
+    api_key: "RzhSdXc1b0I4Y3k0Mlh5WG91WWE6UEI0blZXNk85Yk80R2lURXBzNllEZw=="
+    mapping:
+      mode: ecs
+    metrics_dynamic_index:
+      enabled: false
+    metrics_index: "metrics-snmp.arp-prod"
+
+  elasticsearch/lldp:
+    endpoints: [ "https://gcp-telco-9-3-55a713.es.us-west2.gcp.elastic-cloud.com:443" ]
+    api_key: "RzhSdXc1b0I4Y3k0Mlh5WG91WWE6UEI0blZXNk85Yk80R2lURXBzNllEZw=="
+    mapping:
+      mode: ecs
+    metrics_dynamic_index:
+      enabled: false
+    metrics_index: "metrics-snmp.lldp-prod"
+
+  debug:
+    verbosity: basic
+    sampling_initial: 2
+    sampling_thereafter: 500
+
+# ============================================
+# SERVICE - Pipelines per metric type
+# ============================================
+service:
+  pipelines:
+    metrics/system:
+      receivers:
+        - snmp/csr23_system
+        - snmp/csr24_system
+        - snmp/csr25_system
+        - snmp/csr26_system
+        - snmp/csr27_system
+        - snmp/csr28_system
+        - snmp/csr29_system
+      processors: [batch]
+      exporters: [elasticsearch/system, debug]
+
+    metrics/memory:
+      receivers:
+        - snmp/csr23_memory
+        - snmp/csr24_memory
+        - snmp/csr25_memory
+        - snmp/csr26_memory
+        - snmp/csr27_memory
+        - snmp/csr28_memory
+        - snmp/csr29_memory
+      processors: [batch]
+      exporters: [elasticsearch/memory, debug]
+
+    metrics/interface:
+      receivers:
+        - snmp/csr23_interface
+        - snmp/csr24_interface
+        - snmp/csr25_interface
+        - snmp/csr26_interface
+        - snmp/csr27_interface
+        - snmp/csr28_interface
+        - snmp/csr29_interface
+      processors: [batch]
+      exporters: [elasticsearch/interface, debug]
+
+    metrics/ipstats:
+      receivers:
+        - snmp/csr23_ipstats
+        - snmp/csr24_ipstats
+        - snmp/csr25_ipstats
+        - snmp/csr26_ipstats
+        - snmp/csr27_ipstats
+        - snmp/csr28_ipstats
+        - snmp/csr29_ipstats
+      processors: [batch]
+      exporters: [elasticsearch/ipstats, debug]
+
+    metrics/icmp:
+      receivers:
+        - snmp/csr23_icmp
+        - snmp/csr24_icmp
+        - snmp/csr25_icmp
+        - snmp/csr26_icmp
+        - snmp/csr27_icmp
+        - snmp/csr28_icmp
+        - snmp/csr29_icmp
+      processors: [batch]
+      exporters: [elasticsearch/icmp, debug]
+
+    metrics/tcp:
+      receivers:
+        - snmp/csr23_tcp
+        - snmp/csr24_tcp
+        - snmp/csr25_tcp
+        - snmp/csr26_tcp
+        - snmp/csr27_tcp
+        - snmp/csr28_tcp
+        - snmp/csr29_tcp
+      processors: [batch]
+      exporters: [elasticsearch/tcp, debug]
+
+    metrics/udp:
+      receivers:
+        - snmp/csr23_udp
+        - snmp/csr24_udp
+        - snmp/csr25_udp
+        - snmp/csr26_udp
+        - snmp/csr27_udp
+        - snmp/csr28_udp
+        - snmp/csr29_udp
+      processors: [batch]
+      exporters: [elasticsearch/udp, debug]
+
+    metrics/ospf:
+      receivers:
+        - snmp/csr23_ospf
+        - snmp/csr24_ospf
+        - snmp/csr25_ospf
+        - snmp/csr26_ospf
+        - snmp/csr27_ospf
+        - snmp/csr28_ospf
+        - snmp/csr29_ospf
+      processors: [batch]
+      exporters: [elasticsearch/ospf, debug]
+
+    metrics/arp:
+      receivers:
+        - snmp/csr23_arp
+        - snmp/csr24_arp
+        - snmp/csr25_arp
+        - snmp/csr26_arp
+        - snmp/csr27_arp
+        - snmp/csr28_arp
+        - snmp/csr29_arp
+      processors: [batch]
+      exporters: [elasticsearch/arp, debug]
+
+    metrics/lldp:
+      receivers:
+        - snmp/csr23_lldp
+        - snmp/csr24_lldp
+        - snmp/csr25_lldp
+        - snmp/csr26_lldp
+        - snmp/csr27_lldp
+        - snmp/csr28_lldp
+        - snmp/csr29_lldp
+      processors: [batch]
+      exporters: [elasticsearch/lldp, debug]
+
+  telemetry:
+    logs:
+      level: info

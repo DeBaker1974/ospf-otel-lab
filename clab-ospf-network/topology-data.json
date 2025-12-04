@@ -1,0 +1,853 @@
+{
+  "name": "ospf-network",
+  "type": "clab",
+  "clab": {
+    "config": {
+      "prefix": "clab",
+      "mgmt": {
+        "network": "clab",
+        "bridge": "br-e00c06f5e2b1",
+        "ipv4-subnet": "172.20.20.0/24",
+        "ipv4-gw": "172.20.20.1",
+        "ipv6-subnet": "3fff:172:20:20::/64",
+        "ipv6-gw": "3fff:172:20:20::1",
+        "external-access": true
+      }
+    }
+  },
+  "ssh-pub-keys": ["ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDyi8fOzFmO9ZIK/qIFO2m40ytlV7eAWqp5pi6EY/UfefNiusyQlluXrFzKOj3sx/Ce+K0Wgr7UJJIKSWHfIJDxcssRr499i0EnU2ZuBTZmJEK1vrAk51WSfsWzbKC6h8Z6M4u0Zo+MShqZvgpgUQR7k5eL6VG+oTaFooBDXLrunWY9wHWyIwJiqTfZsT7Ita4wPzetm095i16+bTEVuAeo0qqEeCr5ePdUlhik/8zIvLiB4Gd+9tbjzIiXh47qoBhla3MkGponyyp64XKjbR0M1YTZAIZRg4EHmJpPsNzZtLLioNh/hxXnTMNCvVJAiD1E4gxtC3qpJW+MB2CxpF/Q8ssUrAKwW9Ct3VQu9+SI/SpNL8ukUyU1UJ0Z0Ea1TwqeTy2xthrnMGNEKunX9QMTTEBGysmiBUdE8Gy35N1UV01ImHUtYGy39H4VFZfPoP5bMwQ/gp6Z7vSPPXI3EWuEX/ABcPIdUj6KwCJ2ADFHoLAxXd0vEOayPBrCTCBwRC8="],
+  "nodes": {
+    "csr23": {
+      "index": "0",
+      "shortname": "csr23",
+      "longname": "clab-ospf-network-csr23",
+      "fqdn": "csr23.ospf-network.io",
+      "group": "",
+      "labdir": "/home/patrick_boulanger/ospf-otel-lab/clab-ospf-network/csr23",
+      "kind": "linux",
+      "image": "quay.io/frrouting/frr:10.5.0",
+      "mgmt-net": "",
+      "mgmt-intf": "",
+      "mgmt-ipv4-address": "172.20.20.23",
+      "mgmt-ipv4-prefix-length": 24,
+      "mgmt-ipv6-address": "3fff:172:20:20::5",
+      "mgmt-ipv6-prefix-length": 64,
+      "mac-address": "",
+      "labels": {
+        "clab-mgmt-net-bridge": "br-e00c06f5e2b1",
+        "clab-node-group": "",
+        "clab-node-kind": "linux",
+        "clab-node-lab-dir": "/home/patrick_boulanger/ospf-otel-lab/clab-ospf-network/csr23",
+        "clab-node-longname": "clab-ospf-network-csr23",
+        "clab-node-name": "csr23",
+        "clab-node-type": "",
+        "clab-owner": "patrick_boulanger",
+        "clab-topo-file": "/home/patrick_boulanger/ospf-otel-lab/ospf-network.clab.yml",
+        "containerlab": "ospf-network"
+      },
+      "port-bindings": [
+      ]
+    },
+    "csr24": {
+      "index": "1",
+      "shortname": "csr24",
+      "longname": "clab-ospf-network-csr24",
+      "fqdn": "csr24.ospf-network.io",
+      "group": "",
+      "labdir": "/home/patrick_boulanger/ospf-otel-lab/clab-ospf-network/csr24",
+      "kind": "linux",
+      "image": "quay.io/frrouting/frr:10.5.0",
+      "mgmt-net": "",
+      "mgmt-intf": "",
+      "mgmt-ipv4-address": "172.20.20.24",
+      "mgmt-ipv4-prefix-length": 24,
+      "mgmt-ipv6-address": "3fff:172:20:20::4",
+      "mgmt-ipv6-prefix-length": 64,
+      "mac-address": "",
+      "labels": {
+        "clab-mgmt-net-bridge": "br-e00c06f5e2b1",
+        "clab-node-group": "",
+        "clab-node-kind": "linux",
+        "clab-node-lab-dir": "/home/patrick_boulanger/ospf-otel-lab/clab-ospf-network/csr24",
+        "clab-node-longname": "clab-ospf-network-csr24",
+        "clab-node-name": "csr24",
+        "clab-node-type": "",
+        "clab-owner": "patrick_boulanger",
+        "clab-topo-file": "/home/patrick_boulanger/ospf-otel-lab/ospf-network.clab.yml",
+        "containerlab": "ospf-network"
+      },
+      "port-bindings": [
+      ]
+    },
+    "csr25": {
+      "index": "2",
+      "shortname": "csr25",
+      "longname": "clab-ospf-network-csr25",
+      "fqdn": "csr25.ospf-network.io",
+      "group": "",
+      "labdir": "/home/patrick_boulanger/ospf-otel-lab/clab-ospf-network/csr25",
+      "kind": "linux",
+      "image": "quay.io/frrouting/frr:10.5.0",
+      "mgmt-net": "",
+      "mgmt-intf": "",
+      "mgmt-ipv4-address": "172.20.20.25",
+      "mgmt-ipv4-prefix-length": 24,
+      "mgmt-ipv6-address": "3fff:172:20:20::7",
+      "mgmt-ipv6-prefix-length": 64,
+      "mac-address": "",
+      "labels": {
+        "clab-mgmt-net-bridge": "br-e00c06f5e2b1",
+        "clab-node-group": "",
+        "clab-node-kind": "linux",
+        "clab-node-lab-dir": "/home/patrick_boulanger/ospf-otel-lab/clab-ospf-network/csr25",
+        "clab-node-longname": "clab-ospf-network-csr25",
+        "clab-node-name": "csr25",
+        "clab-node-type": "",
+        "clab-owner": "patrick_boulanger",
+        "clab-topo-file": "/home/patrick_boulanger/ospf-otel-lab/ospf-network.clab.yml",
+        "containerlab": "ospf-network"
+      },
+      "port-bindings": [
+      ]
+    },
+    "csr26": {
+      "index": "3",
+      "shortname": "csr26",
+      "longname": "clab-ospf-network-csr26",
+      "fqdn": "csr26.ospf-network.io",
+      "group": "",
+      "labdir": "/home/patrick_boulanger/ospf-otel-lab/clab-ospf-network/csr26",
+      "kind": "linux",
+      "image": "quay.io/frrouting/frr:10.5.0",
+      "mgmt-net": "",
+      "mgmt-intf": "",
+      "mgmt-ipv4-address": "172.20.20.26",
+      "mgmt-ipv4-prefix-length": 24,
+      "mgmt-ipv6-address": "3fff:172:20:20::a",
+      "mgmt-ipv6-prefix-length": 64,
+      "mac-address": "",
+      "labels": {
+        "clab-mgmt-net-bridge": "br-e00c06f5e2b1",
+        "clab-node-group": "",
+        "clab-node-kind": "linux",
+        "clab-node-lab-dir": "/home/patrick_boulanger/ospf-otel-lab/clab-ospf-network/csr26",
+        "clab-node-longname": "clab-ospf-network-csr26",
+        "clab-node-name": "csr26",
+        "clab-node-type": "",
+        "clab-owner": "patrick_boulanger",
+        "clab-topo-file": "/home/patrick_boulanger/ospf-otel-lab/ospf-network.clab.yml",
+        "containerlab": "ospf-network"
+      },
+      "port-bindings": [
+      ]
+    },
+    "csr27": {
+      "index": "4",
+      "shortname": "csr27",
+      "longname": "clab-ospf-network-csr27",
+      "fqdn": "csr27.ospf-network.io",
+      "group": "",
+      "labdir": "/home/patrick_boulanger/ospf-otel-lab/clab-ospf-network/csr27",
+      "kind": "linux",
+      "image": "quay.io/frrouting/frr:10.5.0",
+      "mgmt-net": "",
+      "mgmt-intf": "",
+      "mgmt-ipv4-address": "172.20.20.27",
+      "mgmt-ipv4-prefix-length": 24,
+      "mgmt-ipv6-address": "3fff:172:20:20::9",
+      "mgmt-ipv6-prefix-length": 64,
+      "mac-address": "",
+      "labels": {
+        "clab-mgmt-net-bridge": "br-e00c06f5e2b1",
+        "clab-node-group": "",
+        "clab-node-kind": "linux",
+        "clab-node-lab-dir": "/home/patrick_boulanger/ospf-otel-lab/clab-ospf-network/csr27",
+        "clab-node-longname": "clab-ospf-network-csr27",
+        "clab-node-name": "csr27",
+        "clab-node-type": "",
+        "clab-owner": "patrick_boulanger",
+        "clab-topo-file": "/home/patrick_boulanger/ospf-otel-lab/ospf-network.clab.yml",
+        "containerlab": "ospf-network"
+      },
+      "port-bindings": [
+      ]
+    },
+    "csr28": {
+      "index": "5",
+      "shortname": "csr28",
+      "longname": "clab-ospf-network-csr28",
+      "fqdn": "csr28.ospf-network.io",
+      "group": "",
+      "labdir": "/home/patrick_boulanger/ospf-otel-lab/clab-ospf-network/csr28",
+      "kind": "linux",
+      "image": "quay.io/frrouting/frr:10.5.0",
+      "mgmt-net": "",
+      "mgmt-intf": "",
+      "mgmt-ipv4-address": "172.20.20.28",
+      "mgmt-ipv4-prefix-length": 24,
+      "mgmt-ipv6-address": "3fff:172:20:20::6",
+      "mgmt-ipv6-prefix-length": 64,
+      "mac-address": "",
+      "labels": {
+        "clab-mgmt-net-bridge": "br-e00c06f5e2b1",
+        "clab-node-group": "",
+        "clab-node-kind": "linux",
+        "clab-node-lab-dir": "/home/patrick_boulanger/ospf-otel-lab/clab-ospf-network/csr28",
+        "clab-node-longname": "clab-ospf-network-csr28",
+        "clab-node-name": "csr28",
+        "clab-node-type": "",
+        "clab-owner": "patrick_boulanger",
+        "clab-topo-file": "/home/patrick_boulanger/ospf-otel-lab/ospf-network.clab.yml",
+        "containerlab": "ospf-network"
+      },
+      "port-bindings": [
+      ]
+    },
+    "csr29": {
+      "index": "6",
+      "shortname": "csr29",
+      "longname": "clab-ospf-network-csr29",
+      "fqdn": "csr29.ospf-network.io",
+      "group": "",
+      "labdir": "/home/patrick_boulanger/ospf-otel-lab/clab-ospf-network/csr29",
+      "kind": "linux",
+      "image": "quay.io/frrouting/frr:10.5.0",
+      "mgmt-net": "",
+      "mgmt-intf": "",
+      "mgmt-ipv4-address": "172.20.20.29",
+      "mgmt-ipv4-prefix-length": 24,
+      "mgmt-ipv6-address": "3fff:172:20:20::3",
+      "mgmt-ipv6-prefix-length": 64,
+      "mac-address": "",
+      "labels": {
+        "clab-mgmt-net-bridge": "br-e00c06f5e2b1",
+        "clab-node-group": "",
+        "clab-node-kind": "linux",
+        "clab-node-lab-dir": "/home/patrick_boulanger/ospf-otel-lab/clab-ospf-network/csr29",
+        "clab-node-longname": "clab-ospf-network-csr29",
+        "clab-node-name": "csr29",
+        "clab-node-type": "",
+        "clab-owner": "patrick_boulanger",
+        "clab-topo-file": "/home/patrick_boulanger/ospf-otel-lab/ospf-network.clab.yml",
+        "containerlab": "ospf-network"
+      },
+      "port-bindings": [
+      ]
+    },
+    "elastic-agent-sw2": {
+      "index": "7",
+      "shortname": "elastic-agent-sw2",
+      "longname": "clab-ospf-network-elastic-agent-sw2",
+      "fqdn": "elastic-agent-sw2.ospf-network.io",
+      "group": "",
+      "labdir": "/home/patrick_boulanger/ospf-otel-lab/clab-ospf-network/elastic-agent-sw2",
+      "kind": "linux",
+      "image": "elastic/elastic-agent:9.2.1",
+      "mgmt-net": "",
+      "mgmt-intf": "",
+      "mgmt-ipv4-address": "172.20.20.50",
+      "mgmt-ipv4-prefix-length": 24,
+      "mgmt-ipv6-address": "3fff:172:20:20::8",
+      "mgmt-ipv6-prefix-length": 64,
+      "mac-address": "",
+      "labels": {
+        "clab-mgmt-net-bridge": "br-e00c06f5e2b1",
+        "clab-node-group": "",
+        "clab-node-kind": "linux",
+        "clab-node-lab-dir": "/home/patrick_boulanger/ospf-otel-lab/clab-ospf-network/elastic-agent-sw2",
+        "clab-node-longname": "clab-ospf-network-elastic-agent-sw2",
+        "clab-node-name": "elastic-agent-sw2",
+        "clab-node-type": "",
+        "clab-owner": "patrick_boulanger",
+        "clab-topo-file": "/home/patrick_boulanger/ospf-otel-lab/ospf-network.clab.yml",
+        "containerlab": "ospf-network"
+      },
+      "port-bindings": [
+      ]
+    },
+    "linux-bottom": {
+      "index": "8",
+      "shortname": "linux-bottom",
+      "longname": "clab-ospf-network-linux-bottom",
+      "fqdn": "linux-bottom.ospf-network.io",
+      "group": "",
+      "labdir": "/home/patrick_boulanger/ospf-otel-lab/clab-ospf-network/linux-bottom",
+      "kind": "linux",
+      "image": "ubuntu-lab:22.04",
+      "mgmt-net": "",
+      "mgmt-intf": "",
+      "mgmt-ipv4-address": "172.20.20.2",
+      "mgmt-ipv4-prefix-length": 24,
+      "mgmt-ipv6-address": "3fff:172:20:20::b",
+      "mgmt-ipv6-prefix-length": 64,
+      "mac-address": "",
+      "labels": {
+        "clab-mgmt-net-bridge": "br-e00c06f5e2b1",
+        "clab-node-group": "",
+        "clab-node-kind": "linux",
+        "clab-node-lab-dir": "/home/patrick_boulanger/ospf-otel-lab/clab-ospf-network/linux-bottom",
+        "clab-node-longname": "clab-ospf-network-linux-bottom",
+        "clab-node-name": "linux-bottom",
+        "clab-node-type": "",
+        "clab-owner": "patrick_boulanger",
+        "clab-topo-file": "/home/patrick_boulanger/ospf-otel-lab/ospf-network.clab.yml",
+        "containerlab": "ospf-network"
+      },
+      "port-bindings": [
+        {
+          "host-ip": "0.0.0.0",
+          "host-port": 2057,
+          "port": 2057,
+          "protocol": "udp"
+        },
+        {
+          "host-ip": "::",
+          "host-port": 2057,
+          "port": 2057,
+          "protocol": "udp"
+        }
+      ]
+    },
+    "linux-top": {
+      "index": "9",
+      "shortname": "linux-top",
+      "longname": "clab-ospf-network-linux-top",
+      "fqdn": "linux-top.ospf-network.io",
+      "group": "",
+      "labdir": "/home/patrick_boulanger/ospf-otel-lab/clab-ospf-network/linux-top",
+      "kind": "linux",
+      "image": "ubuntu-lab:22.04",
+      "mgmt-net": "",
+      "mgmt-intf": "",
+      "mgmt-ipv4-address": "172.20.20.3",
+      "mgmt-ipv4-prefix-length": 24,
+      "mgmt-ipv6-address": "3fff:172:20:20::c",
+      "mgmt-ipv6-prefix-length": 64,
+      "mac-address": "",
+      "labels": {
+        "clab-mgmt-net-bridge": "br-e00c06f5e2b1",
+        "clab-node-group": "",
+        "clab-node-kind": "linux",
+        "clab-node-lab-dir": "/home/patrick_boulanger/ospf-otel-lab/clab-ospf-network/linux-top",
+        "clab-node-longname": "clab-ospf-network-linux-top",
+        "clab-node-name": "linux-top",
+        "clab-node-type": "",
+        "clab-owner": "patrick_boulanger",
+        "clab-topo-file": "/home/patrick_boulanger/ospf-otel-lab/ospf-network.clab.yml",
+        "containerlab": "ospf-network"
+      },
+      "port-bindings": [
+        {
+          "host-ip": "0.0.0.0",
+          "host-port": 2058,
+          "port": 2058,
+          "protocol": "udp"
+        },
+        {
+          "host-ip": "::",
+          "host-port": 2058,
+          "port": 2058,
+          "protocol": "udp"
+        }
+      ]
+    },
+    "logstash": {
+      "index": "10",
+      "shortname": "logstash",
+      "longname": "clab-ospf-network-logstash",
+      "fqdn": "logstash.ospf-network.io",
+      "group": "",
+      "labdir": "/home/patrick_boulanger/ospf-otel-lab/clab-ospf-network/logstash",
+      "kind": "linux",
+      "image": "docker.elastic.co/logstash/logstash:9.2.1",
+      "mgmt-net": "",
+      "mgmt-intf": "",
+      "mgmt-ipv4-address": "172.20.20.31",
+      "mgmt-ipv4-prefix-length": 24,
+      "mgmt-ipv6-address": "3fff:172:20:20::2",
+      "mgmt-ipv6-prefix-length": 64,
+      "mac-address": "",
+      "labels": {
+        "clab-mgmt-net-bridge": "br-e00c06f5e2b1",
+        "clab-node-group": "",
+        "clab-node-kind": "linux",
+        "clab-node-lab-dir": "/home/patrick_boulanger/ospf-otel-lab/clab-ospf-network/logstash",
+        "clab-node-longname": "clab-ospf-network-logstash",
+        "clab-node-name": "logstash",
+        "clab-node-type": "",
+        "clab-owner": "patrick_boulanger",
+        "clab-topo-file": "/home/patrick_boulanger/ospf-otel-lab/ospf-network.clab.yml",
+        "containerlab": "ospf-network"
+      },
+      "port-bindings": [
+        {
+          "host-ip": "0.0.0.0",
+          "host-port": 1062,
+          "port": 1062,
+          "protocol": "udp"
+        },
+        {
+          "host-ip": "::",
+          "host-port": 1062,
+          "port": 1062,
+          "protocol": "udp"
+        },
+        {
+          "host-ip": "0.0.0.0",
+          "host-port": 2055,
+          "port": 2055,
+          "protocol": "udp"
+        },
+        {
+          "host-ip": "::",
+          "host-port": 2055,
+          "port": 2055,
+          "protocol": "udp"
+        },
+        {
+          "host-ip": "",
+          "host-port": 0,
+          "port": 5044,
+          "protocol": "tcp"
+        },
+        {
+          "host-ip": "",
+          "host-port": 0,
+          "port": 9600,
+          "protocol": "tcp"
+        }
+      ]
+    },
+    "otel-collector": {
+      "index": "11",
+      "shortname": "otel-collector",
+      "longname": "clab-ospf-network-otel-collector",
+      "fqdn": "otel-collector.ospf-network.io",
+      "group": "",
+      "labdir": "/home/patrick_boulanger/ospf-otel-lab/clab-ospf-network/otel-collector",
+      "kind": "linux",
+      "image": "otel/opentelemetry-collector-contrib:0.111.0",
+      "mgmt-net": "",
+      "mgmt-intf": "",
+      "mgmt-ipv4-address": "172.20.20.5",
+      "mgmt-ipv4-prefix-length": 24,
+      "mgmt-ipv6-address": "3fff:172:20:20::e",
+      "mgmt-ipv6-prefix-length": 64,
+      "mac-address": "",
+      "labels": {
+        "clab-mgmt-net-bridge": "br-e00c06f5e2b1",
+        "clab-node-group": "",
+        "clab-node-kind": "linux",
+        "clab-node-lab-dir": "/home/patrick_boulanger/ospf-otel-lab/clab-ospf-network/otel-collector",
+        "clab-node-longname": "clab-ospf-network-otel-collector",
+        "clab-node-name": "otel-collector",
+        "clab-node-type": "",
+        "clab-owner": "patrick_boulanger",
+        "clab-topo-file": "/home/patrick_boulanger/ospf-otel-lab/ospf-network.clab.yml",
+        "containerlab": "ospf-network"
+      },
+      "port-bindings": [
+        {
+          "host-ip": "",
+          "host-port": 0,
+          "port": 55678,
+          "protocol": "tcp"
+        },
+        {
+          "host-ip": "",
+          "host-port": 0,
+          "port": 55679,
+          "protocol": "tcp"
+        },
+        {
+          "host-ip": "0.0.0.0",
+          "host-port": 8888,
+          "port": 8888,
+          "protocol": "tcp"
+        },
+        {
+          "host-ip": "::",
+          "host-port": 8888,
+          "port": 8888,
+          "protocol": "tcp"
+        },
+        {
+          "host-ip": "0.0.0.0",
+          "host-port": 4317,
+          "port": 4317,
+          "protocol": "tcp"
+        },
+        {
+          "host-ip": "::",
+          "host-port": 4317,
+          "port": 4317,
+          "protocol": "tcp"
+        },
+        {
+          "host-ip": "0.0.0.0",
+          "host-port": 5140,
+          "port": 5140,
+          "protocol": "udp"
+        },
+        {
+          "host-ip": "::",
+          "host-port": 5140,
+          "port": 5140,
+          "protocol": "udp"
+        }
+      ]
+    },
+    "sw": {
+      "index": "12",
+      "shortname": "sw",
+      "longname": "clab-ospf-network-sw",
+      "fqdn": "sw.ospf-network.io",
+      "group": "",
+      "labdir": "/home/patrick_boulanger/ospf-otel-lab/clab-ospf-network/sw",
+      "kind": "linux",
+      "image": "alpine:latest",
+      "mgmt-net": "",
+      "mgmt-intf": "",
+      "mgmt-ipv4-address": "172.20.20.4",
+      "mgmt-ipv4-prefix-length": 24,
+      "mgmt-ipv6-address": "3fff:172:20:20::d",
+      "mgmt-ipv6-prefix-length": 64,
+      "mac-address": "",
+      "labels": {
+        "clab-mgmt-net-bridge": "br-e00c06f5e2b1",
+        "clab-node-group": "",
+        "clab-node-kind": "linux",
+        "clab-node-lab-dir": "/home/patrick_boulanger/ospf-otel-lab/clab-ospf-network/sw",
+        "clab-node-longname": "clab-ospf-network-sw",
+        "clab-node-name": "sw",
+        "clab-node-type": "",
+        "clab-owner": "patrick_boulanger",
+        "clab-topo-file": "/home/patrick_boulanger/ospf-otel-lab/ospf-network.clab.yml",
+        "containerlab": "ospf-network"
+      },
+      "port-bindings": [
+      ]
+    },
+    "sw2": {
+      "index": "13",
+      "shortname": "sw2",
+      "longname": "clab-ospf-network-sw2",
+      "fqdn": "sw2.ospf-network.io",
+      "group": "",
+      "labdir": "/home/patrick_boulanger/ospf-otel-lab/clab-ospf-network/sw2",
+      "kind": "linux",
+      "image": "alpine:latest",
+      "mgmt-net": "",
+      "mgmt-intf": "",
+      "mgmt-ipv4-address": "172.20.20.6",
+      "mgmt-ipv4-prefix-length": 24,
+      "mgmt-ipv6-address": "3fff:172:20:20::f",
+      "mgmt-ipv6-prefix-length": 64,
+      "mac-address": "",
+      "labels": {
+        "clab-mgmt-net-bridge": "br-e00c06f5e2b1",
+        "clab-node-group": "",
+        "clab-node-kind": "linux",
+        "clab-node-lab-dir": "/home/patrick_boulanger/ospf-otel-lab/clab-ospf-network/sw2",
+        "clab-node-longname": "clab-ospf-network-sw2",
+        "clab-node-name": "sw2",
+        "clab-node-type": "",
+        "clab-owner": "patrick_boulanger",
+        "clab-topo-file": "/home/patrick_boulanger/ospf-otel-lab/ospf-network.clab.yml",
+        "containerlab": "ospf-network"
+      },
+      "port-bindings": [
+      ]
+    }
+  },
+  "links": [
+    {
+      "endpoints": {
+        "a": {
+          "node": "csr28",
+          "interface": "eth1",
+          "mac": "aa:c1:ab:75:82:ee",
+          "peer": "z"
+        },
+        "z": {
+          "node": "csr24",
+          "interface": "eth1",
+          "mac": "aa:c1:ab:df:db:5e",
+          "peer": "a"
+        }
+      }
+    },
+    {
+      "endpoints": {
+        "a": {
+          "node": "csr28",
+          "interface": "eth2",
+          "mac": "aa:c1:ab:da:9a:3e",
+          "peer": "z"
+        },
+        "z": {
+          "node": "csr23",
+          "interface": "eth2",
+          "mac": "aa:c1:ab:85:2d:1f",
+          "peer": "a"
+        }
+      }
+    },
+    {
+      "endpoints": {
+        "a": {
+          "node": "csr28",
+          "interface": "eth3",
+          "mac": "aa:c1:ab:81:98:4d",
+          "peer": "z"
+        },
+        "z": {
+          "node": "sw2",
+          "interface": "eth1",
+          "mac": "aa:c1:ab:c3:a0:35",
+          "peer": "a"
+        }
+      }
+    },
+    {
+      "endpoints": {
+        "a": {
+          "node": "csr24",
+          "interface": "eth2",
+          "mac": "aa:c1:ab:ff:91:a3",
+          "peer": "z"
+        },
+        "z": {
+          "node": "csr29",
+          "interface": "eth1",
+          "mac": "aa:c1:ab:27:80:b8",
+          "peer": "a"
+        }
+      }
+    },
+    {
+      "endpoints": {
+        "a": {
+          "node": "csr24",
+          "interface": "eth3",
+          "mac": "aa:c1:ab:2d:6f:28",
+          "peer": "z"
+        },
+        "z": {
+          "node": "csr23",
+          "interface": "eth3",
+          "mac": "aa:c1:ab:db:d7:c5",
+          "peer": "a"
+        }
+      }
+    },
+    {
+      "endpoints": {
+        "a": {
+          "node": "csr24",
+          "interface": "eth4",
+          "mac": "aa:c1:ab:1e:c3:e5",
+          "peer": "z"
+        },
+        "z": {
+          "node": "csr26",
+          "interface": "eth3",
+          "mac": "aa:c1:ab:1b:83:e5",
+          "peer": "a"
+        }
+      }
+    },
+    {
+      "endpoints": {
+        "a": {
+          "node": "csr24",
+          "interface": "eth5",
+          "mac": "aa:c1:ab:cb:61:02",
+          "peer": "z"
+        },
+        "z": {
+          "node": "csr25",
+          "interface": "eth2",
+          "mac": "aa:c1:ab:1b:5f:a9",
+          "peer": "a"
+        }
+      }
+    },
+    {
+      "endpoints": {
+        "a": {
+          "node": "csr23",
+          "interface": "eth1",
+          "mac": "aa:c1:ab:aa:ad:70",
+          "peer": "z"
+        },
+        "z": {
+          "node": "csr26",
+          "interface": "eth2",
+          "mac": "aa:c1:ab:3c:15:56",
+          "peer": "a"
+        }
+      }
+    },
+    {
+      "endpoints": {
+        "a": {
+          "node": "csr23",
+          "interface": "eth4",
+          "mac": "aa:c1:ab:98:eb:85",
+          "peer": "z"
+        },
+        "z": {
+          "node": "csr25",
+          "interface": "eth1",
+          "mac": "aa:c1:ab:60:1e:1f",
+          "peer": "a"
+        }
+      }
+    },
+    {
+      "endpoints": {
+        "a": {
+          "node": "csr23",
+          "interface": "eth5",
+          "mac": "aa:c1:ab:9c:cf:da",
+          "peer": "z"
+        },
+        "z": {
+          "node": "csr27",
+          "interface": "eth1",
+          "mac": "aa:c1:ab:80:0b:e0",
+          "peer": "a"
+        }
+      }
+    },
+    {
+      "endpoints": {
+        "a": {
+          "node": "csr29",
+          "interface": "eth2",
+          "mac": "aa:c1:ab:c4:dc:a4",
+          "peer": "z"
+        },
+        "z": {
+          "node": "csr26",
+          "interface": "eth1",
+          "mac": "aa:c1:ab:67:0c:41",
+          "peer": "a"
+        }
+      }
+    },
+    {
+      "endpoints": {
+        "a": {
+          "node": "csr27",
+          "interface": "eth2",
+          "mac": "aa:c1:ab:bd:64:d8",
+          "peer": "z"
+        },
+        "z": {
+          "node": "csr25",
+          "interface": "eth4",
+          "mac": "aa:c1:ab:69:a2:f3",
+          "peer": "a"
+        }
+      }
+    },
+    {
+      "endpoints": {
+        "a": {
+          "node": "csr26",
+          "interface": "eth4",
+          "mac": "aa:c1:ab:3e:9d:6c",
+          "peer": "z"
+        },
+        "z": {
+          "node": "csr25",
+          "interface": "eth3",
+          "mac": "aa:c1:ab:50:54:3f",
+          "peer": "a"
+        }
+      }
+    },
+    {
+      "endpoints": {
+        "a": {
+          "node": "csr25",
+          "interface": "eth5",
+          "mac": "aa:c1:ab:bf:64:6c",
+          "peer": "z"
+        },
+        "z": {
+          "node": "sw",
+          "interface": "eth1",
+          "mac": "aa:c1:ab:85:b5:77",
+          "peer": "a"
+        }
+      }
+    },
+    {
+      "endpoints": {
+        "a": {
+          "node": "csr26",
+          "interface": "eth5",
+          "mac": "aa:c1:ab:ff:3e:b4",
+          "peer": "z"
+        },
+        "z": {
+          "node": "sw",
+          "interface": "eth2",
+          "mac": "aa:c1:ab:0a:6e:29",
+          "peer": "a"
+        }
+      }
+    },
+    {
+      "endpoints": {
+        "a": {
+          "node": "sw",
+          "interface": "eth3",
+          "mac": "aa:c1:ab:bd:f5:bf",
+          "peer": "z"
+        },
+        "z": {
+          "node": "linux-bottom",
+          "interface": "eth1",
+          "mac": "aa:c1:ab:ef:66:10",
+          "peer": "a"
+        }
+      }
+    },
+    {
+      "endpoints": {
+        "a": {
+          "node": "sw2",
+          "interface": "eth2",
+          "mac": "aa:c1:ab:e4:a1:80",
+          "peer": "z"
+        },
+        "z": {
+          "node": "linux-top",
+          "interface": "eth1",
+          "mac": "aa:c1:ab:16:64:06",
+          "peer": "a"
+        }
+      }
+    },
+    {
+      "endpoints": {
+        "a": {
+          "node": "sw2",
+          "interface": "eth3",
+          "mac": "aa:c1:ab:a5:e6:18",
+          "peer": "z"
+        },
+        "z": {
+          "node": "elastic-agent-sw2",
+          "interface": "eth1",
+          "mac": "aa:c1:ab:8c:a2:be",
+          "peer": "a"
+        }
+      }
+    }
+  ]
+}

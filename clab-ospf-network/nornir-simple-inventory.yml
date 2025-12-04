@@ -1,0 +1,71 @@
+---
+csr23:
+    username: 
+    password: 
+    platform: linux
+    hostname: 172.20.20.23
+csr24:
+    username: 
+    password: 
+    platform: linux
+    hostname: 172.20.20.24
+csr25:
+    username: 
+    password: 
+    platform: linux
+    hostname: 172.20.20.25
+csr26:
+    username: 
+    password: 
+    platform: linux
+    hostname: 172.20.20.26
+csr27:
+    username: 
+    password: 
+    platform: linux
+    hostname: 172.20.20.27
+csr28:
+    username: 
+    password: 
+    platform: linux
+    hostname: 172.20.20.28
+csr29:
+    username: 
+    password: 
+    platform: linux
+    hostname: 172.20.20.29
+elastic-agent-sw2:
+    username: 
+    password: 
+    platform: linux
+    hostname: 172.20.20.50
+linux-bottom:
+    username: 
+    password: 
+    platform: linux
+    hostname: 172.20.20.2
+linux-top:
+    username: 
+    password: 
+    platform: linux
+    hostname: 172.20.20.3
+logstash:
+    username: 
+    password: 
+    platform: linux
+    hostname: 172.20.20.31
+otel-collector:
+    username: 
+    password: 
+    platform: linux
+    hostname: 172.20.20.5
+sw:
+    username: 
+    password: 
+    platform: linux
+    hostname: 172.20.20.4
+sw2:
+    username: 
+    password: 
+    platform: linux
+    hostname: 172.20.20.6

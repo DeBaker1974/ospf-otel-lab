@@ -1,0 +1,339 @@
+name: ospf-network
+mgmt:
+  network: clab
+  ipv4-subnet: 172.20.20.0/24
+  ipv6-subnet: 3fff:172:20:20::/64
+
+topology:
+  nodes:
+    # ============================================
+    # ELASTIC AGENT
+    # ============================================
+    elastic-agent-sw2:
+      kind: linux
+      image: docker.elastic.co/beats/elastic-agent:8.15.0
+      user: root
+      env:
+        FLEET_URL: "${FLEET_URL}"
+        FLEET_ENROLLMENT_TOKEN: "${FLEET_ENROLLMENT_TOKEN}"
+        FLEET_ENROLL: "1"
+        FLEET_INSECURE: "1"
+      binds:
+        - /var/run/docker.sock:/var/run/docker.sock:ro
+        - /sys/fs/cgroup:/hostfs/sys/fs/cgroup:ro
+        - /proc:/hostfs/proc:ro
+        - /:/hostfs:ro
+        - configs/elastic-agent:/usr/share/elastic-agent/config:ro
+      exec:
+        - ip link set eth1 up
+        - ip addr add 192.168.20.50/24 dev eth1
+        - ip route add default via 192.168.20.1
+      mgmt-ipv4: 172.20.20.50
+
+    # ============================================
+    # ROUTERS (7 FRR containers)
+    # ============================================
+    csr28:
+      kind: linux
+      image: frrouting/frr:v8.4.0
+      user: root
+      binds:
+        - configs/routers/csr28/daemons:/etc/frr/daemons:ro
+        - configs/routers/csr28/frr.conf:/etc/frr/frr.conf:ro
+        - configs/routers/csr28/snmpd.conf:/etc/snmp/snmpd.conf:ro
+      exec:
+        - ip link set eth1 up
+        - ip link set eth2 up
+        - ip link set eth3 up
+        - ip addr add 10.0.1.1/31 dev eth1
+        - ip addr add 10.0.2.1/31 dev eth2
+        - ip addr add 192.168.20.1/24 dev eth3
+        - touch /etc/frr/vtysh.conf
+        - /usr/lib/frr/frrinit.sh start
+        # LLDP SNMP AgentX configuration
+        - mkdir -p /var/agentx && chmod 777 /var/agentx
+        - /usr/sbin/snmpd -c /etc/snmp/snmpd.conf -Lsd -Lf /dev/null udp:161
+        - sleep 5
+        - pkill lldpd || true
+        - lldpd -x -X /var/agentx/master
+      mgmt-ipv4: 172.20.20.28
+
+    csr24:
+      kind: linux
+      image: frrouting/frr:v8.4.0
+      user: root
+      binds:
+        - configs/routers/csr24/daemons:/etc/frr/daemons:ro
+        - configs/routers/csr24/frr.conf:/etc/frr/frr.conf:ro
+        - configs/routers/csr24/snmpd.conf:/etc/snmp/snmpd.conf:ro
+      exec:
+        - ip link set eth1 up
+        - ip link set eth2 up
+        - ip link set eth3 up
+        - ip link set eth4 up
+        - ip link set eth5 up
+        - ip addr add 10.0.1.0/31 dev eth1
+        - ip addr add 10.0.9.0/31 dev eth2
+        - ip addr add 10.0.3.1/31 dev eth3
+        - ip addr add 10.0.4.0/31 dev eth4
+        - ip addr add 10.0.6.0/31 dev eth5
+        - touch /etc/frr/vtysh.conf
+        - /usr/lib/frr/frrinit.sh start
+        # LLDP SNMP AgentX configuration
+        - mkdir -p /var/agentx && chmod 777 /var/agentx
+        - /usr/sbin/snmpd -c /etc/snmp/snmpd.conf -Lsd -Lf /dev/null udp:161
+        - sleep 5
+        - pkill lldpd || true
+        - lldpd -x -X /var/agentx/master
+      mgmt-ipv4: 172.20.20.24
+
+    csr23:
+      kind: linux
+      image: frrouting/frr:v8.4.0
+      user: root
+      binds:
+        - configs/routers/csr23/daemons:/etc/frr/daemons:ro
+        - configs/routers/csr23/frr.conf:/etc/frr/frr.conf:ro
+        - configs/routers/csr23/snmpd.conf:/etc/snmp/snmpd.conf:ro
+      exec:
+        - ip link set eth1 up
+        - ip link set eth2 up
+        - ip link set eth3 up
+        - ip link set eth4 up
+        - ip link set eth5 up
+        - ip addr add 10.0.7.0/31 dev eth1
+        - ip addr add 10.0.2.0/31 dev eth2
+        - ip addr add 10.0.3.0/31 dev eth3
+        - ip addr add 10.0.5.0/31 dev eth4
+        - ip addr add 10.0.11.0/31 dev eth5
+        - touch /etc/frr/vtysh.conf
+        - /usr/lib/frr/frrinit.sh start
+        # LLDP SNMP AgentX configuration
+        - mkdir -p /var/agentx && chmod 777 /var/agentx
+        - /usr/sbin/snmpd -c /etc/snmp/snmpd.conf -Lsd -Lf /dev/null udp:161
+        - sleep 5
+        - pkill lldpd || true
+        - lldpd -x -X /var/agentx/master
+      mgmt-ipv4: 172.20.20.23
+
+    csr29:
+      kind: linux
+      image: frrouting/frr:v8.4.0
+      user: root
+      binds:
+        - configs/routers/csr29/daemons:/etc/frr/daemons:ro
+        - configs/routers/csr29/frr.conf:/etc/frr/frr.conf:ro
+        - configs/routers/csr29/snmpd.conf:/etc/snmp/snmpd.conf:ro
+      exec:
+        - ip link set eth1 up
+        - ip link set eth2 up
+        - ip addr add 10.0.9.1/31 dev eth1
+        - ip addr add 10.0.10.1/31 dev eth2
+        - touch /etc/frr/vtysh.conf
+        - /usr/lib/frr/frrinit.sh start
+        # LLDP SNMP AgentX configuration
+        - mkdir -p /var/agentx && chmod 777 /var/agentx
+        - /usr/sbin/snmpd -c /etc/snmp/snmpd.conf -Lsd -Lf /dev/null udp:161
+        - sleep 5
+        - pkill lldpd || true
+        - lldpd -x -X /var/agentx/master
+      mgmt-ipv4: 172.20.20.29
+
+    csr27:
+      kind: linux
+      image: frrouting/frr:v8.4.0
+      user: root
+      binds:
+        - configs/routers/csr27/daemons:/etc/frr/daemons:ro
+        - configs/routers/csr27/frr.conf:/etc/frr/frr.conf:ro
+        - configs/routers/csr27/snmpd.conf:/etc/snmp/snmpd.conf:ro
+      exec:
+        - ip link set eth1 up
+        - ip link set eth2 up
+        - ip addr add 10.0.11.1/31 dev eth1
+        - ip addr add 10.0.12.1/31 dev eth2
+        - touch /etc/frr/vtysh.conf
+        - /usr/lib/frr/frrinit.sh start
+        # LLDP SNMP AgentX configuration
+        - mkdir -p /var/agentx && chmod 777 /var/agentx
+        - /usr/sbin/snmpd -c /etc/snmp/snmpd.conf -Lsd -Lf /dev/null udp:161
+        - sleep 5
+        - pkill lldpd || true
+        - lldpd -x -X /var/agentx/master
+      mgmt-ipv4: 172.20.20.27
+
+    csr26:
+      kind: linux
+      image: frrouting/frr:v8.4.0
+      user: root
+      binds:
+        - configs/routers/csr26/daemons:/etc/frr/daemons:ro
+        - configs/routers/csr26/frr.conf:/etc/frr/frr.conf:ro
+        - configs/routers/csr26/snmpd.conf:/etc/snmp/snmpd.conf:ro
+      exec:
+        - ip link set eth1 up
+        - ip link set eth2 up
+        - ip link set eth3 up
+        - ip link set eth4 up
+        - ip link set eth5 up
+        - ip addr add 10.0.10.0/31 dev eth1
+        - ip addr add 10.0.7.1/31 dev eth2
+        - ip addr add 10.0.4.1/31 dev eth3
+        - ip addr add 10.0.8.1/31 dev eth4
+        - ip addr add 192.168.10.3/24 dev eth5
+        - touch /etc/frr/vtysh.conf
+        - /usr/lib/frr/frrinit.sh start
+        # LLDP SNMP AgentX configuration
+        - mkdir -p /var/agentx && chmod 777 /var/agentx
+        - /usr/sbin/snmpd -c /etc/snmp/snmpd.conf -Lsd -Lf /dev/null udp:161
+        - sleep 5
+        - pkill lldpd || true
+        - lldpd -x -X /var/agentx/master
+      mgmt-ipv4: 172.20.20.26
+
+    csr25:
+      kind: linux
+      image: frrouting/frr:v8.4.0
+      user: root
+      binds:
+        - configs/routers/csr25/daemons:/etc/frr/daemons:ro
+        - configs/routers/csr25/frr.conf:/etc/frr/frr.conf:ro
+        - configs/routers/csr25/snmpd.conf:/etc/snmp/snmpd.conf:ro
+      exec:
+        - ip link set eth1 up
+        - ip link set eth2 up
+        - ip link set eth3 up
+        - ip link set eth4 up
+        - ip link set eth5 up
+        - ip addr add 10.0.5.1/31 dev eth1
+        - ip addr add 10.0.6.1/31 dev eth2
+        - ip addr add 10.0.8.0/31 dev eth3
+        - ip addr add 10.0.12.0/31 dev eth4
+        - ip addr add 192.168.10.2/24 dev eth5
+        - touch /etc/frr/vtysh.conf
+        - /usr/lib/frr/frrinit.sh start
+        # LLDP SNMP AgentX configuration
+        - mkdir -p /var/agentx && chmod 777 /var/agentx
+        - /usr/sbin/snmpd -c /etc/snmp/snmpd.conf -Lsd -Lf /dev/null udp:161
+        - sleep 5
+        - pkill lldpd || true
+        - lldpd -x -X /var/agentx/master
+      mgmt-ipv4: 172.20.20.25
+
+    # ============================================
+    # SWITCHES (Alpine Linux bridges)
+    # ============================================
+    sw:
+      kind: linux
+      image: alpine:latest
+      exec:
+        - ip link add br0 type bridge
+        - ip link set br0 up
+        - ip link set eth1 master br0 && ip link set eth1 up
+        - ip link set eth2 master br0 && ip link set eth2 up
+        - ip link set eth3 master br0 && ip link set eth3 up
+
+    sw2:
+      kind: linux
+      image: alpine:latest
+      exec:
+        - ip link add br0 type bridge
+        - ip link set br0 up
+        - ip link set eth1 master br0 && ip link set eth1 up
+        - ip link set eth2 master br0 && ip link set eth2 up
+
+    # ============================================
+    # UBUNTU HOSTS (2 hosts on different networks)
+    # ============================================
+    linux-bottom:
+      kind: linux
+      image: ubuntu:22.04
+      user: root
+      binds:
+        - scripts:/scripts
+        - logs:/var/log/linux-bottom
+      exec:
+        - ip addr add 192.168.10.20/24 dev eth1
+        - ip link set eth1 up
+        - ip route add default via 192.168.10.1
+        - bash -c "DEBIAN_FRONTEND=noninteractive apt-get update -qq && apt-get install -y curl wget vim net-tools iputils-ping iproute2 bash jq systemd procps -qq"
+      env:
+        DEBIAN_FRONTEND: noninteractive
+      ports:
+        - "2057:2057/udp"
+
+    linux-top:
+      kind: linux
+      image: ubuntu:22.04
+      user: root
+      binds:
+        - scripts:/scripts
+        - logs:/var/log/linux-top
+      exec:
+        - ip addr add 192.168.20.100/24 dev eth1
+        - ip link set eth1 up
+        - ip route add default via 192.168.20.1
+        - bash -c "DEBIAN_FRONTEND=noninteractive apt-get update -qq && apt-get install -y curl wget vim net-tools iputils-ping iproute2 bash jq systemd procps -qq"
+      env:
+        DEBIAN_FRONTEND: noninteractive
+      ports:
+        - "2058:2058/udp"
+
+    # ============================================
+    # MONITORING INFRASTRUCTURE
+    # ============================================
+    otel-collector:
+      kind: linux
+      image: otel/opentelemetry-collector-contrib:latest
+      binds:
+        - configs/otel/otel-collector.yml:/etc/otelcol-contrib/config.yaml:ro
+        - .env:/etc/otelcol-contrib/.env:ro
+      cmd: --config=/etc/otelcol-contrib/config.yaml
+      ports:
+        - "8888:8888"
+        - "4317:4317"
+        - "5140:5140/udp"
+      exec:
+        - ip route add 10.255.0.0/24 via 172.20.20.28 || true
+        - ip route add 10.0.0.0/8 via 172.20.20.28 || true
+
+    logstash:
+      kind: linux
+      image: docker.elastic.co/logstash/logstash:9.2.0
+      binds:
+        - configs/logstash/pipeline:/usr/share/logstash/pipeline:ro
+        - configs/logstash/logstash.yml:/usr/share/logstash/config/logstash.yml:ro
+        - .env:/usr/share/logstash/.env:ro
+      env:
+        LS_JAVA_OPTS: -Xmx512m -Xms512m
+      ports:
+        - "2055:2055/udp"
+
+  # ============================================
+  # LINKS (Network topology)
+  # ============================================
+  links:
+    # Router interconnects
+    - endpoints: ["csr28:eth1", "csr24:eth1"]
+    - endpoints: ["csr28:eth2", "csr23:eth2"]
+    - endpoints: ["csr28:eth3", "sw2:eth1"]
+    - endpoints: ["csr24:eth2", "csr29:eth1"]
+    - endpoints: ["csr24:eth3", "csr23:eth3"]
+    - endpoints: ["csr24:eth4", "csr26:eth3"]
+    - endpoints: ["csr24:eth5", "csr25:eth2"]
+    - endpoints: ["csr23:eth1", "csr26:eth2"]
+    - endpoints: ["csr23:eth4", "csr25:eth1"]
+    - endpoints: ["csr23:eth5", "csr27:eth1"]
+    - endpoints: ["csr29:eth2", "csr26:eth1"]
+    - endpoints: ["csr27:eth2", "csr25:eth4"]
+    - endpoints: ["csr26:eth4", "csr25:eth3"]
+    
+    # Access network 1 (192.168.10.0/24) - via sw
+    - endpoints: ["csr25:eth5", "sw:eth1"]
+    - endpoints: ["csr26:eth5", "sw:eth2"]
+    - endpoints: ["sw:eth3", "linux-bottom:eth1"]
+    
+    # Access network 2 (192.168.20.0/24) - via sw2
+    - endpoints: ["sw2:eth2", "linux-top:eth1"]
+    - endpoints: ["sw2:eth3", "elastic-agent-sw2:eth1"]
+

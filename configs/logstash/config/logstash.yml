@@ -1,0 +1,37 @@
+# Logstash Configuration
+# Version: 9.2.0 compatible
+
+# Node name
+node.name: logstash-netflow
+
+# Path settings
+path.data: /usr/share/logstash/data
+path.logs: /usr/share/logstash/logs
+
+# Pipeline settings
+pipeline.workers: 2
+pipeline.batch.size: 125
+pipeline.batch.delay: 50
+
+# HTTP API settings (for monitoring)
+# Note: In Logstash 9.x, use api.http.host instead of http.host
+api.http.host: "0.0.0.0"
+api.http.port: 9600
+
+# Log settings
+log.level: info
+log.format: plain
+
+# Queue settings
+queue.type: memory
+queue.max_bytes: 1gb
+
+# Dead letter queue
+dead_letter_queue.enable: false
+
+# Monitoring
+monitoring.enabled: false
+
+# Config reload
+config.reload.automatic: false
+config.reload.interval: 3s

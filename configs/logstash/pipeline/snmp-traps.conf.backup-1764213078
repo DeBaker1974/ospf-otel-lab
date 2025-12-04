@@ -1,0 +1,41 @@
+input {
+  snmptrap {
+    host => "0.0.0.0"
+    port => 1062
+    community => "public"
+  }
+}
+
+filter {
+  # Add CSR23 hostname based on source
+  if [host] == "172.20.20.23" {
+    mutate { 
+      add_field => { 
+        "host.name" => "csr23"
+        "host.ip" => "172.20.20.23"
+      }
+    }
+  }
+  
+  # Add data stream fields
+  mutate {
+    add_field => {
+      "data_stream.type" => "logs"
+      "data_stream.dataset" => "snmp.trap"
+      "data_stream.namespace" => "prod"
+    }
+  }
+}
+
+output {
+  stdout { codec => rubydebug }
+  
+  elasticsearch {
+    hosts => ["${ES_ENDPOINT}"]
+    api_key => "${ES_API_KEY}"
+    data_stream => true
+    data_stream_type => "logs"
+    data_stream_dataset => "snmp.trap"
+    data_stream_namespace => "prod"
+  }
+}

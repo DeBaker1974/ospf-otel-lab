@@ -1,0 +1,2 @@
+# Ignore Elastic Agent runtime state
+configs/elastic-agent-state/

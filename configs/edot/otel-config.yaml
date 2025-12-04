@@ -1,0 +1,233 @@
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+processors:
+  # Add ECS 9.2 metadata fields
+  attributes:
+    actions:
+      - key: ecs.version
+        value: "9.2"
+        action: upsert
+      - key: event.module
+        value: snmp
+        action: upsert
+      - key: event.category
+        value: network
+        action: upsert
+      - key: event.kind
+        value: metric
+        action: upsert
+      - key: event.type
+        value: info
+        action: upsert
+
+  # Resource attributes for routing - DELETE existing and INSERT new
+  resource/system:
+    attributes:
+      - key: data_stream.dataset
+        action: delete
+      - key: data_stream.dataset
+        value: "system"
+        action: insert
+
+  resource/interface:
+    attributes:
+      - key: data_stream.dataset
+        action: delete
+      - key: data_stream.dataset
+        value: "interface"
+        action: insert
+
+  resource/memory:
+    attributes:
+      - key: data_stream.dataset
+        action: delete
+      - key: data_stream.dataset
+        value: "memory"
+        action: insert
+
+  resource/lldp:
+    attributes:
+      - key: data_stream.dataset
+        action: delete
+      - key: data_stream.dataset
+        value: "lldp"
+        action: insert
+
+  resource/tcp:
+    attributes:
+      - key: data_stream.dataset
+        action: delete
+      - key: data_stream.dataset
+        value: "tcp"
+        action: insert
+
+  resource/udp:
+    attributes:
+      - key: data_stream.dataset
+        action: delete
+      - key: data_stream.dataset
+        value: "udp"
+        action: insert
+
+  resource/arp:
+    attributes:
+      - key: data_stream.dataset
+        action: delete
+      - key: data_stream.dataset
+        value: "arp"
+        action: insert
+
+  resource/ipstats:
+    attributes:
+      - key: data_stream.dataset
+        action: delete
+      - key: data_stream.dataset
+        value: "ipstats"
+        action: insert
+
+  # Filters for metric routing
+  filter/system:
+    metrics:
+      include:
+        match_type: regexp
+        metric_names:
+          - "system\\.uptime"
+
+  filter/interface:
+    metrics:
+      include:
+        match_type: regexp
+        metric_names:
+          - "network\\.interface\\..*"
+
+  filter/memory:
+    metrics:
+      include:
+        match_type: regexp
+        metric_names:
+          - "system\\.memory\\..*"
+
+  filter/lldp:
+    metrics:
+      include:
+        match_type: regexp
+        metric_names:
+          - "lldp\\..*"
+
+  filter/tcp:
+    metrics:
+      include:
+        match_type: regexp
+        metric_names:
+          - "network\\.tcp\\..*"
+
+  filter/udp:
+    metrics:
+      include:
+        match_type: regexp
+        metric_names:
+          - "network\\.udp\\..*"
+
+  filter/arp:
+    metrics:
+      include:
+        match_type: regexp
+        metric_names:
+          - "network\\.arp\\..*"
+
+  filter/ipstats:
+    metrics:
+      include:
+        match_type: regexp
+        metric_names:
+          - "network\\.ip\\..*"
+
+  batch:
+    timeout: 10s
+    send_batch_size: 1024
+
+exporters:
+  elasticsearch:
+    endpoints:
+      - "https://gcp-telco-9-3-55a713.es.us-west2.gcp.elastic-cloud.com:443"
+    api_key: "RzhSdXc1b0I4Y3k0Mlh5WG91WWE6UEI0blZXNk85Yk80R2lURXBzNllEZw=="
+    mapping:
+      mode: ecs
+    logs_dynamic_index:
+      enabled: true
+    metrics_dynamic_index:
+      enabled: true
+    tls:
+      insecure_skip_verify: true
+
+  debug:
+    verbosity: normal
+    sampling_initial: 5
+    sampling_thereafter: 500
+
+service:
+  pipelines:
+    # System uptime -> metrics-system-prod
+    metrics/system:
+      receivers: [otlp]
+      processors: [filter/system, resource/system, attributes, batch]
+      exporters: [elasticsearch, debug]
+
+    # Interface metrics -> metrics-interface-prod
+    metrics/interface:
+      receivers: [otlp]
+      processors: [filter/interface, resource/interface, attributes, batch]
+      exporters: [elasticsearch, debug]
+
+    # Memory metrics -> metrics-memory-prod
+    metrics/memory:
+      receivers: [otlp]
+      processors: [filter/memory, resource/memory, attributes, batch]
+      exporters: [elasticsearch, debug]
+
+    # LLDP metrics -> metrics-lldp-prod
+    metrics/lldp:
+      receivers: [otlp]
+      processors: [filter/lldp, resource/lldp, attributes, batch]
+      exporters: [elasticsearch, debug]
+
+    # TCP metrics -> metrics-tcp-prod
+    metrics/tcp:
+      receivers: [otlp]
+      processors: [filter/tcp, resource/tcp, attributes, batch]
+      exporters: [elasticsearch, debug]
+
+    # UDP metrics -> metrics-udp-prod
+    metrics/udp:
+      receivers: [otlp]
+      processors: [filter/udp, resource/udp, attributes, batch]
+      exporters: [elasticsearch, debug]
+
+    # ARP metrics -> metrics-arp-prod
+    metrics/arp:
+      receivers: [otlp]
+      processors: [filter/arp, resource/arp, attributes, batch]
+      exporters: [elasticsearch, debug]
+
+    # IP stats -> metrics-ipstats-prod
+    metrics/ipstats:
+      receivers: [otlp]
+      processors: [filter/ipstats, resource/ipstats, attributes, batch]
+      exporters: [elasticsearch, debug]
+
+    # Logs pipeline
+    logs:
+      receivers: [otlp]
+      processors: [attributes, batch]
+      exporters: [elasticsearch, debug]
+
+  telemetry:
+    logs:
+      level: info
+

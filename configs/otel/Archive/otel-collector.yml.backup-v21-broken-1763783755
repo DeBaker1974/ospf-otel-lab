@@ -1,0 +1,734 @@
+# ============================================
+# Production OTEL Configuration v21.0
+# Complete LLDP monitoring for all routers
+# ============================================
+
+receivers:
+  # ============================================
+  # CSR28 - Complete monitoring
+  # ============================================
+  snmp/csr28_system:
+    endpoint: udp://172.20.20.28:161
+    version: v2c
+    community: public
+    collection_interval: 10s
+    timeout: 10s
+    resource_attributes:
+      host.name: { scalar_oid: "1.3.6.1.2.1.1.5.0" }
+    metrics:
+      system.uptime:
+        unit: s
+        gauge: { value_type: double }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.1.3.0"
+            resource_attributes: ["host.name"]
+  
+  snmp/csr28_memory:
+    endpoint: udp://172.20.20.28:161
+    version: v2c
+    community: public
+    collection_interval: 30s
+    timeout: 10s
+    resource_attributes:
+      host.name: { scalar_oid: "1.3.6.1.2.1.1.5.0" }
+    attributes:
+      memory.pool.name: { oid: "1.3.6.1.2.1.25.2.3.1.3" }
+    metrics:
+      system.memory.size:
+        unit: units
+        gauge: { value_type: int }
+        column_oids:
+          - oid: "1.3.6.1.2.1.25.2.3.1.5"
+            attributes: [ { name: memory.pool.name } ]
+            resource_attributes: ["host.name"]
+      system.memory.used:
+        unit: units
+        gauge: { value_type: int }
+        column_oids:
+          - oid: "1.3.6.1.2.1.25.2.3.1.6"
+            attributes: [ { name: memory.pool.name } ]
+            resource_attributes: ["host.name"]
+  
+  snmp/csr28_interface:
+    endpoint: udp://172.20.20.28:161
+    version: v2c
+    community: public
+    collection_interval: 10s
+    timeout: 10s
+    resource_attributes:
+      host.name: { scalar_oid: "1.3.6.1.2.1.1.5.0" }
+    attributes:
+      if.index: { oid: "1.3.6.1.2.1.2.2.1.1" }
+      if.name: { oid: "1.3.6.1.2.1.31.1.1.1.1" }
+      if.descr: { oid: "1.3.6.1.2.1.2.2.1.2" }
+    metrics:
+      network.interface.in.bytes:
+        unit: By
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        column_oids:
+          - oid: "1.3.6.1.2.1.31.1.1.1.6"
+            attributes: [ { name: if.index }, { name: if.name }, { name: if.descr } ]
+            resource_attributes: ["host.name"]
+      network.interface.out.bytes:
+        unit: By
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        column_oids:
+          - oid: "1.3.6.1.2.1.31.1.1.1.10"
+            attributes: [ { name: if.index }, { name: if.name }, { name: if.descr } ]
+            resource_attributes: ["host.name"]
+      network.interface.in.errors:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        column_oids:
+          - oid: "1.3.6.1.2.1.2.2.1.14"
+            attributes: [ { name: if.index }, { name: if.name } ]
+            resource_attributes: ["host.name"]
+      network.interface.out.errors:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        column_oids:
+          - oid: "1.3.6.1.2.1.2.2.1.20"
+            attributes: [ { name: if.index }, { name: if.name } ]
+            resource_attributes: ["host.name"]
+      network.interface.status:
+        unit: "1"
+        gauge: { value_type: int }
+        column_oids:
+          - oid: "1.3.6.1.2.1.2.2.1.8"
+            attributes: [ { name: if.index }, { name: if.name } ]
+            resource_attributes: ["host.name"]
+  
+  snmp/csr28_ipstats:
+    endpoint: udp://172.20.20.28:161
+    version: v2c
+    community: public
+    collection_interval: 15s
+    timeout: 10s
+    resource_attributes:
+      host.name: { scalar_oid: "1.3.6.1.2.1.1.5.0" }
+    metrics:
+      network.ip.forwarded.datagrams:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.4.6.0"
+            resource_attributes: ["host.name"]
+  
+  snmp/csr28_tcp:
+    endpoint: udp://172.20.20.28:161
+    version: v2c
+    community: public
+    collection_interval: 15s
+    timeout: 10s
+    resource_attributes:
+      host.name: { scalar_oid: "1.3.6.1.2.1.1.5.0" }
+    metrics:
+      network.tcp.curr.estab:
+        unit: "1"
+        gauge: { value_type: int }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.6.9.0"
+            resource_attributes: ["host.name"]
+  
+  snmp/csr28_udp:
+    endpoint: udp://172.20.20.28:161
+    version: v2c
+    community: public
+    collection_interval: 15s
+    timeout: 10s
+    resource_attributes:
+      host.name: { scalar_oid: "1.3.6.1.2.1.1.5.0" }
+    metrics:
+      network.udp.in.datagrams:
+        unit: "1"
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.7.1.0"
+            resource_attributes: ["host.name"]
+  
+  snmp/csr28_arp:
+    endpoint: udp://172.20.20.28:161
+    version: v2c
+    community: public
+    collection_interval: 30s
+    timeout: 10s
+    resource_attributes:
+      host.name: { scalar_oid: "1.3.6.1.2.1.1.5.0" }
+    attributes:
+      arp.ifindex: { oid: "1.3.6.1.2.1.4.22.1.1" }
+      arp.ip: { oid: "1.3.6.1.2.1.4.22.1.3" }
+      arp.mac: { oid: "1.3.6.1.2.1.4.22.1.2" }
+    metrics:
+      network.arp.entry:
+        unit: "1"
+        gauge: { value_type: int }
+        column_oids:
+          - oid: "1.3.6.1.2.1.4.22.1.4"
+            attributes: [ { name: arp.ifindex }, { name: arp.ip }, { name: arp.mac } ]
+            resource_attributes: ["host.name"]
+  
+
+
+  snmp/csr23_combined:
+    endpoint: udp://172.20.20.23:161
+    version: v2c
+    community: public
+    collection_interval: 10s
+    timeout: 10s
+    resource_attributes:
+      host.name: { scalar_oid: "1.3.6.1.2.1.1.5.0" }
+    attributes:
+      if.index: { oid: "1.3.6.1.2.1.2.2.1.1" }
+      if.name: { oid: "1.3.6.1.2.1.31.1.1.1.1" }
+    metrics:
+      system.uptime:
+        unit: s
+        gauge: { value_type: double }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.1.3.0"
+            resource_attributes: ["host.name"]
+      network.interface.in.bytes:
+        unit: By
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        column_oids:
+          - oid: "1.3.6.1.2.1.31.1.1.1.6"
+            attributes: [ { name: if.index }, { name: if.name } ]
+            resource_attributes: ["host.name"]
+      network.interface.out.bytes:
+        unit: By
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        column_oids:
+          - oid: "1.3.6.1.2.1.31.1.1.1.10"
+            attributes: [ { name: if.index }, { name: if.name } ]
+            resource_attributes: ["host.name"]
+
+  # ============================================
+  # CSR24 - LLDP + Combined metrics
+  # ============================================
+
+  snmp/csr24_combined:
+    endpoint: udp://172.20.20.24:161
+    version: v2c
+    community: public
+    collection_interval: 10s
+    timeout: 10s
+    resource_attributes:
+      host.name: { scalar_oid: "1.3.6.1.2.1.1.5.0" }
+    attributes:
+      if.index: { oid: "1.3.6.1.2.1.2.2.1.1" }
+      if.name: { oid: "1.3.6.1.2.1.31.1.1.1.1" }
+    metrics:
+      system.uptime:
+        unit: s
+        gauge: { value_type: double }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.1.3.0"
+            resource_attributes: ["host.name"]
+      network.interface.in.bytes:
+        unit: By
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        column_oids:
+          - oid: "1.3.6.1.2.1.31.1.1.1.6"
+            attributes: [ { name: if.index }, { name: if.name } ]
+            resource_attributes: ["host.name"]
+      network.interface.out.bytes:
+        unit: By
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        column_oids:
+          - oid: "1.3.6.1.2.1.31.1.1.1.10"
+            attributes: [ { name: if.index }, { name: if.name } ]
+            resource_attributes: ["host.name"]
+
+  # ============================================
+  # CSR25 - LLDP + Combined metrics
+  # ============================================
+
+  snmp/csr25_combined:
+    endpoint: udp://172.20.20.25:161
+    version: v2c
+    community: public
+    collection_interval: 10s
+    timeout: 10s
+    resource_attributes:
+      host.name: { scalar_oid: "1.3.6.1.2.1.1.5.0" }
+    attributes:
+      if.index: { oid: "1.3.6.1.2.1.2.2.1.1" }
+      if.name: { oid: "1.3.6.1.2.1.31.1.1.1.1" }
+    metrics:
+      system.uptime:
+        unit: s
+        gauge: { value_type: double }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.1.3.0"
+            resource_attributes: ["host.name"]
+      network.interface.in.bytes:
+        unit: By
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        column_oids:
+          - oid: "1.3.6.1.2.1.31.1.1.1.6"
+            attributes: [ { name: if.index }, { name: if.name } ]
+            resource_attributes: ["host.name"]
+      network.interface.out.bytes:
+        unit: By
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        column_oids:
+          - oid: "1.3.6.1.2.1.31.1.1.1.10"
+            attributes: [ { name: if.index }, { name: if.name } ]
+            resource_attributes: ["host.name"]
+
+  # ============================================
+  # CSR26 - LLDP + Combined metrics
+  # ============================================
+
+  snmp/csr26_combined:
+    endpoint: udp://172.20.20.26:161
+    version: v2c
+    community: public
+    collection_interval: 10s
+    timeout: 10s
+    resource_attributes:
+      host.name: { scalar_oid: "1.3.6.1.2.1.1.5.0" }
+    attributes:
+      if.index: { oid: "1.3.6.1.2.1.2.2.1.1" }
+      if.name: { oid: "1.3.6.1.2.1.31.1.1.1.1" }
+    metrics:
+      system.uptime:
+        unit: s
+        gauge: { value_type: double }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.1.3.0"
+            resource_attributes: ["host.name"]
+      network.interface.in.bytes:
+        unit: By
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        column_oids:
+          - oid: "1.3.6.1.2.1.31.1.1.1.6"
+            attributes: [ { name: if.index }, { name: if.name } ]
+            resource_attributes: ["host.name"]
+      network.interface.out.bytes:
+        unit: By
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        column_oids:
+          - oid: "1.3.6.1.2.1.31.1.1.1.10"
+            attributes: [ { name: if.index }, { name: if.name } ]
+            resource_attributes: ["host.name"]
+
+  # ============================================
+  # CSR27 - LLDP + Combined metrics
+  # ============================================
+
+  snmp/csr27_combined:
+    endpoint: udp://172.20.20.27:161
+    version: v2c
+    community: public
+    collection_interval: 10s
+    timeout: 10s
+    resource_attributes:
+      host.name: { scalar_oid: "1.3.6.1.2.1.1.5.0" }
+    attributes:
+      if.index: { oid: "1.3.6.1.2.1.2.2.1.1" }
+      if.name: { oid: "1.3.6.1.2.1.31.1.1.1.1" }
+    metrics:
+      system.uptime:
+        unit: s
+        gauge: { value_type: double }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.1.3.0"
+            resource_attributes: ["host.name"]
+      network.interface.in.bytes:
+        unit: By
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        column_oids:
+          - oid: "1.3.6.1.2.1.31.1.1.1.6"
+            attributes: [ { name: if.index }, { name: if.name } ]
+            resource_attributes: ["host.name"]
+      network.interface.out.bytes:
+        unit: By
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        column_oids:
+          - oid: "1.3.6.1.2.1.31.1.1.1.10"
+            attributes: [ { name: if.index }, { name: if.name } ]
+            resource_attributes: ["host.name"]
+
+  # ============================================
+  # CSR29 - LLDP + Combined metrics
+  # ============================================
+
+  snmp/csr29_combined:
+    endpoint: udp://172.20.20.29:161
+    version: v2c
+    community: public
+    collection_interval: 10s
+    timeout: 10s
+    resource_attributes:
+      host.name: { scalar_oid: "1.3.6.1.2.1.1.5.0" }
+    attributes:
+      if.index: { oid: "1.3.6.1.2.1.2.2.1.1" }
+      if.name: { oid: "1.3.6.1.2.1.31.1.1.1.1" }
+    metrics:
+      system.uptime:
+        unit: s
+        gauge: { value_type: double }
+        scalar_oids:
+          - oid: "1.3.6.1.2.1.1.3.0"
+            resource_attributes: ["host.name"]
+      network.interface.in.bytes:
+        unit: By
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        column_oids:
+          - oid: "1.3.6.1.2.1.31.1.1.1.6"
+            attributes: [ { name: if.index }, { name: if.name } ]
+            resource_attributes: ["host.name"]
+      network.interface.out.bytes:
+        unit: By
+        sum: { value_type: int, monotonic: true, aggregation: cumulative }
+        column_oids:
+          - oid: "1.3.6.1.2.1.31.1.1.1.10"
+            attributes: [ { name: if.index }, { name: if.name } ]
+            resource_attributes: ["host.name"]
+
+
+  snmp/csr23_lldp:
+    endpoint: udp://172.20.20.23:161
+    version: v2c
+    community: public
+    collection_interval: 30s
+    timeout: 10s
+    resource_attributes:
+      host.name: {{ scalar_oid: "1.3.6.1.2.1.1.5.0" }}
+    attributes:
+      network.lldp.rem.sysname: {{ oid: "1.0.8802.1.1.2.1.4.1.1.9" }}
+    metrics:
+      network.lldp.neighbors:
+        unit: "1"
+        gauge: {{ value_type: int }}
+        column_oids:
+          - oid: "1.0.8802.1.1.2.1.4.1.1.4"
+            attributes: [ {{ name: network.lldp.rem.sysname }} ]
+            resource_attributes: ["host.name"]
+
+  snmp/csr24_lldp:
+    endpoint: udp://172.20.20.24:161
+    version: v2c
+    community: public
+    collection_interval: 30s
+    timeout: 10s
+    resource_attributes:
+      host.name: {{ scalar_oid: "1.3.6.1.2.1.1.5.0" }}
+    attributes:
+      network.lldp.rem.sysname: {{ oid: "1.0.8802.1.1.2.1.4.1.1.9" }}
+    metrics:
+      network.lldp.neighbors:
+        unit: "1"
+        gauge: {{ value_type: int }}
+        column_oids:
+          - oid: "1.0.8802.1.1.2.1.4.1.1.4"
+            attributes: [ {{ name: network.lldp.rem.sysname }} ]
+            resource_attributes: ["host.name"]
+
+  snmp/csr25_lldp:
+    endpoint: udp://172.20.20.25:161
+    version: v2c
+    community: public
+    collection_interval: 30s
+    timeout: 10s
+    resource_attributes:
+      host.name: {{ scalar_oid: "1.3.6.1.2.1.1.5.0" }}
+    attributes:
+      network.lldp.rem.sysname: {{ oid: "1.0.8802.1.1.2.1.4.1.1.9" }}
+    metrics:
+      network.lldp.neighbors:
+        unit: "1"
+        gauge: {{ value_type: int }}
+        column_oids:
+          - oid: "1.0.8802.1.1.2.1.4.1.1.4"
+            attributes: [ {{ name: network.lldp.rem.sysname }} ]
+            resource_attributes: ["host.name"]
+
+  snmp/csr26_lldp:
+    endpoint: udp://172.20.20.26:161
+    version: v2c
+    community: public
+    collection_interval: 30s
+    timeout: 10s
+    resource_attributes:
+      host.name: {{ scalar_oid: "1.3.6.1.2.1.1.5.0" }}
+    attributes:
+      network.lldp.rem.sysname: {{ oid: "1.0.8802.1.1.2.1.4.1.1.9" }}
+    metrics:
+      network.lldp.neighbors:
+        unit: "1"
+        gauge: {{ value_type: int }}
+        column_oids:
+          - oid: "1.0.8802.1.1.2.1.4.1.1.4"
+            attributes: [ {{ name: network.lldp.rem.sysname }} ]
+            resource_attributes: ["host.name"]
+
+  snmp/csr27_lldp:
+    endpoint: udp://172.20.20.27:161
+    version: v2c
+    community: public
+    collection_interval: 30s
+    timeout: 10s
+    resource_attributes:
+      host.name: {{ scalar_oid: "1.3.6.1.2.1.1.5.0" }}
+    attributes:
+      network.lldp.rem.sysname: {{ oid: "1.0.8802.1.1.2.1.4.1.1.9" }}
+    metrics:
+      network.lldp.neighbors:
+        unit: "1"
+        gauge: {{ value_type: int }}
+        column_oids:
+          - oid: "1.0.8802.1.1.2.1.4.1.1.4"
+            attributes: [ {{ name: network.lldp.rem.sysname }} ]
+            resource_attributes: ["host.name"]
+
+  snmp/csr28_lldp:
+    endpoint: udp://172.20.20.28:161
+    version: v2c
+    community: public
+    collection_interval: 30s
+    timeout: 10s
+    resource_attributes:
+      host.name: {{ scalar_oid: "1.3.6.1.2.1.1.5.0" }}
+    attributes:
+      network.lldp.rem.sysname: {{ oid: "1.0.8802.1.1.2.1.4.1.1.9" }}
+    metrics:
+      network.lldp.neighbors:
+        unit: "1"
+        gauge: {{ value_type: int }}
+        column_oids:
+          - oid: "1.0.8802.1.1.2.1.4.1.1.4"
+            attributes: [ {{ name: network.lldp.rem.sysname }} ]
+            resource_attributes: ["host.name"]
+
+  snmp/csr29_lldp:
+    endpoint: udp://172.20.20.29:161
+    version: v2c
+    community: public
+    collection_interval: 30s
+    timeout: 10s
+    resource_attributes:
+      host.name: {{ scalar_oid: "1.3.6.1.2.1.1.5.0" }}
+    attributes:
+      network.lldp.rem.sysname: {{ oid: "1.0.8802.1.1.2.1.4.1.1.9" }}
+    metrics:
+      network.lldp.neighbors:
+        unit: "1"
+        gauge: {{ value_type: int }}
+        column_oids:
+          - oid: "1.0.8802.1.1.2.1.4.1.1.4"
+            attributes: [ {{ name: network.lldp.rem.sysname }} ]
+            resource_attributes: ["host.name"]
+
+processors:
+  resource/system:
+    attributes:
+      - { key: data_stream.type, action: upsert, value: metrics }
+      - { key: data_stream.dataset, action: upsert, value: system }
+      - { key: data_stream.namespace, action: upsert, value: prod }
+  
+  resource/memory:
+    attributes:
+      - { key: data_stream.type, action: upsert, value: metrics }
+      - { key: data_stream.dataset, action: upsert, value: memory }
+      - { key: data_stream.namespace, action: upsert, value: prod }
+  
+  resource/interface:
+    attributes:
+      - { key: data_stream.type, action: upsert, value: metrics }
+      - { key: data_stream.dataset, action: upsert, value: interface }
+      - { key: data_stream.namespace, action: upsert, value: prod }
+  
+  resource/ipstats:
+    attributes:
+      - { key: data_stream.type, action: upsert, value: metrics }
+      - { key: data_stream.dataset, action: upsert, value: ipstats }
+      - { key: data_stream.namespace, action: upsert, value: prod }
+  
+  resource/tcp:
+    attributes:
+      - { key: data_stream.type, action: upsert, value: metrics }
+      - { key: data_stream.dataset, action: upsert, value: tcp }
+      - { key: data_stream.namespace, action: upsert, value: prod }
+  
+  resource/udp:
+    attributes:
+      - { key: data_stream.type, action: upsert, value: metrics }
+      - { key: data_stream.dataset, action: upsert, value: udp }
+      - { key: data_stream.namespace, action: upsert, value: prod }
+  
+  resource/arp:
+    attributes:
+      - { key: data_stream.type, action: upsert, value: metrics }
+      - { key: data_stream.dataset, action: upsert, value: arp }
+      - { key: data_stream.namespace, action: upsert, value: prod }
+  
+  resource/lldp:
+    attributes:
+      - { key: data_stream.type, action: upsert, value: metrics }
+      - { key: data_stream.dataset, action: upsert, value: lldp }
+      - { key: data_stream.namespace, action: upsert, value: prod }
+  
+  transform/normalize:
+    error_mode: ignore
+    metric_statements:
+      - context: datapoint
+        statements:
+          - set(datapoint.value_double, datapoint.value_double / 100.0) where metric.name == "system.uptime"
+  
+  
+  batch:
+    timeout: 10s
+    send_batch_size: 200
+
+exporters:
+  elasticsearch/system:
+    endpoints: [ "https://featured-upgrade-6ffa2e.es.us-west2.gcp.elastic-cloud.com:443" ]
+    api_key: "VDBJT2hKb0JEX2tnaVRVa25kQ2I6bUFOTmdSQWZUMXg2MlJFOWI2MVZadw=="
+    mapping: { mode: ecs }
+  
+  elasticsearch/memory:
+    endpoints: [ "https://featured-upgrade-6ffa2e.es.us-west2.gcp.elastic-cloud.com:443" ]
+    api_key: "VDBJT2hKb0JEX2tnaVRVa25kQ2I6bUFOTmdSQWZUMXg2MlJFOWI2MVZadw=="
+    mapping: { mode: ecs }
+  
+  elasticsearch/interface:
+    endpoints: [ "https://featured-upgrade-6ffa2e.es.us-west2.gcp.elastic-cloud.com:443" ]
+    api_key: "VDBJT2hKb0JEX2tnaVRVa25kQ2I6bUFOTmdSQWZUMXg2MlJFOWI2MVZadw=="
+    mapping: { mode: ecs }
+  
+  elasticsearch/ipstats:
+    endpoints: [ "https://featured-upgrade-6ffa2e.es.us-west2.gcp.elastic-cloud.com:443" ]
+    api_key: "VDBJT2hKb0JEX2tnaVRVa25kQ2I6bUFOTmdSQWZUMXg2MlJFOWI2MVZadw=="
+    mapping: { mode: ecs }
+  
+  elasticsearch/tcp:
+    endpoints: [ "https://featured-upgrade-6ffa2e.es.us-west2.gcp.elastic-cloud.com:443" ]
+    api_key: "VDBJT2hKb0JEX2tnaVRVa25kQ2I6bUFOTmdSQWZUMXg2MlJFOWI2MVZadw=="
+    mapping: { mode: ecs }
+  
+  elasticsearch/udp:
+    endpoints: [ "https://featured-upgrade-6ffa2e.es.us-west2.gcp.elastic-cloud.com:443" ]
+    api_key: "VDBJT2hKb0JEX2tnaVRVa25kQ2I6bUFOTmdSQWZUMXg2MlJFOWI2MVZadw=="
+    mapping: { mode: ecs }
+  
+  elasticsearch/arp:
+    endpoints: [ "https://featured-upgrade-6ffa2e.es.us-west2.gcp.elastic-cloud.com:443" ]
+    api_key: "VDBJT2hKb0JEX2tnaVRVa25kQ2I6bUFOTmdSQWZUMXg2MlJFOWI2MVZadw=="
+    mapping: { mode: ecs }
+  
+  elasticsearch/lldp:
+    endpoints: [ "https://featured-upgrade-6ffa2e.es.us-west2.gcp.elastic-cloud.com:443" ]
+    api_key: "VDBJT2hKb0JEX2tnaVRVa25kQ2I6bUFOTmdSQWZUMXg2MlJFOWI2MVZadw=="
+    mapping: { mode: ecs }
+  
+  debug:
+    verbosity: detailed
+    sampling_initial: 5
+    sampling_thereafter: 200
+
+service:
+  pipelines:
+    metrics/system:
+      receivers:
+        - snmp/csr28_system
+        - snmp/csr29_combined
+        - snmp/csr27_combined
+        - snmp/csr26_combined
+        - snmp/csr25_combined
+        - snmp/csr24_combined
+        - snmp/csr23_combined
+      processors:
+        - resource/system
+        - transform/normalize
+        - batch
+      exporters:
+        - elasticsearch/system
+        - debug
+    
+    metrics/memory:
+      receivers:
+        - snmp/csr28_memory
+      processors:
+        - resource/memory
+        - batch
+      exporters:
+        - elasticsearch/memory
+        - debug
+    
+    metrics/interface:
+      receivers:
+        - snmp/csr28_interface
+        - snmp/csr29_combined
+        - snmp/csr27_combined
+        - snmp/csr26_combined
+        - snmp/csr25_combined
+        - snmp/csr24_combined
+        - snmp/csr23_combined
+      processors:
+        - resource/interface
+        - batch
+      exporters:
+        - elasticsearch/interface
+        - debug
+    
+    metrics/ipstats:
+      receivers:
+        - snmp/csr28_ipstats
+      processors:
+        - resource/ipstats
+        - batch
+      exporters:
+        - elasticsearch/ipstats
+        - debug
+    
+    metrics/tcp:
+      receivers:
+        - snmp/csr28_tcp
+      processors:
+        - resource/tcp
+        - batch
+      exporters:
+        - elasticsearch/tcp
+        - debug
+    
+    metrics/udp:
+      receivers:
+        - snmp/csr28_udp
+      processors:
+        - resource/udp
+        - batch
+      exporters:
+        - elasticsearch/udp
+        - debug
+    
+    metrics/arp:
+      receivers:
+        - snmp/csr28_arp
+      processors:
+        - resource/arp
+        - batch
+      exporters:
+        - elasticsearch/arp
+        - debug
+    
+    metrics/lldp:
+      receivers:
+        - snmp/csr23_lldp
+        - snmp/csr24_lldp
+        - snmp/csr25_lldp
+        - snmp/csr26_lldp
+        - snmp/csr27_lldp
+        - snmp/csr28_lldp
+        - snmp/csr29_lldp
+            processors:
+        - resource/lldp
+        - transform/normalize
+        - batch
+      exporters:
+        - elasticsearch/lldp
+        - debug
+  
+  telemetry:
+    logs: { level: info }

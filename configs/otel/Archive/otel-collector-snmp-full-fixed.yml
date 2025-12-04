@@ -1,0 +1,3 @@
+receivers:
+  # Keep all existing receivers from the working config...
+  # (I'll show you how to insert them properly)
