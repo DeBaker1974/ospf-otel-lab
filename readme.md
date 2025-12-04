@@ -1,4 +1,4 @@
-# Containerlab OSPF Simulation with OTEL, NetFlow, and SNMP
+# Containerlab OSPF Simulation with OTEL, NetFlow, and SNMP, shipping to Elasticsearch
 
 ## Introduction:
 
