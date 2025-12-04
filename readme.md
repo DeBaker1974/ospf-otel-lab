@@ -13,7 +13,7 @@ The primary focus is on comprehensive network observability, integrating three d
 Use case implemented:
 - Simulate SNMP Traps for CSR23 (eth1 down/up). Recover the trap in elastic.
 - Simulate CSR23 down/up. Visualize the status in the "CSR23 - Interface Status" dashboard
-- There are two Linux host for you to connect. They can be used to simulate additional workloads
+- There are two Linux hosts for you to connect. They can be used to simulate additional workloads
 
 ![Lab Topology](Images/lab-topology.jpg)
 
