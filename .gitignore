@@ -1,2 +1,21 @@
-# Ignore Elastic Agent runtime state
+
+# Elastic Agent runtime state
 configs/elastic-agent-state/
+configs/elastic-agent/state/
+configs/elastic-agent/data/
+
+# Logs
+logs/
+*.log
+*.pid
+
+# Backups and archives
+configs/logstash/pipeline/backups/
+configs/otel/backups/
+configs/otel/Archive/
+configs/elasticsearch/Archive/
+scripts/archive/
+Archive/
+
+# TLS runtime certs
+clab-ospf-network/.tls/
