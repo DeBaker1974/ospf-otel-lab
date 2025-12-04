@@ -10,7 +10,7 @@ The primary focus is on comprehensive network observability, integrating three d
 * **NetFlow (Traffic Analysis):** Exported from all routers and collected by an **Elastic Agent**.  
 * **SNMP Traps (Events/Logs):** Sent from csr23 and processed by **Logstash**.
 
-![Lab Architecture Diagram][/home/patrick_boulanger/ospf-otel-lab/Images/Lab topology2.jpg]
+![Lab Architecture Diagram][Images/lab-topology.jpg]
 
 # Quick Start:
 
