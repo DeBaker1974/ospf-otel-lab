@@ -10,7 +10,7 @@ The primary focus is on comprehensive network observability, integrating three d
 * **NetFlow (Traffic Analysis):** Exported from all routers and collected by an **Elastic Agent**.  
 * **SNMP Traps (Events/Logs):** Sent from csr23 and processed by **Logstash**.
 
-![Lab Architecture Diagram][Images/lab-topology.jpg]
+![Lab Topology](Images/lab-topology.jpg)
 
 # Quick Start:
 
