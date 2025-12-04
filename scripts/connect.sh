@@ -1,5 +1,4 @@
 #!/bin/bash
-
 # Colors
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -8,26 +7,22 @@ CYAN='\033[0;36m'
 BLUE='\033[0;34m'
 MAGENTA='\033[0;35m'
 NC='\033[0m'
-
 # Load environment
 ENV_FILE="$HOME/ospf-otel-lab/.env"
 if [ -f "$ENV_FILE" ]; then
     source "$ENV_FILE"
 fi
-
 clear
 echo -e "${CYAN}=========================================${NC}"
-echo -e "${CYAN}   OSPF OTEL Lab - Menu v21.3${NC}"
+echo -e "${CYAN}   OSPF OTEL Lab - Menu v21.4${NC}"
 echo -e "${CYAN}  Full Mesh Topology + VRRP${NC}"
 echo -e "${CYAN}  Elasticsearch Serverless${NC}"
 echo -e "${CYAN}=========================================${NC}"
 echo ""
-
 check_container() {
     docker ps --filter "name=$1" --filter "status=running" -q &>/dev/null
     return $?
 }
-
 status_indicator() {
     if check_container "$1"; then
         echo -e "${GREEN}●${NC}"
@@ -35,7 +30,6 @@ status_indicator() {
         echo -e "${RED}●${NC}"
     fi
 }
-
 while true; do
     echo -e "${YELLOW}ROUTERS:${NC}"
     echo "  1)  $(status_indicator clab-ospf-network-csr28) CSR28 - Core/Edge (172.20.20.28)"
@@ -85,6 +79,18 @@ while true; do
     echo "  38) Check AgentX sockets"
     echo "  39) Restart SNMP + LLDP on all routers"
     echo ""
+    echo -e "${MAGENTA}SNMP TRAP SIMULATION (CSR23):${NC}"
+    echo "  40) 🔴 Interface eth1 DOWN (trigger trap)"
+    echo "  41) 🟢 Interface eth1 UP (trigger trap)"
+    echo "  42) 🔴 Interface eth2 DOWN"
+    echo "  43) 🟢 Interface eth2 UP"
+    echo "  44) 🔴 Interface eth3 DOWN"
+    echo "  45) 🟢 Interface eth3 UP"
+    echo "  46) ⚡ Flap eth1 (down/up cycle)"
+    echo "  47) 📊 Watch Logstash for traps (live)"
+    echo "  48) 📋 Show CSR23 interface status"
+    echo "  49) 🔧 Verify trap configuration"
+    echo ""
     echo -e "${YELLOW}ELASTICSEARCH COMMANDS:${NC}"
     echo "  50) Configure Elasticsearch"
     echo "  51) Test Elasticsearch connection"
@@ -94,6 +100,7 @@ while true; do
     echo "  55) Show indices"
     echo "  56) Show collection rate"
     echo "  57) Per-router metrics count"
+    echo "  58) 📋 Query SNMP Traps from ES"
     echo ""
     echo -e "${YELLOW}TOPOLOGY & VISUALIZATION:${NC}"
     echo "  60) Show network topology (ASCII)"
@@ -126,10 +133,9 @@ while true; do
     echo ""
     echo -ne "${CYAN}Select option: ${NC}"
     read -r choice
-
     case $choice in
         # ========================================
-        # ROUTERS (1-7)
+        # ROUTERS (1-7) - Keep existing code
         # ========================================
         1) docker exec -it clab-ospf-network-csr28 vtysh ;;
         2) docker exec -it clab-ospf-network-csr24 vtysh ;;
@@ -513,7 +519,246 @@ CONNMATRIX
             ;;
         
         # ========================================
-        # ELASTICSEARCH COMMANDS (50-57)
+        # SNMP TRAP SIMULATION (40-49)
+        # ========================================
+        40)
+            clear
+            echo -e "${RED}=== Bringing eth1 DOWN on CSR23 ===${NC}"
+            echo ""
+            echo -e "${YELLOW}This will:${NC}"
+            echo "  • Disable eth1 (P2P link to CSR26)"
+            echo "  • Send linkDown SNMP trap to Logstash"
+            echo "  • Affect OSPF adjacency with CSR26"
+            echo ""
+            read -p "Continue? (y/n): " confirm
+            if [[ "$confirm" =~ ^[Yy]$ ]]; then
+                echo ""
+                echo "1. Bringing eth1 down..."
+                docker exec clab-ospf-network-csr23 ip link set eth1 down
+                echo -e "   ${GREEN}✓${NC} eth1 is now DOWN"
+                
+                echo ""
+                echo "2. Sending linkDown trap (OID 1.3.6.1.6.3.1.1.5.3)..."
+                docker exec clab-ospf-network-csr23 snmptrap -v2c -c public 172.20.20.31:1062 '' \
+                    1.3.6.1.6.3.1.1.5.3 \
+                    1.3.6.1.2.1.2.2.1.1.2 i 2 \
+                    1.3.6.1.2.1.2.2.1.2.2 s "eth1" \
+                    1.3.6.1.2.1.2.2.1.7.2 i 2 \
+                    1.3.6.1.2.1.2.2.1.8.2 i 2 2>/dev/null
+                
+                if [ $? -eq 0 ]; then
+                    echo -e "   ${GREEN}✓${NC} linkDown trap sent to 172.20.20.31:1062"
+                else
+                    echo -e "   ${RED}✗${NC} Failed to send trap (installing snmp tools...)"
+                    docker exec clab-ospf-network-csr23 apk add --no-cache net-snmp-tools >/dev/null 2>&1
+                    docker exec clab-ospf-network-csr23 snmptrap -v2c -c public 172.20.20.31:1062 '' \
+                        1.3.6.1.6.3.1.1.5.3 \
+                        1.3.6.1.2.1.2.2.1.1.2 i 2 \
+                        1.3.6.1.2.1.2.2.1.2.2 s "eth1" \
+                        1.3.6.1.2.1.2.2.1.7.2 i 2 \
+                        1.3.6.1.2.1.2.2.1.8.2 i 2 && echo -e "   ${GREEN}✓${NC} Trap sent (after installing tools)"
+                fi
+                
+                echo ""
+                echo -e "${CYAN}Checking Logstash for trap (last 5 lines with linkDown OID):${NC}"
+                sleep 2
+                docker logs --tail 50 clab-ospf-network-logstash 2>&1 | grep -E "1\.3\.6\.1\.6\.3\.1\.1\.5\.3|linkDown" | tail -5 || echo "  (No linkDown trap in recent logs yet)"
+            fi
+            ;;
+        41)
+            clear
+            echo -e "${GREEN}=== Bringing eth1 UP on CSR23 ===${NC}"
+            echo ""
+            read -p "Continue? (y/n): " confirm
+            if [[ "$confirm" =~ ^[Yy]$ ]]; then
+                echo ""
+                echo "1. Bringing eth1 up..."
+                docker exec clab-ospf-network-csr23 ip link set eth1 up
+                echo -e "   ${GREEN}✓${NC} eth1 is now UP"
+                
+                echo ""
+                echo "2. Sending linkUp trap (OID 1.3.6.1.6.3.1.1.5.4)..."
+                docker exec clab-ospf-network-csr23 snmptrap -v2c -c public 172.20.20.31:1062 '' \
+                    1.3.6.1.6.3.1.1.5.4 \
+                    1.3.6.1.2.1.2.2.1.1.2 i 2 \
+                    1.3.6.1.2.1.2.2.1.2.2 s "eth1" \
+                    1.3.6.1.2.1.2.2.1.7.2 i 1 \
+                    1.3.6.1.2.1.2.2.1.8.2 i 1 2>/dev/null
+                
+                if [ $? -eq 0 ]; then
+                    echo -e "   ${GREEN}✓${NC} linkUp trap sent"
+                else
+                    docker exec clab-ospf-network-csr23 apk add --no-cache net-snmp-tools >/dev/null 2>&1
+                    docker exec clab-ospf-network-csr23 snmptrap -v2c -c public 172.20.20.31:1062 '' \
+                        1.3.6.1.6.3.1.1.5.4 \
+                        1.3.6.1.2.1.2.2.1.1.2 i 2 \
+                        1.3.6.1.2.1.2.2.1.2.2 s "eth1" \
+                        1.3.6.1.2.1.2.2.1.7.2 i 1 \
+                        1.3.6.1.2.1.2.2.1.8.2 i 1
+                fi
+                
+                echo ""
+                echo "OSPF will reconverge in ~40 seconds"
+                echo ""
+                docker logs --tail 50 clab-ospf-network-logstash 2>&1 | grep -E "1\.3\.6\.1\.6\.3\.1\.1\.5\.4|linkUp" | tail -3 || echo "  (Checking for linkUp trap...)"
+            fi
+            ;;
+        42)
+            clear
+            echo -e "${RED}=== Bringing eth2 DOWN on CSR23 (link to CSR28) ===${NC}"
+            read -p "Continue? (y/n): " confirm
+            if [[ "$confirm" =~ ^[Yy]$ ]]; then
+                docker exec clab-ospf-network-csr23 ip link set eth2 down
+                docker exec clab-ospf-network-csr23 snmptrap -v2c -c public 172.20.20.31:1062 '' \
+                    1.3.6.1.6.3.1.1.5.3 \
+                    1.3.6.1.2.1.2.2.1.2.3 s "eth2" \
+                    1.3.6.1.2.1.2.2.1.8.3 i 2 2>/dev/null
+                echo -e "${GREEN}✓${NC} eth2 DOWN + trap sent"
+            fi
+            ;;
+        43)
+            clear
+            echo -e "${GREEN}=== Bringing eth2 UP on CSR23 ===${NC}"
+            read -p "Continue? (y/n): " confirm
+            if [[ "$confirm" =~ ^[Yy]$ ]]; then
+                docker exec clab-ospf-network-csr23 ip link set eth2 up
+                docker exec clab-ospf-network-csr23 snmptrap -v2c -c public 172.20.20.31:1062 '' \
+                    1.3.6.1.6.3.1.1.5.4 \
+                    1.3.6.1.2.1.2.2.1.2.3 s "eth2" \
+                    1.3.6.1.2.1.2.2.1.8.3 i 1 2>/dev/null
+                echo -e "${GREEN}✓${NC} eth2 UP + trap sent"
+            fi
+            ;;
+        44)
+            clear
+            echo -e "${RED}=== Bringing eth3 DOWN on CSR23 (link to CSR24) ===${NC}"
+            read -p "Continue? (y/n): " confirm
+            if [[ "$confirm" =~ ^[Yy]$ ]]; then
+                docker exec clab-ospf-network-csr23 ip link set eth3 down
+                docker exec clab-ospf-network-csr23 snmptrap -v2c -c public 172.20.20.31:1062 '' \
+                    1.3.6.1.6.3.1.1.5.3 \
+                    1.3.6.1.2.1.2.2.1.2.4 s "eth3" \
+                    1.3.6.1.2.1.2.2.1.8.4 i 2 2>/dev/null
+                echo -e "${GREEN}✓${NC} eth3 DOWN + trap sent"
+            fi
+            ;;
+        45)
+            clear
+            echo -e "${GREEN}=== Bringing eth3 UP on CSR23 ===${NC}"
+            read -p "Continue? (y/n): " confirm
+            if [[ "$confirm" =~ ^[Yy]$ ]]; then
+                docker exec clab-ospf-network-csr23 ip link set eth3 up
+                docker exec clab-ospf-network-csr23 snmptrap -v2c -c public 172.20.20.31:1062 '' \
+                    1.3.6.1.6.3.1.1.5.4 \
+                    1.3.6.1.2.1.2.2.1.2.4 s "eth3" \
+                    1.3.6.1.2.1.2.2.1.8.4 i 1 2>/dev/null
+                echo -e "${GREEN}✓${NC} eth3 UP + trap sent"
+            fi
+            ;;
+        46)
+            clear
+            echo -e "${MAGENTA}=== Flapping eth1 on CSR23 (Down → Wait → Up) ===${NC}"
+            echo ""
+            echo "This generates 2 traps: linkDown + linkUp"
+            echo ""
+            read -p "Continue? (y/n): " confirm
+            if [[ "$confirm" =~ ^[Yy]$ ]]; then
+                # Ensure snmptrap is available
+                docker exec clab-ospf-network-csr23 which snmptrap >/dev/null 2>&1 || \
+                    docker exec clab-ospf-network-csr23 apk add --no-cache net-snmp-tools >/dev/null 2>&1
+                
+                echo ""
+                echo -e "${RED}[$(date +%H:%M:%S)]${NC} Bringing eth1 DOWN..."
+                docker exec clab-ospf-network-csr23 ip link set eth1 down
+                docker exec clab-ospf-network-csr23 snmptrap -v2c -c public 172.20.20.31:1062 '' \
+                    1.3.6.1.6.3.1.1.5.3 \
+                    1.3.6.1.2.1.2.2.1.2.2 s "eth1" \
+                    1.3.6.1.2.1.2.2.1.8.2 i 2
+                echo -e "   ${GREEN}✓${NC} linkDown trap sent"
+                
+                echo ""
+                echo "Waiting 10 seconds..."
+                for i in {10..1}; do
+                    echo -ne "\r  $i seconds remaining...  "
+                    sleep 1
+                done
+                echo ""
+                
+                echo -e "${GREEN}[$(date +%H:%M:%S)]${NC} Bringing eth1 UP..."
+                docker exec clab-ospf-network-csr23 ip link set eth1 up
+                docker exec clab-ospf-network-csr23 snmptrap -v2c -c public 172.20.20.31:1062 '' \
+                    1.3.6.1.6.3.1.1.5.4 \
+                    1.3.6.1.2.1.2.2.1.2.2 s "eth1" \
+                    1.3.6.1.2.1.2.2.1.8.2 i 1
+                echo -e "   ${GREEN}✓${NC} linkUp trap sent"
+                
+                echo ""
+                echo -e "${GREEN}✓${NC} Flap complete! Checking Logstash for traps..."
+                sleep 2
+                echo ""
+                docker logs --tail 30 clab-ospf-network-logstash 2>&1 | grep -E "1\.3\.6\.1\.6\.3\.1\.1\.5\.[34]|eth1" | tail -6
+            fi
+            ;;
+        47)
+            clear
+            echo -e "${CYAN}=== Watching for Interface Up/Down Traps (Ctrl+C to exit) ===${NC}"
+            echo ""
+            echo "Filtering for linkDown (5.3) and linkUp (5.4) OIDs"
+            echo "Trigger a trap with options 40-46"
+            echo ""
+            docker logs -f clab-ospf-network-logstash 2>&1 | grep --line-buffered -E "1\.3\.6\.1\.6\.3\.1\.1\.5\.[34]|linkDown|linkUp|eth[0-9].*down|eth[0-9].*up"
+            ;;
+        48)
+            clear
+            echo -e "${CYAN}=== CSR23 Interface Status ===${NC}"
+            echo ""
+            echo -e "${YELLOW}Interface State:${NC}"
+            docker exec clab-ospf-network-csr23 ip -br link show | grep -E "eth[0-9]"
+            echo ""
+            echo -e "${YELLOW}Interface to Neighbor Mapping:${NC}"
+            echo "  eth0 - Management (172.20.20.23)"
+            echo "  eth1 - P2P to CSR26"
+            echo "  eth2 - P2P to CSR28 (Core)"
+            echo "  eth3 - P2P to CSR24"
+            echo "  eth4 - P2P to CSR25"
+            echo "  eth5 - P2P to CSR27"
+            echo ""
+            echo -e "${YELLOW}OSPF Neighbors:${NC}"
+            docker exec clab-ospf-network-csr23 vtysh -c "show ip ospf neighbor" 2>/dev/null | head -15
+            ;;
+        49)
+            clear
+            echo -e "${CYAN}=== Verify SNMP Trap Setup ===${NC}"
+            echo ""
+            echo -e "${YELLOW}1. snmptrap tool on CSR23:${NC}"
+            docker exec clab-ospf-network-csr23 which snmptrap 2>/dev/null && echo "   ✓ Installed" || {
+                echo "   ✗ Not installed - installing..."
+                docker exec clab-ospf-network-csr23 apk add --no-cache net-snmp-tools >/dev/null 2>&1
+                echo "   ✓ Installed now"
+            }
+            
+            echo ""
+            echo -e "${YELLOW}2. Logstash listening:${NC}"
+            docker logs --tail 100 clab-ospf-network-logstash 2>&1 | grep -i "trap receiver started" | tail -1 || echo "   (Check Logstash logs)"
+            
+            echo ""
+            echo -e "${YELLOW}3. Network connectivity:${NC}"
+            docker exec clab-ospf-network-csr23 ping -c 1 -W 2 172.20.20.31 >/dev/null 2>&1 && echo "   ✓ CSR23 can reach Logstash" || echo "   ✗ Cannot reach Logstash"
+            
+            echo ""
+            echo -e "${YELLOW}4. Sending test trap:${NC}"
+            docker exec clab-ospf-network-csr23 snmptrap -v2c -c public 172.20.20.31:1062 '' 1.3.6.1.6.3.1.1.5.3 1.3.6.1.2.1.2.2.1.2.99 s "test-interface" 2>/dev/null
+            echo "   Test trap sent, checking logs..."
+            sleep 2
+            docker logs --tail 10 clab-ospf-network-logstash 2>&1 | grep -E "test-interface|5\.3" | tail -3 || echo "   (May take a moment to appear)"
+            
+            echo ""
+            echo -e "${YELLOW}5. Recent traps in Logstash (any type):${NC}"
+            docker logs --tail 50 clab-ospf-network-logstash 2>&1 | grep -E "snmpTrapOID|TRAP" | tail -5
+            ;;
+
+        # ========================================
+        # ELASTICSEARCH COMMANDS (50-58)
         # ========================================
         50)
             clear
@@ -593,6 +838,60 @@ CONNMATRIX
                 done
             else
                 echo "Elasticsearch not configured"
+            fi
+            ;;
+        58)
+            clear
+            echo -e "${CYAN}=== Query SNMP Traps from Elasticsearch ===${NC}"
+            echo ""
+            if [ -f "$ENV_FILE" ]; then
+                source "$ENV_FILE"
+                
+                echo -e "${YELLOW}Total SNMP Trap Documents:${NC}"
+                TRAP_COUNT=$(curl -s -H "Authorization: ApiKey $ES_API_KEY" \
+                    "$ES_ENDPOINT/logs-snmp.trap-prod/_count" 2>/dev/null | jq -r '.count // 0')
+                echo "  Total: $TRAP_COUNT traps"
+                echo ""
+                
+                echo -e "${YELLOW}Recent Traps (last 10):${NC}"
+                curl -s -H "Authorization: ApiKey $ES_API_KEY" \
+                    "$ES_ENDPOINT/logs-snmp.trap-prod/_search" \
+                    -H 'Content-Type: application/json' \
+                    -d '{
+                        "size": 10,
+                        "sort": [{"@timestamp": "desc"}],
+                        "_source": ["@timestamp", "host.name", "event.action", "trap.oid", "message"]
+                    }' 2>/dev/null | jq -r '
+                        .hits.hits[]._source | 
+                        "\(.["@timestamp"]) | \(.["host.name"] // "unknown") | \(.["event.action"] // .["trap.oid"] // "unknown") | \(.message // "")"
+                    ' 2>/dev/null || echo "  No traps found or index doesn't exist"
+                
+                echo ""
+                echo -e "${YELLOW}Trap Summary by Type:${NC}"
+                curl -s -H "Authorization: ApiKey $ES_API_KEY" \
+                    "$ES_ENDPOINT/logs-snmp.trap-prod/_search" \
+                    -H 'Content-Type: application/json' \
+                    -d '{
+                        "size": 0,
+                        "aggs": {
+                            "by_action": {
+                                "terms": {"field": "event.action", "size": 10}
+                            }
+                        }
+                    }' 2>/dev/null | jq -r '
+                        .aggregations.by_action.buckets[] | 
+                        "  \(.key): \(.doc_count) events"
+                    ' 2>/dev/null || echo "  No aggregation data"
+                
+                echo ""
+                echo -e "${YELLOW}Traps in Last Hour:${NC}"
+                RECENT=$(curl -s -H "Authorization: ApiKey $ES_API_KEY" \
+                    "$ES_ENDPOINT/logs-snmp.trap-prod/_count" \
+                    -H 'Content-Type: application/json' \
+                    -d '{"query":{"range":{"@timestamp":{"gte":"now-1h"}}}}' 2>/dev/null | jq -r '.count // 0')
+                echo "  Last hour: $RECENT traps"
+            else
+                echo "✗ Elasticsearch not configured"
             fi
             ;;
         
