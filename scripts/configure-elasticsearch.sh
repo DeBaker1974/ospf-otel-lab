@@ -2,7 +2,7 @@
 
 echo "========================================="
 echo "Elasticsearch & Fleet Configuration"
-echo "  Supports: Serverless & Traditional"
+echo "  Supports: Cloud, Serverless & On-Premise"
 echo "========================================="
 echo ""
 
@@ -12,15 +12,8 @@ ENV_FILE="$HOME/ospf-otel-lab/.env"
 check_agent_version_exists() {
     local version=$1
     local url="https://artifacts.elastic.co/downloads/beats/elastic-agent/elastic-agent-${version}-linux-x86_64.tar.gz"
-    
-    # Use HEAD request to check if the file exists
     HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" -I "$url" 2>/dev/null)
-    
-    if [ "$HTTP_CODE" = "200" ]; then
-        return 0  # Version exists
-    else
-        return 1  # Version doesn't exist
-    fi
+    [ "$HTTP_CODE" = "200" ]
 }
 
 # Function to find the most recent available agent version
@@ -31,82 +24,84 @@ find_latest_available_agent_version() {
     
     echo "  Checking for Elastic Agent version $target_version..." >&2
     
-    # First, try the exact version
     if check_agent_version_exists "$target_version"; then
         echo "  ✓ Version $target_version is available" >&2
         echo "$target_version"
         return 0
     fi
     
-    echo "  ✗ Version $target_version not found" >&2
-    echo "  Searching for most recent available version..." >&2
+    echo "  ✗ Version $target_version not found, searching..." >&2
     
-    # Try previous patch versions (go back up to 10 versions)
     for i in $(seq $((patch - 1)) -1 0); do
         test_version="${major_minor}.${i}"
-        echo "  Trying version $test_version..." >&2
-        
         if check_agent_version_exists "$test_version"; then
-            echo "  ✓ Found available version: $test_version" >&2
+            echo "  ✓ Found: $test_version" >&2
             echo "$test_version"
             return 0
         fi
     done
     
-    # If we're in 9.x, try common stable versions
+    # Fallback versions
     if [[ "$major_minor" == "9."* ]]; then
-        echo "  Trying known stable 9.x versions..." >&2
-        for stable_ver in "9.2.1" "9.2.0" "9.1.1" "9.1.0" "9.0.0"; do
-            echo "  Trying stable version $stable_ver..." >&2
-            if check_agent_version_exists "$stable_ver"; then
-                echo "  ✓ Found stable version: $stable_ver" >&2
-                echo "$stable_ver"
-                return 0
-            fi
+        for v in "9.2.1" "9.2.0" "9.1.0"; do
+            check_agent_version_exists "$v" && echo "$v" && return 0
         done
-    fi
-    
-    # If we're in 8.x, try common stable versions
-    if [[ "$major_minor" == "8."* ]]; then
-        echo "  Trying known stable 8.x versions..." >&2
-        for stable_ver in "8.15.3" "8.15.2" "8.15.1" "8.15.0" "8.14.3" "8.14.2" "8.14.1" "8.14.0" "8.13.4"; do
-            echo "  Trying stable version $stable_ver..." >&2
-            if check_agent_version_exists "$stable_ver"; then
-                echo "  ✓ Found stable version: $stable_ver" >&2
-                echo "$stable_ver"
-                return 0
-            fi
-        done
-    fi
-    
-    # Last resort: return a known stable version based on major version
-    if [[ "$major_minor" == "9."* ]]; then
-        echo "  ⚠ Could not find compatible 9.x version, using fallback" >&2
         echo "9.2.1"
     else
-        echo "  ⚠ Could not find compatible version, using fallback" >&2
+        for v in "8.15.3" "8.15.2" "8.14.3"; do
+            check_agent_version_exists "$v" && echo "$v" && return 0
+        done
         echo "8.15.3"
     fi
-    return 1
 }
 
-# Function to test Elasticsearch connection (Serverless compatible)
+# Function to suggest port based on URL type
+suggest_port() {
+    local url=$1
+    local service=$2  # "elasticsearch" or "fleet"
+    
+    # Already has port
+    [[ $url =~ :[0-9]+$ ]] && return
+    
+    # Cloud URLs use 443
+    if [[ $url =~ elastic.*cloud|\.es\.|\.fleet\. ]]; then
+        echo "443"
+        return
+    fi
+    
+    # On-premise defaults
+    if [ "$service" = "fleet" ]; then
+        echo "8220"
+    else
+        echo "9200"
+    fi
+}
+
+# Function to test Elasticsearch connection
 test_elasticsearch() {
     local endpoint=$1
     local api_key=$2
+    local username=$3
+    local password=$4
     
     echo "Testing connection to Elasticsearch..."
     
-    # Test basic endpoint (works for both serverless and traditional)
-    RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" \
-        -H "Authorization: ApiKey $api_key" \
-        "$endpoint/" 2>/dev/null)
+    # Build curl command based on auth type
+    local curl_opts="-s -k"
+    if [ -n "$api_key" ]; then
+        RESPONSE=$(curl $curl_opts -o /dev/null -w "%{http_code}" -H "Authorization: ApiKey $api_key" "$endpoint/" 2>/dev/null)
+        CLUSTER_INFO=$(curl $curl_opts -H "Authorization: ApiKey $api_key" "$endpoint/" 2>/dev/null)
+    elif [ -n "$username" ]; then
+        RESPONSE=$(curl $curl_opts -o /dev/null -w "%{http_code}" -u "$username:$password" "$endpoint/" 2>/dev/null)
+        CLUSTER_INFO=$(curl $curl_opts -u "$username:$password" "$endpoint/" 2>/dev/null)
+    else
+        RESPONSE=$(curl $curl_opts -o /dev/null -w "%{http_code}" "$endpoint/" 2>/dev/null)
+        CLUSTER_INFO=$(curl $curl_opts "$endpoint/" 2>/dev/null)
+    fi
     
     if [ "$RESPONSE" = "200" ]; then
         echo "✓ Connection successful!"
         
-        # Get cluster/deployment info
-        CLUSTER_INFO=$(curl -s -H "Authorization: ApiKey $api_key" "$endpoint/" 2>/dev/null)
         VERSION=$(echo "$CLUSTER_INFO" | jq -r '.version.number // "unknown"')
         CLUSTER_NAME=$(echo "$CLUSTER_INFO" | jq -r '.cluster_name // .name // "unknown"')
         BUILD_FLAVOR=$(echo "$CLUSTER_INFO" | jq -r '.version.build_flavor // "unknown"')
@@ -117,273 +112,169 @@ test_elasticsearch() {
         echo "  Version:      $VERSION"
         echo "  Build Flavor: $BUILD_FLAVOR"
         
-        # Detect if serverless
-        if [[ "$BUILD_FLAVOR" == "serverless" ]] || [[ "$CLUSTER_NAME" =~ serverless ]]; then
+        if [[ "$BUILD_FLAVOR" == "serverless" ]]; then
             echo "  Type:         Serverless"
-            echo ""
-            echo "✓ Serverless deployment detected"
+        elif [[ "$BUILD_FLAVOR" == "default" ]]; then
+            echo "  Type:         On-Premise / Self-Managed"
         else
-            echo "  Type:         Traditional/Stateful"
+            echo "  Type:         Elastic Cloud"
         fi
         
-        # Test write permission by creating a test index
+        # Test write permission
         echo ""
         echo "Testing write permissions..."
         TEST_DOC='{"test":"connection","timestamp":"'$(date -u +"%Y-%m-%dT%H:%M:%S.000Z")'"}'
-        WRITE_RESPONSE=$(curl -s -X POST "$endpoint/test-ospf-otel/_doc" \
-            -H "Authorization: ApiKey $api_key" \
-            -H "Content-Type: application/json" \
-            -d "$TEST_DOC" 2>/dev/null)
+        
+        if [ -n "$api_key" ]; then
+            WRITE_RESPONSE=$(curl -s -k -X POST "$endpoint/test-ospf-otel/_doc" \
+                -H "Authorization: ApiKey $api_key" -H "Content-Type: application/json" -d "$TEST_DOC" 2>/dev/null)
+            curl -s -k -X DELETE "$endpoint/test-ospf-otel" -H "Authorization: ApiKey $api_key" >/dev/null 2>&1
+        elif [ -n "$username" ]; then
+            WRITE_RESPONSE=$(curl -s -k -X POST "$endpoint/test-ospf-otel/_doc" \
+                -u "$username:$password" -H "Content-Type: application/json" -d "$TEST_DOC" 2>/dev/null)
+            curl -s -k -X DELETE "$endpoint/test-ospf-otel" -u "$username:$password" >/dev/null 2>&1
+        fi
         
         if echo "$WRITE_RESPONSE" | grep -q '"result":"created"'; then
             echo "✓ Write permission confirmed"
-            
-            # Clean up test index
-            curl -s -X DELETE "$endpoint/test-ospf-otel" \
-                -H "Authorization: ApiKey $api_key" >/dev/null 2>&1
         else
-            echo "⚠ Write test inconclusive (may still work)"
+            echo "⚠ Write test inconclusive"
         fi
         
-        # Return version for agent compatibility
         echo "$VERSION"
         return 0
     else
         echo "✗ Connection failed (HTTP $RESPONSE)"
         echo ""
-        
-        # Try to get more details
-        ERROR_RESPONSE=$(curl -s \
-            -H "Authorization: ApiKey $api_key" \
-            "$endpoint/" 2>&1)
-        
-        if [ -n "$ERROR_RESPONSE" ]; then
-            echo "Response details:"
-            echo "$ERROR_RESPONSE" | jq '.' 2>/dev/null || echo "$ERROR_RESPONSE" | head -5
-            echo ""
-        fi
-        
-        echo "Common issues:"
-        echo "  1. Endpoint URL format:"
-        echo "     Serverless:   https://your-project.es.region.provider.elastic.cloud:443"
-        echo "     Traditional:  https://your-deployment.elastic-cloud.com:443"
-        echo ""
-        echo "  2. API Key format - Should be base64 encoded string"
-        echo ""
-        echo "  3. API Key permissions for Serverless:"
-        echo "     - Must have 'write' and 'auto_configure' on target indices"
-        echo ""
+        echo "Common endpoints:"
+        echo "  On-Premise:    http(s)://elasticsearch.local:9200"
+        echo "  Elastic Cloud: https://xxx.es.region.cloud.es.io:443"
+        echo "  Serverless:    https://xxx.es.region.elastic.cloud:443"
         return 1
     fi
 }
 
-# Function to configure Elasticsearch credentials
+# Function to configure Elasticsearch
 configure_elasticsearch() {
     echo "========================================="
     echo "Elasticsearch Configuration"
     echo "========================================="
     echo ""
-    echo "📌 SERVERLESS API Key Setup:"
-    echo ""
-    echo "In Kibana → Stack Management → Security → API Keys:"
-    echo ""
-    echo '{
-  "name": "ospf-otel-serverless",
-  "role_descriptors": {
-    "ospf_writer": {
-      "indices": [
-        {
-          "names": ["metrics-*", "lldp-topology", "logs-*"],
-          "privileges": ["write", "create_index", "auto_configure"]
-        }
-      ]
-    }
-  }
-}'
-    echo ""
-    echo "Copy the ENCODED (base64) API Key"
-    echo ""
-    echo "========================================="
+    echo "Supported deployments:"
+    echo "  • On-Premise:    http(s)://host:9200"
+    echo "  • Elastic Cloud: https://xxx.es.region.cloud.es.io:443"
+    echo "  • Serverless:    https://xxx.es.region.elastic.cloud:443"
     echo ""
 
     while true; do
         read -p "Elasticsearch Endpoint: " ES_ENDPOINT
         
-        if [ -z "$ES_ENDPOINT" ]; then
-            echo "✗ Endpoint cannot be empty"
-            continue
-        fi
+        [ -z "$ES_ENDPOINT" ] && echo "✗ Cannot be empty" && continue
+        [[ ! $ES_ENDPOINT =~ ^https?:// ]] && echo "✗ Must start with http:// or https://" && continue
         
-        # Validate URL format
-        if [[ ! $ES_ENDPOINT =~ ^https?:// ]]; then
-            echo "✗ Endpoint must start with http:// or https://"
-            continue
-        fi
-        
-        # Check if port is included
-        if [[ ! $ES_ENDPOINT =~ :[0-9]+$ ]] && [[ $ES_ENDPOINT =~ elastic.*cloud ]]; then
+        # Suggest port if missing
+        SUGGESTED_PORT=$(suggest_port "$ES_ENDPOINT" "elasticsearch")
+        if [ -n "$SUGGESTED_PORT" ]; then
             echo ""
-            echo "⚠ Warning: Elastic Cloud URLs typically need :443"
-            read -p "Add :443 to endpoint? (Y/n): " add_port
-            if [[ ! $add_port =~ ^[Nn]$ ]]; then
-                ES_ENDPOINT="${ES_ENDPOINT}:443"
-                echo "  Updated to: $ES_ENDPOINT"
-            fi
+            echo "⚠ No port specified. Common ports:"
+            echo "   On-Premise: 9200 | Cloud: 443"
+            read -p "Add :$SUGGESTED_PORT to endpoint? (Y/n): " add_port
+            [[ ! $add_port =~ ^[Nn]$ ]] && ES_ENDPOINT="${ES_ENDPOINT}:${SUGGESTED_PORT}" && echo "  Updated: $ES_ENDPOINT"
         fi
-        
         break
     done
 
     echo ""
-
-    while true; do
+    echo "Authentication:"
+    echo "  1) API Key (Cloud/Serverless/On-Prem)"
+    echo "  2) Username/Password (On-Premise)"
+    read -p "Select [1/2] (default: 1): " auth_method
+    
+    ES_USERNAME=""
+    ES_PASSWORD=""
+    ES_API_KEY=""
+    
+    if [[ "$auth_method" == "2" ]]; then
+        read -p "Username: " ES_USERNAME
+        read -sp "Password: " ES_PASSWORD
+        echo ""
+    else
+        echo ""
+        echo "Create API Key in Kibana → Stack Management → Security → API Keys"
         read -sp "API Key (base64 encoded): " ES_API_KEY
         echo ""
-        
-        if [ -z "$ES_API_KEY" ]; then
-            echo "✗ API Key cannot be empty"
-            continue
-        fi
-        
-        break
-    done
+    fi
 
     echo ""
-    echo "Testing connection..."
-    echo ""
-
-    DETECTED_VERSION=$(test_elasticsearch "$ES_ENDPOINT" "$ES_API_KEY" | tail -1)
+    DETECTED_VERSION=$(test_elasticsearch "$ES_ENDPOINT" "$ES_API_KEY" "$ES_USERNAME" "$ES_PASSWORD" | tail -1)
 
     if [ $? -eq 0 ]; then
         echo ""
         echo "✓ Elasticsearch connection validated"
         
-        # Determine agent version based on ES version
         echo ""
-        echo "Determining compatible Elastic Agent version..."
-        
-        if [[ "$DETECTED_VERSION" =~ ^9\. ]]; then
-            # ES 9.x detected - use matching 9.x agent
-            TARGET_VERSION="$DETECTED_VERSION"
-            echo "✓ Detected ES version $DETECTED_VERSION"
-            echo "  Targeting Elastic Agent version: $TARGET_VERSION"
-            AGENT_VERSION=$(find_latest_available_agent_version "$TARGET_VERSION")
-            
-        elif [[ "$DETECTED_VERSION" =~ ^8\. ]]; then
-            # ES 8.x detected, try to use same version
-            TARGET_VERSION="$DETECTED_VERSION"
-            echo "✓ Detected ES version $DETECTED_VERSION"
-            echo "  Targeting Elastic Agent version: $TARGET_VERSION"
-            AGENT_VERSION=$(find_latest_available_agent_version "$TARGET_VERSION")
-            
+        echo "Determining Elastic Agent version..."
+        if [[ "$DETECTED_VERSION" =~ ^[89]\. ]]; then
+            AGENT_VERSION=$(find_latest_available_agent_version "$DETECTED_VERSION")
         else
-            # Unknown version, use stable default
-            TARGET_VERSION="8.15.3"
-            echo "⚠ Unknown ES version: $DETECTED_VERSION"
-            echo "  Using default stable Elastic Agent version: $TARGET_VERSION"
-            AGENT_VERSION=$(find_latest_available_agent_version "$TARGET_VERSION")
+            AGENT_VERSION=$(find_latest_available_agent_version "8.15.3")
         fi
-        
-        echo ""
-        echo "========================================="
-        echo "✓ Selected Elastic Agent version: $AGENT_VERSION"
-        echo "========================================="
-        
+        echo "✓ Agent version: $AGENT_VERSION"
         return 0
     else
-        echo ""
         echo "✗ Elasticsearch connection failed"
         return 1
     fi
 }
 
-# Function to configure Fleet credentials
+# Function to configure Fleet
 configure_fleet() {
     echo ""
     echo "========================================="
     echo "Fleet Configuration"
     echo "========================================="
     echo ""
-    echo "Fleet allows you to centrally manage Elastic Agents."
-    echo ""
-    echo "📌 Fleet Server Setup:"
-    echo ""
-    echo "1. In Kibana → Fleet → Settings → Fleet Server hosts"
-    echo "   Copy the Fleet Server URL (e.g., https://xxx.fleet.elastic-cloud.com:443)"
-    echo ""
-    echo "2. In Kibana → Fleet → Enrollment tokens"
-    echo "   Copy an existing token OR create a new one for your policy"
-    echo ""
-    echo "========================================="
+    echo "Fleet Server URLs:"
+    echo "  • On-Premise:    https://fleet-server:8220"
+    echo "  • Elastic Cloud: https://xxx.fleet.region.cloud.es.io:443"
     echo ""
     
-    while true; do
-        read -p "Fleet Server URL: " FLEET_URL
-        
-        if [ -z "$FLEET_URL" ]; then
-            echo "⚠ Skipping Fleet configuration"
-            FLEET_URL=""
-            FLEET_ENROLLMENT_TOKEN=""
-            return 1
-        fi
-        
-        # Validate URL format
-        if [[ ! $FLEET_URL =~ ^https?:// ]]; then
-            echo "✗ Fleet URL must start with http:// or https://"
-            continue
-        fi
-        
-        # Check if port is included
-        if [[ ! $FLEET_URL =~ :[0-9]+$ ]] && [[ $FLEET_URL =~ fleet.*elastic.*cloud ]]; then
-            echo ""
-            echo "⚠ Warning: Fleet Cloud URLs typically need :443"
-            read -p "Add :443 to URL? (Y/n): " add_port
-            if [[ ! $add_port =~ ^[Nn]$ ]]; then
-                FLEET_URL="${FLEET_URL}:443"
-                echo "  Updated to: $FLEET_URL"
-            fi
-        fi
-        
-        break
-    done
+    read -p "Fleet Server URL (Enter to skip): " FLEET_URL
     
-    if [ -n "$FLEET_URL" ]; then
-        echo ""
-        while true; do
-            read -sp "Fleet Enrollment Token: " FLEET_ENROLLMENT_TOKEN
-            echo ""
-            
-            if [ -z "$FLEET_ENROLLMENT_TOKEN" ]; then
-                echo "✗ Token cannot be empty"
-                read -p "Skip Fleet configuration? (y/N): " skip_fleet
-                if [[ $skip_fleet =~ ^[Yy]$ ]]; then
-                    FLEET_URL=""
-                    FLEET_ENROLLMENT_TOKEN=""
-                    return 1
-                fi
-                continue
-            fi
-            
-            break
-        done
-    fi
-    
-    if [ -n "$FLEET_URL" ] && [ -n "$FLEET_ENROLLMENT_TOKEN" ]; then
-        echo ""
-        echo "✓ Fleet configuration captured"
-        echo "  URL: $FLEET_URL"
-        echo "  Token: ${FLEET_ENROLLMENT_TOKEN:0:20}..."
-        return 0
-    else
-        echo ""
+    if [ -z "$FLEET_URL" ]; then
         echo "⚠ Fleet configuration skipped"
         FLEET_URL=""
         FLEET_ENROLLMENT_TOKEN=""
         return 1
     fi
+    
+    [[ ! $FLEET_URL =~ ^https?:// ]] && echo "✗ Must start with http:// or https://" && return 1
+    
+    # Suggest port if missing
+    SUGGESTED_PORT=$(suggest_port "$FLEET_URL" "fleet")
+    if [ -n "$SUGGESTED_PORT" ]; then
+        echo ""
+        echo "⚠ No port specified. Common ports:"
+        echo "   On-Premise: 8220 | Cloud: 443"
+        read -p "Add :$SUGGESTED_PORT to URL? (Y/n): " add_port
+        [[ ! $add_port =~ ^[Nn]$ ]] && FLEET_URL="${FLEET_URL}:${SUGGESTED_PORT}" && echo "  Updated: $FLEET_URL"
+    fi
+    
+    echo ""
+    read -sp "Fleet Enrollment Token: " FLEET_ENROLLMENT_TOKEN
+    echo ""
+    
+    if [ -z "$FLEET_ENROLLMENT_TOKEN" ]; then
+        echo "✗ Token required"
+        FLEET_URL=""
+        return 1
+    fi
+    
+    echo "✓ Fleet configured: $FLEET_URL"
+    return 0
 }
 
-# Function to update Logstash pipeline configuration
+# Function to update Logstash pipeline
 update_logstash_pipeline() {
     local endpoint=$1
     local api_key=$2
@@ -391,23 +282,12 @@ update_logstash_pipeline() {
     PIPELINE_FILE="$HOME/ospf-otel-lab/configs/logstash/pipeline/snmp-traps.conf"
     
     echo ""
-    echo "========================================="
-    echo "Updating Logstash Pipeline Configuration"
-    echo "========================================="
-    echo ""
+    echo "Updating Logstash pipeline..."
     
-    # Backup existing config
-    if [ -f "$PIPELINE_FILE" ]; then
-        BACKUP_FILE="${PIPELINE_FILE}.backup-$(date +%s)"
-        cp "$PIPELINE_FILE" "$BACKUP_FILE"
-        echo "  Backup created: $(basename $BACKUP_FILE)"
-    fi
-    
-    # Create directory if it doesn't exist
     mkdir -p "$(dirname $PIPELINE_FILE)"
+    [ -f "$PIPELINE_FILE" ] && cp "$PIPELINE_FILE" "${PIPELINE_FILE}.backup-$(date +%s)"
     
-    # Create new pipeline with hardcoded values
-    cat > "$PIPELINE_FILE" << 'PIPELINEEOF'
+    cat > "$PIPELINE_FILE" << 'PIPELINE_EOF'
 input {
   snmptrap {
     host => "0.0.0.0"
@@ -417,36 +297,16 @@ input {
 }
 
 filter {
-  # Add CSR23 hostname
   if [host] == "172.20.20.23" {
-    mutate { 
-      add_field => { 
-        "host.name" => "csr23"
-        "host.ip" => "172.20.20.23"
-      }
-    }
+    mutate { add_field => { "host.name" => "csr23" "host.ip" => "172.20.20.23" } }
   }
-
-  # Identify trap type by OID
+  
   if [oid] == "1.3.6.1.6.3.1.1.5.3" {
-    mutate { 
-      add_tag => ["interface_down"]
-      add_field => { 
-        "event.action" => "interface-down"
-        "message" => "Interface down on %{[host.name]}"
-      }
-    }
+    mutate { add_tag => ["interface_down"] add_field => { "event.action" => "interface-down" } }
   } else if [oid] == "1.3.6.1.6.3.1.1.5.4" {
-    mutate { 
-      add_tag => ["interface_up"]
-      add_field => { 
-        "event.action" => "interface-up"
-        "message" => "Interface up on %{[host.name]}"
-      }
-    }
+    mutate { add_tag => ["interface_up"] add_field => { "event.action" => "interface-up" } }
   }
-
-  # Add data stream fields
+  
   mutate {
     add_field => {
       "data_stream.type" => "logs"
@@ -457,12 +317,7 @@ filter {
 }
 
 output {
-  # Console output for debugging
-  stdout {
-    codec => rubydebug
-  }
-
-  # Send to Elasticsearch with hardcoded credentials
+  stdout { codec => rubydebug }
   elasticsearch {
     hosts => ["ENDPOINT_PLACEHOLDER"]
     api_key => "API_KEY_PLACEHOLDER"
@@ -472,249 +327,71 @@ output {
     data_stream_namespace => "prod"
   }
 }
-PIPELINEEOF
+PIPELINE_EOF
 
-    # Replace placeholders with actual values
     sed -i "s|ENDPOINT_PLACEHOLDER|$endpoint|g" "$PIPELINE_FILE"
     sed -i "s|API_KEY_PLACEHOLDER|$api_key|g" "$PIPELINE_FILE"
     
-    echo "  ✓ Pipeline updated: $PIPELINE_FILE"
-    echo "  Endpoint: $endpoint"
-    echo "  API Key: ${api_key:0:20}..."
-    echo ""
+    echo "✓ Logstash pipeline updated"
     
-    # If Logstash container is running, offer to restart it
     if docker ps --format '{{.Names}}' | grep -q "clab-ospf-network-logstash"; then
-        echo "  Logstash container is running"
-        read -p "  Restart Logstash to apply changes? (Y/n): " restart_logstash
-        
-        if [[ ! $restart_logstash =~ ^[Nn]$ ]]; then
-            echo "  Restarting Logstash..."
-            docker restart clab-ospf-network-logstash >/dev/null 2>&1
-            echo "  ✓ Logstash restarted"
-            echo ""
-            echo "  Wait 30 seconds, then check logs:"
-            echo "    docker logs clab-ospf-network-logstash --tail 50"
-        else
-            echo ""
-            echo "  ⚠ Remember to restart Logstash manually:"
-            echo "    docker restart clab-ospf-network-logstash"
-        fi
-    else
-        echo "  ⓘ Logstash not running yet"
-        echo "  Pipeline will be loaded when Logstash starts"
+        read -p "Restart Logstash? (Y/n): " restart
+        [[ ! $restart =~ ^[Nn]$ ]] && docker restart clab-ospf-network-logstash >/dev/null 2>&1 && echo "✓ Logstash restarted"
     fi
-    
-    echo ""
-    echo "✓ Logstash pipeline configuration complete"
 }
 
-# Check if .env already exists
+# ===========================================
+# MAIN SCRIPT
+# ===========================================
+
+# Check existing config
 if [ -f "$ENV_FILE" ]; then
     echo "Existing configuration found."
-    echo ""
-    
-    # Source existing config
     source "$ENV_FILE"
     
     if [ -n "$ES_ENDPOINT" ] && [ -n "$ES_API_KEY" ]; then
-        echo "Current Elasticsearch configuration:"
         echo "  Endpoint: $ES_ENDPOINT"
         echo "  API Key:  ${ES_API_KEY:0:20}..."
-        
-        if [ -n "$FLEET_URL" ]; then
-            echo ""
-            echo "Current Fleet configuration:"
-            echo "  Fleet URL: $FLEET_URL"
-            echo "  Fleet Token: ${FLEET_ENROLLMENT_TOKEN:0:20}..."
-        fi
-        
-        if [ -n "$AGENT_VERSION" ]; then
-            echo ""
-            echo "Current Agent version: $AGENT_VERSION"
-        fi
+        [ -n "$FLEET_URL" ] && echo "  Fleet:    $FLEET_URL"
         echo ""
         
-        # Test existing Elasticsearch connection
-        DETECTED_VERSION=$(test_elasticsearch "$ES_ENDPOINT" "$ES_API_KEY" | tail -1)
-        ES_TEST_RESULT=$?
-        
-        if [ $ES_TEST_RESULT -eq 0 ]; then
-            echo ""
-            echo "✓ Elasticsearch connection is valid"
-            
-            # Ask if user wants to update Elasticsearch credentials
-            read -p "Update Elasticsearch credentials? (y/N): " update_es
-            
-            if [[ $update_es =~ ^[Yy]$ ]]; then
-                echo ""
-                if configure_elasticsearch; then
-                    ES_UPDATED=true
-                else
-                    echo "Failed to update Elasticsearch credentials. Keeping existing."
-                    ES_UPDATED=false
-                fi
-            else
-                echo "Keeping existing Elasticsearch configuration."
-                ES_UPDATED=false
-                
-                # Determine agent version from existing ES version
-                echo ""
-                echo "Determining compatible Elastic Agent version..."
-                
-                if [[ "$DETECTED_VERSION" =~ ^9\. ]]; then
-                    TARGET_VERSION="$DETECTED_VERSION"
-                    echo "✓ Detected ES version $DETECTED_VERSION"
-                    echo "  Targeting Elastic Agent version: $TARGET_VERSION"
-                    AGENT_VERSION=$(find_latest_available_agent_version "$TARGET_VERSION")
-                elif [[ "$DETECTED_VERSION" =~ ^8\. ]]; then
-                    TARGET_VERSION="$DETECTED_VERSION"
-                    echo "✓ Detected ES version $DETECTED_VERSION"
-                    echo "  Targeting Elastic Agent version: $TARGET_VERSION"
-                    AGENT_VERSION=$(find_latest_available_agent_version "$TARGET_VERSION")
-                else
-                    TARGET_VERSION="8.15.3"
-                    echo "⚠ Unknown ES version: $DETECTED_VERSION"
-                    echo "  Using default stable Elastic Agent version: $TARGET_VERSION"
-                    AGENT_VERSION=$(find_latest_available_agent_version "$TARGET_VERSION")
-                fi
-                
-                echo ""
-                echo "========================================="
-                echo "✓ Selected Elastic Agent version: $AGENT_VERSION"
-                echo "========================================="
-            fi
-            
-            # Now ask about Fleet credentials
-            echo ""
-            read -p "Update Fleet credentials? (y/N): " update_fleet
-            
-            if [[ $update_fleet =~ ^[Yy]$ ]]; then
-                if configure_fleet; then
-                    FLEET_UPDATED=true
-                else
-                    echo "Fleet configuration skipped or failed."
-                    FLEET_UPDATED=false
-                fi
-            else
-                echo "Keeping existing Fleet configuration."
-                FLEET_UPDATED=false
-            fi
-            
-        else
-            echo ""
-            echo "⚠ Existing Elasticsearch configuration is invalid. Please reconfigure."
-            echo ""
-            
-            if configure_elasticsearch; then
-                ES_UPDATED=true
-                
-                # Ask about Fleet after ES is configured
-                echo ""
-                read -p "Configure Fleet credentials? (y/N): " config_fleet
-                
-                if [[ $config_fleet =~ ^[Yy]$ ]]; then
-                    if configure_fleet; then
-                        FLEET_UPDATED=true
-                    else
-                        FLEET_UPDATED=false
-                    fi
-                else
-                    FLEET_UPDATED=false
-                fi
-            else
-                echo ""
-                echo "========================================="
-                echo "✗ Configuration NOT saved"
-                echo "========================================="
-                exit 1
-            fi
+        read -p "Update configuration? (y/N): " update_config
+        if [[ ! $update_config =~ ^[Yy]$ ]]; then
+            echo "Keeping existing configuration."
+            exit 0
         fi
-    else
-        echo "Incomplete configuration found. Please reconfigure."
-        echo ""
-        
-        if configure_elasticsearch; then
-            ES_UPDATED=true
-            
-            # Ask about Fleet
-            echo ""
-            read -p "Configure Fleet credentials? (y/N): " config_fleet
-            
-            if [[ $config_fleet =~ ^[Yy]$ ]]; then
-                if configure_fleet; then
-                    FLEET_UPDATED=true
-                else
-                    FLEET_UPDATED=false
-                fi
-            else
-                FLEET_UPDATED=false
-            fi
-        else
-            echo ""
-            echo "========================================="
-            echo "✗ Configuration NOT saved"
-            echo "========================================="
-            exit 1
-        fi
-    fi
-    
-else
-    # No existing config - fresh setup
-    echo "No existing configuration found."
-    echo ""
-    
-    if configure_elasticsearch; then
-        ES_UPDATED=true
-        
-        # Ask about Fleet
-        echo ""
-        read -p "Configure Fleet for Elastic Agent deployment? (y/N): " config_fleet
-        
-        if [[ $config_fleet =~ ^[Yy]$ ]]; then
-            if configure_fleet; then
-                FLEET_UPDATED=true
-            else
-                FLEET_UPDATED=false
-            fi
-        else
-            echo ""
-            echo "⚠ Fleet configuration skipped"
-            FLEET_URL=""
-            FLEET_ENROLLMENT_TOKEN=""
-            FLEET_UPDATED=false
-        fi
-    else
-        echo ""
-        echo "========================================="
-        echo "✗ Configuration NOT saved"
-        echo "========================================="
-        exit 1
     fi
 fi
 
-# Save to .env file
+# Configure Elasticsearch
+if ! configure_elasticsearch; then
+    echo "✗ Configuration failed"
+    exit 1
+fi
+
+# Configure Fleet
+echo ""
+read -p "Configure Fleet for agent deployment? (y/N): " config_fleet
+[[ $config_fleet =~ ^[Yy]$ ]] && configure_fleet
+
+# Save configuration
 echo ""
 echo "Saving configuration..."
 
 cat > "$ENV_FILE" << ENVEOF
-# Elasticsearch Configuration
-# Generated: $(date)
-# Compatible with Serverless and Traditional deployments
+# Elasticsearch Configuration - $(date)
 ES_ENDPOINT=$ES_ENDPOINT
 ES_API_KEY=$ES_API_KEY
-
-# Elastic Stack Version (detected)
+ES_USERNAME=$ES_USERNAME
+ES_PASSWORD=$ES_PASSWORD
 ES_VERSION=$DETECTED_VERSION
 AGENT_VERSION=$AGENT_VERSION
 ENVEOF
 
-# Add Fleet configuration if provided
-if [ -n "$FLEET_URL" ] && [ -n "$FLEET_ENROLLMENT_TOKEN" ]; then
+if [ -n "$FLEET_URL" ]; then
     cat >> "$ENV_FILE" << ENVEOF
 
-# Fleet Configuration (Optional)
-# For centralized Elastic Agent management
+# Fleet Configuration
 FLEET_URL=$FLEET_URL
 FLEET_ENROLLMENT_TOKEN=$FLEET_ENROLLMENT_TOKEN
 ENVEOF
@@ -724,49 +401,23 @@ chmod 600 "$ENV_FILE"
 
 echo ""
 echo "========================================="
-echo "✓ Configuration saved to .env"
+echo "✓ Configuration Saved"
 echo "========================================="
-echo ""
-echo "Configuration details:"
-echo "  File:            $ENV_FILE"
-echo "  Endpoint:        $ES_ENDPOINT"
-echo "  API Key:         ${ES_API_KEY:0:20}... (${#ES_API_KEY} chars)"
-echo "  ES Version:      $DETECTED_VERSION"
-echo "  Agent Version:   $AGENT_VERSION"
-
-if [ -n "$FLEET_URL" ]; then
-    echo "  Fleet URL:       $FLEET_URL"
-    echo "  Fleet Token:     ${FLEET_ENROLLMENT_TOKEN:0:20}..."
-    echo ""
-    echo "✓ Fleet is configured and ready for agent deployment"
-else
-    echo ""
-    echo "⚠ Fleet not configured"
-    echo "  To add Fleet later, run this script again and update Fleet credentials"
-fi
-
-echo ""
-echo "Next steps:"
-echo "  1. Deploy lab:   ./scripts/complete-setup-v22.sh"
-
-if [ -n "$FLEET_URL" ]; then
-    echo "  2. Elastic Agent will be deployed automatically during setup"
-    echo "  3. Monitor agents in Kibana → Fleet → Agents"
-else
-    echo "  2. Deploy agent manually (optional): ./scripts/deploy-elastic-agent-sw2-stable.sh"
-fi
-
+echo "  Endpoint:      $ES_ENDPOINT"
+echo "  ES Version:    $DETECTED_VERSION"
+echo "  Agent Version: $AGENT_VERSION"
+[ -n "$FLEET_URL" ] && echo "  Fleet URL:     $FLEET_URL"
 echo ""
 
-# Update Logstash pipeline configuration
+# Update Logstash
 update_logstash_pipeline "$ES_ENDPOINT" "$ES_API_KEY"
 
-echo ""
-
-# Update topology file with new credentials
+# Update topology if script exists
 if [ -f "$HOME/ospf-otel-lab/scripts/update-topology-from-env.sh" ]; then
     echo ""
     echo "Updating topology file..."
     bash "$HOME/ospf-otel-lab/scripts/update-topology-from-env.sh"
 fi
 
+echo ""
+echo "Next: ./scripts/complete-setup.sh"
