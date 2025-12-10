@@ -19,6 +19,8 @@ Use case implemented:
 
 # Quick Start:
 
+IMPORTANT: THE LAB IS NOT FULLY TESTED FOR A LOCAL DEPLOYMENT ON A LAPTOP.
+
 - Suggested instance for deployment:  
 * GCP: e2-standard-2 (2 vCPU, 1 core, 8 GB memory)  
 * AWS: t3.large 2 vCPU, 8 GB memory  
