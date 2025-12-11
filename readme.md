@@ -226,7 +226,12 @@ Set up your connection to the Elastic Stack. This script validates your credenti
 1.  Obtain your **Elasticsearch Endpoint** (HTTPS URL).
 2.  Create a **Base64 Encoded API Key** in Kibana (Stack Management → Security → API Keys).
 3.  Create a Fleet policy enabling **Netflow Capture**.
-4.  Obtain the Fleet URL and the policy token.
+4.  Create policy and add the integration: https://www.elastic.co/docs/reference/fleet/agent-policy#create-a-policy
+      Set:
+       - UDP host to listen on : 0.0.0.0
+       - UDP port to listen on : 2055
+5.  Obtain the Fleet URL and the policy token.
+   a. Get a fleet token: https://www.elastic.co/docs/reference/fleet/fleet-enrollment-tokens     
 
 Run the configuration wizard:
 
