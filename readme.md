@@ -470,6 +470,7 @@ In our lab, we will use Discover to examine the incoming traps and gain insights
 ## 14. AI Assistant
 
 Head to the **AI Assistant** at the top right corner. In the flyout, select **Expand Conversation List** (top left corner).
+
 ![ai conversation](Images/conversation.png)
 
 When your alert triggered, the prompt automatically generated an initial investigation.
