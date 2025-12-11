@@ -15,7 +15,7 @@ configs/otel/backups/
 configs/otel/Archive/
 configs/elasticsearch/Archive/
 scripts/archive/
-Archive/
+/Archive/
 *.backup-*
 * copy.yml
 *.pem
@@ -23,3 +23,7 @@ Archive/
 
 # TLS runtime certs
 clab-ospf-network/.tls/
+
+# Environment files (secrets)
+.env
+.env.*
