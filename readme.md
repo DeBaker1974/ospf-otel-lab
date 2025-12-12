@@ -486,7 +486,6 @@ See it for yourself:
 
 **Well done! You have completed the lab.**
 
-## 15. Conclusion
+## 15. **What’s next?**
 
-**What’s next?**
-In upcoming blogs, we will explore how to parse this data with streams, create a workflow using **One Workflow**, and utilize the **Agent Builder** (new generation AI Assistant) to investigate and correlate events. This functionality is anticipated with Elastic 9.3 (Early 2026).
+In upcoming blogs, we will explore how to parse data using **Streams**, build workflows with **One Workflow**, and leverage the **Agent Builder** (next-generation AI Assistant) to investigate and correlate events. Look out for the next blog in early 2026.
