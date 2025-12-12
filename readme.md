@@ -1,4 +1,4 @@
-# Containerlab OSPF Simulation with OTEL, NetFlow, and SNMP
+# Building a Unified Network Observability Lab with Elastic and Containerlab
 
 ## Introduction
 
