@@ -1935,8 +1935,8 @@ processors:
 # ========================================
 exporters:
   elasticsearch/system:
-    endpoints: [ "https://gcp-telco-9-3-55a713.es.us-west2.gcp.elastic-cloud.com:443" ]
-    api_key: "RzhSdXc1b0I4Y3k0Mlh5WG91WWE6UEI0blZXNk85Yk80R2lURXBzNllEZw=="
+    endpoints: [ "https://network-demo-f289e8.es.us-central1.gcp.cloud.es.io:443" ]
+    api_key: "aEFZNHJwb0I5TXhyMmdZdVBHQmU6Z0E1cElQYlgyeFJtQmQwRzFlcHNlQQ=="
     mapping:
       mode: ecs
     metrics_dynamic_index:
@@ -1944,8 +1944,8 @@ exporters:
     metrics_index: "metrics-snmp.system-prod"
   
   elasticsearch/memory:
-    endpoints: [ "https://gcp-telco-9-3-55a713.es.us-west2.gcp.elastic-cloud.com:443" ]
-    api_key: "RzhSdXc1b0I4Y3k0Mlh5WG91WWE6UEI0blZXNk85Yk80R2lURXBzNllEZw=="
+    endpoints: [ "https://network-demo-f289e8.es.us-central1.gcp.cloud.es.io:443" ]
+    api_key: "aEFZNHJwb0I5TXhyMmdZdVBHQmU6Z0E1cElQYlgyeFJtQmQwRzFlcHNlQQ=="
     mapping:
       mode: ecs
     metrics_dynamic_index:
@@ -1953,8 +1953,8 @@ exporters:
     metrics_index: "metrics-snmp.memory-prod"
   
   elasticsearch/interface:
-    endpoints: [ "https://gcp-telco-9-3-55a713.es.us-west2.gcp.elastic-cloud.com:443" ]
-    api_key: "RzhSdXc1b0I4Y3k0Mlh5WG91WWE6UEI0blZXNk85Yk80R2lURXBzNllEZw=="
+    endpoints: [ "https://network-demo-f289e8.es.us-central1.gcp.cloud.es.io:443" ]
+    api_key: "aEFZNHJwb0I5TXhyMmdZdVBHQmU6Z0E1cElQYlgyeFJtQmQwRzFlcHNlQQ=="
     mapping:
       mode: ecs
     metrics_dynamic_index:
@@ -1962,8 +1962,8 @@ exporters:
     metrics_index: "metrics-snmp.interface-prod"
   
   elasticsearch/ipstats:
-    endpoints: [ "https://gcp-telco-9-3-55a713.es.us-west2.gcp.elastic-cloud.com:443" ]
-    api_key: "RzhSdXc1b0I4Y3k0Mlh5WG91WWE6UEI0blZXNk85Yk80R2lURXBzNllEZw=="
+    endpoints: [ "https://network-demo-f289e8.es.us-central1.gcp.cloud.es.io:443" ]
+    api_key: "aEFZNHJwb0I5TXhyMmdZdVBHQmU6Z0E1cElQYlgyeFJtQmQwRzFlcHNlQQ=="
     mapping:
       mode: ecs
     metrics_dynamic_index:
@@ -1971,8 +1971,8 @@ exporters:
     metrics_index: "metrics-snmp.ipstats-prod"
   
   elasticsearch/tcp:
-    endpoints: [ "https://gcp-telco-9-3-55a713.es.us-west2.gcp.elastic-cloud.com:443" ]
-    api_key: "RzhSdXc1b0I4Y3k0Mlh5WG91WWE6UEI0blZXNk85Yk80R2lURXBzNllEZw=="
+    endpoints: [ "https://network-demo-f289e8.es.us-central1.gcp.cloud.es.io:443" ]
+    api_key: "aEFZNHJwb0I5TXhyMmdZdVBHQmU6Z0E1cElQYlgyeFJtQmQwRzFlcHNlQQ=="
     mapping:
       mode: ecs
     metrics_dynamic_index:
@@ -1980,8 +1980,8 @@ exporters:
     metrics_index: "metrics-snmp.tcp-prod"
   
   elasticsearch/udp:
-    endpoints: [ "https://gcp-telco-9-3-55a713.es.us-west2.gcp.elastic-cloud.com:443" ]
-    api_key: "RzhSdXc1b0I4Y3k0Mlh5WG91WWE6UEI0blZXNk85Yk80R2lURXBzNllEZw=="
+    endpoints: [ "https://network-demo-f289e8.es.us-central1.gcp.cloud.es.io:443" ]
+    api_key: "aEFZNHJwb0I5TXhyMmdZdVBHQmU6Z0E1cElQYlgyeFJtQmQwRzFlcHNlQQ=="
     mapping:
       mode: ecs
     metrics_dynamic_index:
@@ -1989,8 +1989,8 @@ exporters:
     metrics_index: "metrics-snmp.udp-prod"
   
   elasticsearch/arp:
-    endpoints: [ "https://gcp-telco-9-3-55a713.es.us-west2.gcp.elastic-cloud.com:443" ]
-    api_key: "RzhSdXc1b0I4Y3k0Mlh5WG91WWE6UEI0blZXNk85Yk80R2lURXBzNllEZw=="
+    endpoints: [ "https://network-demo-f289e8.es.us-central1.gcp.cloud.es.io:443" ]
+    api_key: "aEFZNHJwb0I5TXhyMmdZdVBHQmU6Z0E1cElQYlgyeFJtQmQwRzFlcHNlQQ=="
     mapping:
       mode: ecs
     metrics_dynamic_index:
@@ -1998,8 +1998,8 @@ exporters:
     metrics_index: "metrics-snmp.arp-prod"
   
   elasticsearch/lldp:
-    endpoints: [ "https://gcp-telco-9-3-55a713.es.us-west2.gcp.elastic-cloud.com:443" ]
-    api_key: "RzhSdXc1b0I4Y3k0Mlh5WG91WWE6UEI0blZXNk85Yk80R2lURXBzNllEZw=="
+    endpoints: [ "https://network-demo-f289e8.es.us-central1.gcp.cloud.es.io:443" ]
+    api_key: "aEFZNHJwb0I5TXhyMmdZdVBHQmU6Z0E1cElQYlgyeFJtQmQwRzFlcHNlQQ=="
     mapping:
       mode: ecs
     metrics_dynamic_index:

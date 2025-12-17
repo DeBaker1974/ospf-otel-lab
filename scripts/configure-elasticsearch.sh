@@ -154,6 +154,37 @@ test_elasticsearch() {
     fi
 }
 
+# Function to update OTel Collector configuration
+update_otel_collector() {
+    local endpoint=$1
+    local api_key=$2
+    
+    OTEL_CONFIG="$HOME/ospf-otel-lab/configs/otel/otel-collector.yml"
+    
+    echo ""
+    echo "Updating OTel Collector configuration..."
+    
+    if [ ! -f "$OTEL_CONFIG" ]; then
+        echo "⚠ OTel config not found: $OTEL_CONFIG"
+        return 1
+    fi
+    
+    # Backup current config
+    cp "$OTEL_CONFIG" "${OTEL_CONFIG}.backup-$(date +%s)"
+    
+    # Update all elasticsearch exporter endpoints and api_keys
+    sed -i "s|endpoints: \[ \"https://[^\"]*\" \]|endpoints: [ \"$endpoint\" ]|g" "$OTEL_CONFIG"
+    sed -i "s|api_key: \"[^\"]*\"|api_key: \"$api_key\"|g" "$OTEL_CONFIG"
+    
+    echo "✓ OTel Collector configuration updated"
+    
+    # Restart collector if running
+    if docker ps --format '{{.Names}}' | grep -q "clab-ospf-network-otel-collector"; then
+        read -p "Restart OTel Collector? (Y/n): " restart
+        [[ ! $restart =~ ^[Nn]$ ]] && docker restart clab-ospf-network-otel-collector >/dev/null 2>&1 && echo "✓ OTel Collector restarted"
+    fi
+}
+
 # Function to configure Elasticsearch
 configure_elasticsearch() {
     echo "========================================="
@@ -411,6 +442,9 @@ echo ""
 
 # Update Logstash
 update_logstash_pipeline "$ES_ENDPOINT" "$ES_API_KEY"
+# Update OTel Collector
+update_otel_collector "$ES_ENDPOINT" "$ES_API_KEY"
+
 
 # Update topology if script exists
 if [ -f "$HOME/ospf-otel-lab/scripts/update-topology-from-env.sh" ]; then

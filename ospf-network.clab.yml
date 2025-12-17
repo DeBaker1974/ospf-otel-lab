@@ -24,8 +24,8 @@ topology:
       # Network config will be done by containerlab automatically
       mgmt-ipv4: 172.20.20.50
       env:
-        FLEET_URL: https://f289e81a77fd4c2a9bdbb71c829e7918.fleet.us-central1.gcp.cloud.es.io:443
-        FLEET_ENROLLMENT_TOKEN: TWxwOVFab0JNbmRCZ1cwSktGemM6UVlYRHFIWE5kdFNJLVpVLWxmRVZwQQ==
+        FLEET_URL: ${FLEET_URL}
+        FLEET_ENROLLMENT_TOKEN: ${FLEET_ENROLLMENT_TOKEN}
         FLEET_ENROLL: '1'
         FLEET_INSECURE: '1'
       cap-add:
