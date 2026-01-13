@@ -430,107 +430,6 @@ test_elasticsearch() {
     if [ "$RESPONSE" = "200" ]; then
         echo "✓ Connection successful!"
         
-        DETECTED_VERSION=$(echo "$CLUSTER_INFO" | jq -r '.version.number // "unknown"')
-        local cluster_name=$(echo "$CLUSTER_INFO" | jq -r '.cluster_name // .name // "unknown"')
-        local build_flavor=$(echo "$CLUSTER_INFO" | jq -r '.version.build_flavor // "unknown"')
-        local build_type=$(echo "$CLUSTER_INFO" | jq -r '.version.build_type // "unknown"')
-        local tagline=$(echo "$CLUSTER_INFO" | jq -r '.tagline // ""')
-        
-        # Determine deployment type
-        if [[ "$build_flavor" == "serverless" ]]; then
-            DEPLOYMENT_TYPE="serverless"
-        elif [[ "$build_flavor" == "default" ]] && [[ "$endpoint" != *".cloud."* ]] && [[ "$endpoint" != *".elastic.cloud"* ]]; then
-            DEPLOYMENT_TYPE="on-premise"
-        elif [[ "$endpoint" == *".es."*".cloud."* ]] || [[ "$endpoint" == *".elastic-cloud.com"* ]]; then
-            DEPLOYMENT_TYPE="cloud"
-        elif [[ "$build_type" == "docker" ]] || [[ "$cluster_name" == "docker-cluster" ]]; then
-            DEPLOYMENT_TYPE="on-premise"
-        else
-            # Default to cloud if URL looks like Elastic Cloud
-            if [[ "$endpoint" == *"cloud"* ]] || [[ "$endpoint" == *"found.io"* ]]; then
-                DEPLOYMENT_TYPE="cloud"
-            else
-                DEPLOYMENT_TYPE="on-premise"
-            fi
-        fi
-        
-        echo ""
-        echo "┌─────────────────────────────────────────────────────────────┐"
-        echo "│ ELASTICSEARCH DEPLOYMENT                                    │"
-        echo "├─────────────────────────────────────────────────────────────┤"
-        echo "│  Cluster:     $cluster_name"
-        echo "│  Version:     $DETECTED_VERSION"
-        echo "│  Build:       $build_flavor / $build_type"
-        
-        case "$DEPLOYMENT_TYPE" in
-            "serverless")
-                echo "│  Type:        ⚡ SERVERLESS                                │"
-                echo "├─────────────────────────────────────────────────────────────┤"
-                echo "│  • Fleet is integrated (no separate Fleet URL)             │"
-                echo "│  • Uses data streams exclusively                           │"
-                echo "│  • Some index operations restricted                        │"
-                ;;
-            "cloud")
-                echo "│  Type:        ☁️  ELASTIC CLOUD (Hosted)                    │"
-                echo "├─────────────────────────────────────────────────────────────┤"
-                echo "│  • Fleet available via Cloud Console                       │"
-                echo "│  • Full index management capabilities                      │"
-                ;;
-            "on-premise")
-                echo "│  Type:        🏠 SELF-MANAGED / ON-PREMISE                 │"
-                echo "├─────────────────────────────────────────────────────────────┤"
-                echo "│  • Fleet Server required for agent management              │"
-                echo "│  • Full control over indices and ILM                       │"
-                ;;
-        esac
-        echo "└─────────────────────────────────────────────────────────────┘"
-        
-        # Test write permission with deployment-aware approach
-        echo ""
-        echo "Testing write permissions..."
-        test_write_permission "$endpoint" "$api_key" "$username" "$password"
-        
-        return 0
-    else
-        echo "✗ Connection failed (HTTP $RESPONSE)"
-        echo ""
-        echo "Common endpoints by deployment type:"
-        echo "  Self-Managed:  https://elasticsearch.local:9200"
-        echo "  Elastic Cloud: https://xxx.es.region.cloud.es.io:443"
-        echo "  Serverless:    https://xxx.es.region.elastic.cloud:443"
-        return 1
-    fi
-}
-
-test_elasticsearch() {
-    local endpoint=$1
-    local api_key=$2
-    local username=$3
-    local password=$4
-    
-    echo "Testing connection to Elasticsearch..."
-    
-    # Build curl command based on auth type
-    local curl_opts="-s -k --max-time 30"
-    
-    if [ -n "$api_key" ]; then
-        RESPONSE=$(curl $curl_opts -o /dev/null -w "%{http_code}" \
-            -H "Authorization: ApiKey $api_key" "$endpoint/" 2>/dev/null)
-        CLUSTER_INFO=$(curl $curl_opts \
-            -H "Authorization: ApiKey $api_key" "$endpoint/" 2>/dev/null)
-    elif [ -n "$username" ]; then
-        RESPONSE=$(curl $curl_opts -o /dev/null -w "%{http_code}" \
-            -u "$username:$password" "$endpoint/" 2>/dev/null)
-        CLUSTER_INFO=$(curl $curl_opts \
-            -u "$username:$password" "$endpoint/" 2>/dev/null)
-    else
-        RESPONSE=$(curl $curl_opts -o /dev/null -w "%{http_code}" "$endpoint/" 2>/dev/null)
-        CLUSTER_INFO=$(curl $curl_opts "$endpoint/" 2>/dev/null)
-    fi
-    
-    if [ "$RESPONSE" = "200" ]; then
-        echo "✓ Connection successful!"
-        
         local raw_version=$(echo "$CLUSTER_INFO" | jq -r '.version.number // "unknown"')
         local cluster_name=$(echo "$CLUSTER_INFO" | jq -r '.cluster_name // .name // "unknown"')
         local build_flavor=$(echo "$CLUSTER_INFO" | jq -r '.version.build_flavor // "unknown"')
@@ -1073,30 +972,9 @@ update_logstash_pipeline() {
     mkdir -p "$(dirname $PIPELINE_FILE)"
     [ -f "$PIPELINE_FILE" ] && cp "$PIPELINE_FILE" "${PIPELINE_FILE}.backup-$(date +%s)"
     
-    # Different output config for serverless vs regular
-    local es_output=""
-    if [[ "$DEPLOYMENT_TYPE" == "serverless" ]]; then
-        es_output='elasticsearch {
-    cloud_id => "USE_CLOUD_ID_FOR_SERVERLESS"
-    api_key => "API_KEY_PLACEHOLDER"
-    data_stream => true
-    data_stream_type => "logs"
-    data_stream_dataset => "snmp.trap"
-    data_stream_namespace => "prod"
-  }'
-        echo "  ⚠ Note: For Serverless, update cloud_id in the pipeline config"
-    else
-        es_output='elasticsearch {
-    hosts => ["ENDPOINT_PLACEHOLDER"]
-    api_key => "API_KEY_PLACEHOLDER"
-    data_stream => true
-    data_stream_type => "logs"
-    data_stream_dataset => "snmp.trap"
-    data_stream_namespace => "prod"
-  }'
-    fi
-    
-    cat > "$PIPELINE_FILE" << PIPELINE_EOF
+    # IMPORTANT: Serverless, Cloud, and On-Premise ALL use the same format
+    # hosts + api_key works for all deployment types
+    cat > "$PIPELINE_FILE" << 'PIPELINE_EOF'
 input {
   snmptrap {
     host => "0.0.0.0"
@@ -1106,16 +984,30 @@ input {
 }
 
 filter {
+  # Add host identification for CSR23 (trap source)
   if [host] == "172.20.20.23" {
-    mutate { add_field => { "host.name" => "csr23" "host.ip" => "172.20.20.23" } }
+    mutate { 
+      add_field => { 
+        "host.name" => "csr23" 
+        "host.ip" => "172.20.20.23" 
+      }
+    }
   }
   
+  # Identify trap type by OID
   if [oid] == "1.3.6.1.6.3.1.1.5.3" {
-    mutate { add_tag => ["interface_down"] add_field => { "event.action" => "interface-down" } }
+    mutate { 
+      add_tag => ["interface_down"] 
+      add_field => { "event.action" => "interface-down" }
+    }
   } else if [oid] == "1.3.6.1.6.3.1.1.5.4" {
-    mutate { add_tag => ["interface_up"] add_field => { "event.action" => "interface-up" } }
+    mutate { 
+      add_tag => ["interface_up"] 
+      add_field => { "event.action" => "interface-up" }
+    }
   }
   
+  # Add data stream fields for proper indexing
   mutate {
     add_field => {
       "data_stream.type" => "logs"
@@ -1126,21 +1018,47 @@ filter {
 }
 
 output {
+  # Console output for debugging
   stdout { codec => rubydebug }
-  $es_output
+  
+  # Elasticsearch output - works for Serverless, Cloud, and On-Premise
+  elasticsearch {
+    hosts => ["ENDPOINT_PLACEHOLDER"]
+    api_key => "API_KEY_PLACEHOLDER"
+    data_stream => true
+    data_stream_type => "logs"
+    data_stream_dataset => "snmp.trap"
+    data_stream_namespace => "prod"
+  }
 }
 PIPELINE_EOF
 
+    # Replace placeholders with actual values
     sed -i "s|ENDPOINT_PLACEHOLDER|$endpoint|g" "$PIPELINE_FILE"
     sed -i "s|API_KEY_PLACEHOLDER|$api_key|g" "$PIPELINE_FILE"
     
     echo "✓ Logstash pipeline updated"
+    echo "  Endpoint: $endpoint"
+    echo "  Target: logs-snmp.trap-prod"
     
+    # Verify replacement worked
+    if grep -q "ENDPOINT_PLACEHOLDER\|API_KEY_PLACEHOLDER" "$PIPELINE_FILE"; then
+        echo "  ⚠ Warning: Some placeholders were not replaced!"
+        grep -n "PLACEHOLDER" "$PIPELINE_FILE" | sed 's/^/    /'
+    else
+        echo "  ✓ All placeholders replaced successfully"
+    fi
+    
+    # Restart Logstash if running
     if docker ps --format '{{.Names}}' 2>/dev/null | grep -q "clab-ospf-network-logstash"; then
         read -p "Restart Logstash? (Y/n): " restart
-        [[ ! $restart =~ ^[Nn]$ ]] && docker restart clab-ospf-network-logstash >/dev/null 2>&1 && echo "✓ Logstash restarted"
+        if [[ ! $restart =~ ^[Nn]$ ]]; then
+            docker restart clab-ospf-network-logstash >/dev/null 2>&1
+            echo "✓ Logstash restarted"
+        fi
     fi
 }
+
 
 # ============================================
 # ELASTICSEARCH CONFIGURATION

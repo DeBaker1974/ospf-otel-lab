@@ -28,6 +28,7 @@ echo ""
 echo "Phase 0: Pre-flight checks..."
 
 # Check Elasticsearch configuration
+# Check Elasticsearch configuration
 ENV_FILE="$LAB_DIR/.env"
 
 if [ ! -f "$ENV_FILE" ]; then
@@ -36,12 +37,30 @@ if [ ! -f "$ENV_FILE" ]; then
     exit 1
 fi
 
+# CRITICAL: Export all variables so they pass through sudo to containerlab
+echo "Loading and exporting environment variables..."
+set -a  # Auto-export all variables that are sourced
 source "$ENV_FILE"
+set +a  # Disable auto-export
+
+# Verify Fleet variables are loaded (for debugging)
+if [ -n "$FLEET_URL" ]; then
+    echo "✓ FLEET_URL loaded: $FLEET_URL"
+else
+    echo "⚠ FLEET_URL not set in .env"
+fi
+if [ -n "$FLEET_ENROLLMENT_TOKEN" ]; then
+    echo "✓ FLEET_ENROLLMENT_TOKEN loaded: ${FLEET_ENROLLMENT_TOKEN:0:20}..."
+else
+    echo "⚠ FLEET_ENROLLMENT_TOKEN not set in .env"
+fi
+
 if [ -z "$ES_ENDPOINT" ] || [ -z "$ES_API_KEY" ]; then
     echo "✗ Elasticsearch configuration incomplete"
     exit 1
 fi
 echo "✓ Elasticsearch configured: $ES_ENDPOINT"
+
 # ============================================
 # CHECK FLEET CONFIGURATION
 # ============================================
@@ -497,11 +516,12 @@ if systemctl is-active --quiet lldp-export 2>/dev/null; then
 fi
 
 # Destroy existing lab
-if sudo clab inspect -t ospf-network.clab.yml &>/dev/null 2>&1; then
+if sudo -E clab inspect -t ospf-network.clab.yml &>/dev/null 2>&1; then
     echo "  Destroying existing lab..."
-    sudo clab destroy -t ospf-network.clab.yml --cleanup 2>/dev/null || true
+    sudo -E clab destroy -t ospf-network.clab.yml --cleanup 2>/dev/null || true
     sleep 10
 fi
+
 
 # Clean up any orphaned containers
 echo "  Cleaning orphaned containers..."
@@ -767,12 +787,14 @@ cp ospf-network.clab.yml "$BACKUP_FILE"
 echo "  Topology backed up to: $BACKUP_FILE"
 
 # Deploy with detailed output
+# CRITICAL: Use sudo -E to preserve exported environment variables (FLEET_URL, etc.)
 echo "  Starting containerlab deployment (containers will run as root)..."
-if sudo clab deploy -t ospf-network.clab.yml --reconfigure; then
+echo "  Using sudo -E to preserve FLEET_URL and FLEET_ENROLLMENT_TOKEN..."
+if sudo -E clab deploy -t ospf-network.clab.yml --reconfigure; then
     echo "✓ Topology deployed successfully"
 else
     echo "✗ Deployment failed"
-    echo "  Check logs: sudo clab inspect -t ospf-network.clab.yml"
+    echo "  Check logs: sudo -E clab inspect -t ospf-network.clab.yml"
     echo "  Recent topology backups:"
     ls -lht ospf-network.clab.yml.backup-* | head -5
     exit 1
@@ -1873,7 +1895,7 @@ else
     echo "        FLEET_URL: \${FLEET_URL}"
     echo "        FLEET_ENROLLMENT_TOKEN: \${FLEET_ENROLLMENT_TOKEN}"
     echo ""
-    echo "  Then redeploy: sudo clab destroy && sudo clab deploy"
+    echo "  Then redeploy: sudo -E clab destroy && sudo -E clab deploy"
 fi
 # ============================================
 # PHASE 10: Telemetry Collection Wait

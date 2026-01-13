@@ -20,6 +20,7 @@ scripts/archive/
 * copy.yml
 *.pem
 *.key
+*.broken
 
 # TLS runtime certs
 clab-ospf-network/.tls/

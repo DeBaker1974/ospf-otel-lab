@@ -26,12 +26,12 @@ all:
         clab-ospf-network-linux-bottom:
           ansible_host: 172.20.20.6
         clab-ospf-network-linux-top:
-          ansible_host: 172.20.20.2
+          ansible_host: 172.20.20.5
         clab-ospf-network-logstash:
           ansible_host: 172.20.20.31
         clab-ospf-network-otel-collector:
           ansible_host: 172.20.20.4
         clab-ospf-network-sw:
-          ansible_host: 172.20.20.5
-        clab-ospf-network-sw2:
           ansible_host: 172.20.20.3
+        clab-ospf-network-sw2:
+          ansible_host: 172.20.20.2
