@@ -19,7 +19,7 @@ The primary focus is on comprehensive network observability, integrating three d
 
 ## Quick Start
 
-> **⚠️ IMPORTANT:** This lab is designed for Elastic Cloud Hosted and has not been fully tested on Serverless and local deployment on laptops.
+> **⚠️ IMPORTANT:** This lab is designed for Elastic Cloud Hosted and Serverless, or linux VMs. It has not been fully tested on local Docker Desktop .
 
 **1. Infrastructure Requirements**
 Suggested instance sizes for deployment:
