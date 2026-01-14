@@ -296,7 +296,7 @@ At the end of the deployment, the script provides a health summary:
 
 ## 10. Transform: net-lldp-edges
 
-To create the `net-lldp-edges` Index Mapping and Transform:
+To create the `net-lldp-edges` Index Mapping and Transform. This is required to summarize metrics to be used in our Status Dashboard
 *   Ensure the setup is complete before executing this transform.
 *   Ensure LLDP data is flowing.
 *   Ensure the `lldp-topology` index exists.
@@ -315,11 +315,6 @@ PUT net-lldp-edges
       "observation_count": { "type": "long" },
       "neighbor_count": { "type": "long" }
     }
-  },
-  "settings": {
-    "number_of_shards": 1,
-    "number_of_replicas": 1,
-    "refresh_interval": "30s"
   }
 }
 ```
@@ -330,7 +325,7 @@ PUT net-lldp-edges
 PUT _transform/lldp-topology-to-edges
 {
   "source": {
-    "index": ["metrics-lldp-prod"],
+    "index": ["metrics-snmp.lldp-prod"],
     "query": {
       "bool": {
         "must": [
@@ -363,8 +358,66 @@ PUT _transform/lldp-topology-to-edges
   "settings": { "max_page_search_size": 500 }
 }
 ```
+**Start the transform:**
 
-## 11. Create Alert in Kibana
+```json
+POST _transform/lldp-topology-to-edges/_start
+```
+## 11. Import the CSR23 Interface Status Dashboard
+
+Before creating alerts, import the pre-built dashboard to visualize interface health and neighbor relationships in real-time.
+
+### Import via Kibana UI
+
+1. In Kibana, navigate to: **Stack Management → Saved Objects**
+2. Click the **Import** button (top right corner)
+3. Click **Select a file to import**
+4. Browse to your local repository and select: ~/ospf-otel-lab/configs/kibana/dashboards/csr23-interface-status.ndjson
+5. Click **Import**
+
+### Post-Import Steps
+
+After importing, access your dashboard:
+
+1. Navigate to **Analytics → Dashboards** (or click **Dashboards** in the left sidebar)
+2. Search for: `CSR23`
+3. Click on **"CSR23 - Interface Status"** to open
+
+> **⚠️ Note:** This dashboard requires the `net-lldp-edges` transform from Step 10 to be running and populated with data. Allow 2-3 minutes after starting the transform for data to appear.
+
+### Dashboard Overview
+
+The **CSR23 - Interface Status** dashboard provides real-time visibility into router health and OSPF neighbor relationships.
+
+![CSR23 Interface Status Dashboard](Images/csr23-dashboard.png)
+
+### Dashboard Panels
+
+| Panel | Description |
+|-------|-------------|
+| **CSR23 - Interface Status** | Top-level view showing all neighbors with status indicators (🟢 ACTIVE), age display, and last-seen timestamps |
+| **Fault Detection (Missing Neighbors)** | Displays alerts when expected LLDP neighbors are missing — empty when healthy |
+| **Interface Health Summary** | Aggregated view showing neighbor count per router and overall health status (🟢 Healthy) |
+| **Real-Time Interface Monitor** | Per-interface breakdown (eth1-eth5) with neighbor names, live status, and packet counts |
+| **Global View - Router & Neighbor Table** | Detailed table with router-to-neighbor mappings, status, age, and link counts |
+| **Summary Dashboard (Neighbor Count per Router)** | Per-router summary showing health, neighbor count, last-seen time, and total packets |
+
+### Key Indicators
+
+- **🟢 ACTIVE / LIVE** — Interface is operational and LLDP neighbor is detected
+- **🟢 Healthy** — Router has expected neighbor count and all interfaces responding
+- **Seconds_Ago** — Time since last SNMP poll (should be ~30-40s when healthy)
+- **packet_count** — Running count of SNMP observations for this interface
+
+### Verifying Dashboard Data
+
+After import, verify the dashboard is populated:
+
+1. All 5 interfaces on CSR23 should show **LIVE** status
+2. Neighbors should display: `csr24`, `csr25`, `csr26`, `csr27`, `csr28`
+3. **Fault Detection** panel should show "No results found" (healthy state)
+4. **Seconds_Ago** values should be < 60 seconds
+## 12. Create Alert in Kibana
 
 1.  Navigate to: **Stack management > Rules > Create rules**
 2.  Search: **Elasticsearch query**
@@ -373,8 +426,7 @@ PUT _transform/lldp-topology-to-edges
 **Query:**
 ```esql
 FROM logs-snmp.trap-prod
-| WHERE snmp.trap_oid == "1.3.6.1.6.3.1.1.5.3"
-| KEEP @timestamp, host.name, interface.name, snmp.trap_oid, interface.oper_status_text, message
+| WHERE message LIKE "*1.3.6.1.6.3.1.1.5.3*"
 ```
 
 4.  Select a time field: `@timestamp`
@@ -421,9 +473,71 @@ Provide a summary with severity assessment (Critical/High/Medium/Low).
 ```
 
 7.  Optional: Add **Elastic-Cloud-SMTP** to receive an email.
-8.  **Save** your rule.
+8.  **Rule name** :  Network Interface Down
+9.  **Tags** : Network
+10.  **Save** your rule.
 
-## 12. Trigger a Failure
+**Use the DEV Tools to create your rule:**
+
+```json
+POST kbn:/api/alerting/rule
+{
+  "tags": [],
+  "params": {
+    "searchType": "esqlQuery",
+    "timeWindowSize": 5,
+    "timeWindowUnit": "m",
+    "threshold": [
+      0
+    ],
+    "thresholdComparator": ">",
+    "size": 10,
+    "esqlQuery": {
+      "esql": "FROM logs-snmp.trap-prod\r\n| WHERE message LIKE \"*1.3.6.1.6.3.1.1.5.3*\""
+    },
+    "aggType": "count",
+    "groupBy": "all",
+    "termSize": 5,
+    "sourceFields": [],
+    "timeField": "@timestamp"
+  },
+  "schedule": {
+    "interval": "1m"
+  },
+  "consumer": "alerts",
+  "name": "Network Interface Down",
+  "rule_type_id": ".es-query",
+  "actions": [
+    {
+      "group": "query matched",
+      "id": "system-connector-.observability-ai-assistant",
+      "params": {
+        "prompts": [
+          {
+            "statuses": [
+              "active",
+              "recovered",
+              "untracked"
+            ],
+            "message": "An SNMP linkDown trap alert has been triggered.\n\n## Alert Query\nFROM logs-snmp.trap-prod\n| WHERE event.action == \"interface-down\"\n| KEEP @timestamp, host.name, host.ip, event.action, message\n\n## Investigation Tasks\n\n### 1. Immediate Triage\n- Which router reported the link down? (host.name)\n- Which interface went down? (extract from message or varbinds)\n- When did this occur? (@timestamp)\n\n### 2. Impact Assessment\n- Is this interface part of an OSPF adjacency?\n- Query metrics-* for OSPF neighbor state on this router\n- Check if any OSPF neighbors were lost after this timestamp\n\n### 3. Correlation\n- Are there other linkDown traps from the same router in the last 30 minutes?\n- Are other routers (csr23-csr29) also reporting link issues?\n- Is this a flapping interface? (check for linkUp followed by linkDown)\n\n### 4. Network Context\nTopology: 7 FRR routers in OSPF mesh\n- CSR23 (172.20.20.23) - trap source, connects to CSR24, CSR25, CSR26, CSR27, CSR28\n- CSR24-CSR29 are peer routers\n\n### 5. Recommended Actions\nBased on findings, suggest:\n- If single interface down: Check physical connectivity, cable, port\n- If multiple interfaces: Check router health, power, upstream switch\n- If OSPF impacted: Verify traffic is rerouting via alternate paths\n\nProvide a summary with severity assessment (Critical/High/Medium/Low)."
+          }
+        ],
+        "message": "An SNMP linkDown trap alert has been triggered.\n\n## Alert Query\nFROM logs-snmp.trap-prod\n| WHERE event.action == \"interface-down\"\n| KEEP @timestamp, host.name, host.ip, event.action, message\n\n## Investigation Tasks\n\n### 1. Immediate Triage\n- Which router reported the link down? (host.name)\n- Which interface went down? (extract from message or varbinds)\n- When did this occur? (@timestamp)\n\n### 2. Impact Assessment\n- Is this interface part of an OSPF adjacency?\n- Query metrics-* for OSPF neighbor state on this router\n- Check if any OSPF neighbors were lost after this timestamp\n\n### 3. Correlation\n- Are there other linkDown traps from the same router in the last 30 minutes?\n- Are other routers (csr23-csr29) also reporting link issues?\n- Is this a flapping interface? (check for linkUp followed by linkDown)\n\n### 4. Network Context\nTopology: 7 FRR routers in OSPF mesh\n- CSR23 (172.20.20.23) - trap source, connects to CSR24, CSR25, CSR26, CSR27, CSR28\n- CSR24-CSR29 are peer routers\n\n### 5. Recommended Actions\nBased on findings, suggest:\n- If single interface down: Check physical connectivity, cable, port\n- If multiple interfaces: Check router health, power, upstream switch\n- If OSPF impacted: Verify traffic is rerouting via alternate paths\n\nProvide a summary with severity assessment (Critical/High/Medium/Low).",
+        "connector": "Anthropic-Claude-Sonnet-4-5"
+      },
+      "frequency": {
+        "notify_when": "onActionGroupChange",
+        "throttle": null,
+        "summary": false
+      }
+    }
+  ],
+  "alert_delay": {
+    "active": 1
+  }
+}
+```
+## 13. Trigger a Failure
 
 Use the provided script to simulate network events and prove Elastic can handle real-world scenarios. Choose menu 40 to generate **Interface eth1 DOWN** on CSR23.
 
@@ -459,7 +573,7 @@ Navigate to `/scripts` and execute:
     *   Tests connectivity to Logstash.
     *   Sends a test trap to validate the pipeline.
 
-## 13. Kibana - Discover
+## 14. Kibana - Discover
 
 **Discover** is the primary tool for exploring your Elasticsearch data in Kibana. Search and filter documents, analyze field structures, visualize patterns, and save findings to reuse later or share with dashboards. Whether investigating issues, analyzing trends, or validating data quality, Discover offers a flexible interface for understanding your data.
 
