@@ -6,7 +6,7 @@
       "prefix": "clab",
       "mgmt": {
         "network": "clab",
-        "bridge": "br-658ab846afb9",
+        "bridge": "br-cd6723ba4d68",
         "ipv4-subnet": "172.20.20.0/24",
         "ipv4-gw": "172.20.20.1",
         "ipv6-subnet": "3fff:172:20:20::/64",
@@ -30,11 +30,11 @@
       "mgmt-intf": "",
       "mgmt-ipv4-address": "172.20.20.23",
       "mgmt-ipv4-prefix-length": 24,
-      "mgmt-ipv6-address": "3fff:172:20:20::5",
+      "mgmt-ipv6-address": "3fff:172:20:20::a",
       "mgmt-ipv6-prefix-length": 64,
       "mac-address": "",
       "labels": {
-        "clab-mgmt-net-bridge": "br-658ab846afb9",
+        "clab-mgmt-net-bridge": "br-cd6723ba4d68",
         "clab-node-group": "",
         "clab-node-kind": "linux",
         "clab-node-lab-dir": "/home/patrick_boulanger/ospf-otel-lab/clab-ospf-network/csr23",
@@ -61,11 +61,11 @@
       "mgmt-intf": "",
       "mgmt-ipv4-address": "172.20.20.24",
       "mgmt-ipv4-prefix-length": 24,
-      "mgmt-ipv6-address": "3fff:172:20:20::7",
+      "mgmt-ipv6-address": "3fff:172:20:20::4",
       "mgmt-ipv6-prefix-length": 64,
       "mac-address": "",
       "labels": {
-        "clab-mgmt-net-bridge": "br-658ab846afb9",
+        "clab-mgmt-net-bridge": "br-cd6723ba4d68",
         "clab-node-group": "",
         "clab-node-kind": "linux",
         "clab-node-lab-dir": "/home/patrick_boulanger/ospf-otel-lab/clab-ospf-network/csr24",
@@ -92,11 +92,11 @@
       "mgmt-intf": "",
       "mgmt-ipv4-address": "172.20.20.25",
       "mgmt-ipv4-prefix-length": 24,
-      "mgmt-ipv6-address": "3fff:172:20:20::9",
+      "mgmt-ipv6-address": "3fff:172:20:20::3",
       "mgmt-ipv6-prefix-length": 64,
       "mac-address": "",
       "labels": {
-        "clab-mgmt-net-bridge": "br-658ab846afb9",
+        "clab-mgmt-net-bridge": "br-cd6723ba4d68",
         "clab-node-group": "",
         "clab-node-kind": "linux",
         "clab-node-lab-dir": "/home/patrick_boulanger/ospf-otel-lab/clab-ospf-network/csr25",
@@ -123,11 +123,11 @@
       "mgmt-intf": "",
       "mgmt-ipv4-address": "172.20.20.26",
       "mgmt-ipv4-prefix-length": 24,
-      "mgmt-ipv6-address": "3fff:172:20:20::a",
+      "mgmt-ipv6-address": "3fff:172:20:20::5",
       "mgmt-ipv6-prefix-length": 64,
       "mac-address": "",
       "labels": {
-        "clab-mgmt-net-bridge": "br-658ab846afb9",
+        "clab-mgmt-net-bridge": "br-cd6723ba4d68",
         "clab-node-group": "",
         "clab-node-kind": "linux",
         "clab-node-lab-dir": "/home/patrick_boulanger/ospf-otel-lab/clab-ospf-network/csr26",
@@ -158,7 +158,7 @@
       "mgmt-ipv6-prefix-length": 64,
       "mac-address": "",
       "labels": {
-        "clab-mgmt-net-bridge": "br-658ab846afb9",
+        "clab-mgmt-net-bridge": "br-cd6723ba4d68",
         "clab-node-group": "",
         "clab-node-kind": "linux",
         "clab-node-lab-dir": "/home/patrick_boulanger/ospf-otel-lab/clab-ospf-network/csr27",
@@ -189,7 +189,7 @@
       "mgmt-ipv6-prefix-length": 64,
       "mac-address": "",
       "labels": {
-        "clab-mgmt-net-bridge": "br-658ab846afb9",
+        "clab-mgmt-net-bridge": "br-cd6723ba4d68",
         "clab-node-group": "",
         "clab-node-kind": "linux",
         "clab-node-lab-dir": "/home/patrick_boulanger/ospf-otel-lab/clab-ospf-network/csr28",
@@ -216,11 +216,11 @@
       "mgmt-intf": "",
       "mgmt-ipv4-address": "172.20.20.29",
       "mgmt-ipv4-prefix-length": 24,
-      "mgmt-ipv6-address": "3fff:172:20:20::4",
+      "mgmt-ipv6-address": "3fff:172:20:20::7",
       "mgmt-ipv6-prefix-length": 64,
       "mac-address": "",
       "labels": {
-        "clab-mgmt-net-bridge": "br-658ab846afb9",
+        "clab-mgmt-net-bridge": "br-cd6723ba4d68",
         "clab-node-group": "",
         "clab-node-kind": "linux",
         "clab-node-lab-dir": "/home/patrick_boulanger/ospf-otel-lab/clab-ospf-network/csr29",
@@ -242,7 +242,7 @@
       "group": "",
       "labdir": "/home/patrick_boulanger/ospf-otel-lab/clab-ospf-network/elastic-agent-sw2",
       "kind": "linux",
-      "image": "elastic/elastic-agent:9.2.1",
+      "image": "elastic/elastic-agent:9.2.4",
       "mgmt-net": "",
       "mgmt-intf": "",
       "mgmt-ipv4-address": "172.20.20.50",
@@ -251,7 +251,7 @@
       "mgmt-ipv6-prefix-length": 64,
       "mac-address": "",
       "labels": {
-        "clab-mgmt-net-bridge": "br-658ab846afb9",
+        "clab-mgmt-net-bridge": "br-cd6723ba4d68",
         "clab-node-group": "",
         "clab-node-kind": "linux",
         "clab-node-lab-dir": "/home/patrick_boulanger/ospf-otel-lab/clab-ospf-network/elastic-agent-sw2",
@@ -276,13 +276,13 @@
       "image": "ubuntu-lab:22.04",
       "mgmt-net": "",
       "mgmt-intf": "",
-      "mgmt-ipv4-address": "172.20.20.6",
+      "mgmt-ipv4-address": "172.20.20.5",
       "mgmt-ipv4-prefix-length": 24,
-      "mgmt-ipv6-address": "3fff:172:20:20::f",
+      "mgmt-ipv6-address": "3fff:172:20:20::e",
       "mgmt-ipv6-prefix-length": 64,
       "mac-address": "",
       "labels": {
-        "clab-mgmt-net-bridge": "br-658ab846afb9",
+        "clab-mgmt-net-bridge": "br-cd6723ba4d68",
         "clab-node-group": "",
         "clab-node-kind": "linux",
         "clab-node-lab-dir": "/home/patrick_boulanger/ospf-otel-lab/clab-ospf-network/linux-bottom",
@@ -319,13 +319,13 @@
       "image": "ubuntu-lab:22.04",
       "mgmt-net": "",
       "mgmt-intf": "",
-      "mgmt-ipv4-address": "172.20.20.5",
+      "mgmt-ipv4-address": "172.20.20.2",
       "mgmt-ipv4-prefix-length": 24,
-      "mgmt-ipv6-address": "3fff:172:20:20::e",
+      "mgmt-ipv6-address": "3fff:172:20:20::b",
       "mgmt-ipv6-prefix-length": 64,
       "mac-address": "",
       "labels": {
-        "clab-mgmt-net-bridge": "br-658ab846afb9",
+        "clab-mgmt-net-bridge": "br-cd6723ba4d68",
         "clab-node-group": "",
         "clab-node-kind": "linux",
         "clab-node-lab-dir": "/home/patrick_boulanger/ospf-otel-lab/clab-ospf-network/linux-top",
@@ -359,16 +359,16 @@
       "group": "",
       "labdir": "/home/patrick_boulanger/ospf-otel-lab/clab-ospf-network/logstash",
       "kind": "linux",
-      "image": "docker.elastic.co/logstash/logstash:9.2.1",
+      "image": "docker.elastic.co/logstash/logstash:9.2.4",
       "mgmt-net": "",
       "mgmt-intf": "",
       "mgmt-ipv4-address": "172.20.20.31",
       "mgmt-ipv4-prefix-length": 24,
-      "mgmt-ipv6-address": "3fff:172:20:20::3",
+      "mgmt-ipv6-address": "3fff:172:20:20::9",
       "mgmt-ipv6-prefix-length": 64,
       "mac-address": "",
       "labels": {
-        "clab-mgmt-net-bridge": "br-658ab846afb9",
+        "clab-mgmt-net-bridge": "br-cd6723ba4d68",
         "clab-node-group": "",
         "clab-node-kind": "linux",
         "clab-node-lab-dir": "/home/patrick_boulanger/ospf-otel-lab/clab-ospf-network/logstash",
@@ -381,6 +381,30 @@
       },
       "port-bindings": [
         {
+          "host-ip": "0.0.0.0",
+          "host-port": 1062,
+          "port": 1062,
+          "protocol": "udp"
+        },
+        {
+          "host-ip": "::",
+          "host-port": 1062,
+          "port": 1062,
+          "protocol": "udp"
+        },
+        {
+          "host-ip": "0.0.0.0",
+          "host-port": 2055,
+          "port": 2055,
+          "protocol": "udp"
+        },
+        {
+          "host-ip": "::",
+          "host-port": 2055,
+          "port": 2055,
+          "protocol": "udp"
+        },
+        {
           "host-ip": "",
           "host-port": 0,
           "port": 5044,
@@ -391,30 +415,6 @@
           "host-port": 0,
           "port": 9600,
           "protocol": "tcp"
-        },
-        {
-          "host-ip": "0.0.0.0",
-          "host-port": 1062,
-          "port": 1062,
-          "protocol": "udp"
-        },
-        {
-          "host-ip": "::",
-          "host-port": 1062,
-          "port": 1062,
-          "protocol": "udp"
-        },
-        {
-          "host-ip": "0.0.0.0",
-          "host-port": 2055,
-          "port": 2055,
-          "protocol": "udp"
-        },
-        {
-          "host-ip": "::",
-          "host-port": 2055,
-          "port": 2055,
-          "protocol": "udp"
         }
       ]
     },
@@ -429,13 +429,13 @@
       "image": "otel/opentelemetry-collector-contrib:0.111.0",
       "mgmt-net": "",
       "mgmt-intf": "",
-      "mgmt-ipv4-address": "172.20.20.4",
+      "mgmt-ipv4-address": "172.20.20.3",
       "mgmt-ipv4-prefix-length": 24,
-      "mgmt-ipv6-address": "3fff:172:20:20::d",
+      "mgmt-ipv6-address": "3fff:172:20:20::c",
       "mgmt-ipv6-prefix-length": 64,
       "mac-address": "",
       "labels": {
-        "clab-mgmt-net-bridge": "br-658ab846afb9",
+        "clab-mgmt-net-bridge": "br-cd6723ba4d68",
         "clab-node-group": "",
         "clab-node-kind": "linux",
         "clab-node-lab-dir": "/home/patrick_boulanger/ospf-otel-lab/clab-ospf-network/otel-collector",
@@ -447,6 +447,18 @@
         "containerlab": "ospf-network"
       },
       "port-bindings": [
+        {
+          "host-ip": "0.0.0.0",
+          "host-port": 8888,
+          "port": 8888,
+          "protocol": "tcp"
+        },
+        {
+          "host-ip": "::",
+          "host-port": 8888,
+          "port": 8888,
+          "protocol": "tcp"
+        },
         {
           "host-ip": "0.0.0.0",
           "host-port": 4317,
@@ -482,18 +494,6 @@
           "host-port": 0,
           "port": 55679,
           "protocol": "tcp"
-        },
-        {
-          "host-ip": "0.0.0.0",
-          "host-port": 8888,
-          "port": 8888,
-          "protocol": "tcp"
-        },
-        {
-          "host-ip": "::",
-          "host-port": 8888,
-          "port": 8888,
-          "protocol": "tcp"
         }
       ]
     },
@@ -508,13 +508,13 @@
       "image": "alpine:latest",
       "mgmt-net": "",
       "mgmt-intf": "",
-      "mgmt-ipv4-address": "172.20.20.3",
+      "mgmt-ipv4-address": "172.20.20.6",
       "mgmt-ipv4-prefix-length": 24,
-      "mgmt-ipv6-address": "3fff:172:20:20::c",
+      "mgmt-ipv6-address": "3fff:172:20:20::f",
       "mgmt-ipv6-prefix-length": 64,
       "mac-address": "",
       "labels": {
-        "clab-mgmt-net-bridge": "br-658ab846afb9",
+        "clab-mgmt-net-bridge": "br-cd6723ba4d68",
         "clab-node-group": "",
         "clab-node-kind": "linux",
         "clab-node-lab-dir": "/home/patrick_boulanger/ospf-otel-lab/clab-ospf-network/sw",
@@ -539,13 +539,13 @@
       "image": "alpine:latest",
       "mgmt-net": "",
       "mgmt-intf": "",
-      "mgmt-ipv4-address": "172.20.20.2",
+      "mgmt-ipv4-address": "172.20.20.4",
       "mgmt-ipv4-prefix-length": 24,
-      "mgmt-ipv6-address": "3fff:172:20:20::b",
+      "mgmt-ipv6-address": "3fff:172:20:20::d",
       "mgmt-ipv6-prefix-length": 64,
       "mac-address": "",
       "labels": {
-        "clab-mgmt-net-bridge": "br-658ab846afb9",
+        "clab-mgmt-net-bridge": "br-cd6723ba4d68",
         "clab-node-group": "",
         "clab-node-kind": "linux",
         "clab-node-lab-dir": "/home/patrick_boulanger/ospf-otel-lab/clab-ospf-network/sw2",
@@ -566,13 +566,13 @@
         "a": {
           "node": "csr28",
           "interface": "eth1",
-          "mac": "aa:c1:ab:dd:3b:cc",
+          "mac": "aa:c1:ab:a4:7a:f1",
           "peer": "z"
         },
         "z": {
           "node": "csr24",
           "interface": "eth1",
-          "mac": "aa:c1:ab:7e:29:6d",
+          "mac": "aa:c1:ab:57:f0:cb",
           "peer": "a"
         }
       }
@@ -582,13 +582,13 @@
         "a": {
           "node": "csr28",
           "interface": "eth2",
-          "mac": "aa:c1:ab:43:d3:73",
+          "mac": "aa:c1:ab:2d:8f:f6",
           "peer": "z"
         },
         "z": {
           "node": "csr23",
           "interface": "eth2",
-          "mac": "aa:c1:ab:3f:70:34",
+          "mac": "aa:c1:ab:9e:ad:da",
           "peer": "a"
         }
       }
@@ -598,13 +598,13 @@
         "a": {
           "node": "csr28",
           "interface": "eth3",
-          "mac": "aa:c1:ab:11:d8:d5",
+          "mac": "aa:c1:ab:42:6a:2a",
           "peer": "z"
         },
         "z": {
           "node": "sw2",
           "interface": "eth1",
-          "mac": "aa:c1:ab:92:07:84",
+          "mac": "aa:c1:ab:bc:2e:7b",
           "peer": "a"
         }
       }
@@ -614,13 +614,13 @@
         "a": {
           "node": "csr24",
           "interface": "eth2",
-          "mac": "aa:c1:ab:e1:0e:04",
+          "mac": "aa:c1:ab:bb:5c:1c",
           "peer": "z"
         },
         "z": {
           "node": "csr29",
           "interface": "eth1",
-          "mac": "aa:c1:ab:2c:f1:90",
+          "mac": "aa:c1:ab:b7:3c:11",
           "peer": "a"
         }
       }
@@ -630,13 +630,13 @@
         "a": {
           "node": "csr24",
           "interface": "eth3",
-          "mac": "aa:c1:ab:6d:7f:09",
+          "mac": "aa:c1:ab:0f:b3:f8",
           "peer": "z"
         },
         "z": {
           "node": "csr23",
           "interface": "eth3",
-          "mac": "aa:c1:ab:4f:b0:8c",
+          "mac": "aa:c1:ab:50:04:ed",
           "peer": "a"
         }
       }
@@ -646,13 +646,13 @@
         "a": {
           "node": "csr24",
           "interface": "eth4",
-          "mac": "aa:c1:ab:e0:73:78",
+          "mac": "aa:c1:ab:a6:38:71",
           "peer": "z"
         },
         "z": {
           "node": "csr26",
           "interface": "eth3",
-          "mac": "aa:c1:ab:a0:ed:05",
+          "mac": "aa:c1:ab:46:c1:c9",
           "peer": "a"
         }
       }
@@ -662,13 +662,13 @@
         "a": {
           "node": "csr24",
           "interface": "eth5",
-          "mac": "aa:c1:ab:95:98:0d",
+          "mac": "aa:c1:ab:49:89:ab",
           "peer": "z"
         },
         "z": {
           "node": "csr25",
           "interface": "eth2",
-          "mac": "aa:c1:ab:23:3b:45",
+          "mac": "aa:c1:ab:65:72:07",
           "peer": "a"
         }
       }
@@ -678,13 +678,13 @@
         "a": {
           "node": "csr23",
           "interface": "eth1",
-          "mac": "aa:c1:ab:66:d5:54",
+          "mac": "aa:c1:ab:a9:70:21",
           "peer": "z"
         },
         "z": {
           "node": "csr26",
           "interface": "eth2",
-          "mac": "aa:c1:ab:73:04:02",
+          "mac": "aa:c1:ab:eb:2f:29",
           "peer": "a"
         }
       }
@@ -694,13 +694,13 @@
         "a": {
           "node": "csr23",
           "interface": "eth4",
-          "mac": "aa:c1:ab:4f:3f:05",
+          "mac": "aa:c1:ab:4e:60:6d",
           "peer": "z"
         },
         "z": {
           "node": "csr25",
           "interface": "eth1",
-          "mac": "aa:c1:ab:23:a3:39",
+          "mac": "aa:c1:ab:04:16:c2",
           "peer": "a"
         }
       }
@@ -710,13 +710,13 @@
         "a": {
           "node": "csr23",
           "interface": "eth5",
-          "mac": "aa:c1:ab:aa:b2:52",
+          "mac": "aa:c1:ab:10:4e:b6",
           "peer": "z"
         },
         "z": {
           "node": "csr27",
           "interface": "eth1",
-          "mac": "aa:c1:ab:7e:67:6e",
+          "mac": "aa:c1:ab:bb:fa:ba",
           "peer": "a"
         }
       }
@@ -726,13 +726,13 @@
         "a": {
           "node": "csr29",
           "interface": "eth2",
-          "mac": "aa:c1:ab:86:45:17",
+          "mac": "aa:c1:ab:23:66:49",
           "peer": "z"
         },
         "z": {
           "node": "csr26",
           "interface": "eth1",
-          "mac": "aa:c1:ab:00:8d:d3",
+          "mac": "aa:c1:ab:9f:49:f1",
           "peer": "a"
         }
       }
@@ -742,13 +742,13 @@
         "a": {
           "node": "csr27",
           "interface": "eth2",
-          "mac": "aa:c1:ab:4a:8b:02",
+          "mac": "aa:c1:ab:8a:7f:06",
           "peer": "z"
         },
         "z": {
           "node": "csr25",
           "interface": "eth4",
-          "mac": "aa:c1:ab:b3:a9:8b",
+          "mac": "aa:c1:ab:84:b3:dd",
           "peer": "a"
         }
       }
@@ -758,13 +758,13 @@
         "a": {
           "node": "csr26",
           "interface": "eth4",
-          "mac": "aa:c1:ab:f8:4b:a2",
+          "mac": "aa:c1:ab:9a:25:6a",
           "peer": "z"
         },
         "z": {
           "node": "csr25",
           "interface": "eth3",
-          "mac": "aa:c1:ab:3a:19:ec",
+          "mac": "aa:c1:ab:ff:76:1b",
           "peer": "a"
         }
       }
@@ -774,13 +774,13 @@
         "a": {
           "node": "csr25",
           "interface": "eth5",
-          "mac": "aa:c1:ab:23:a2:d1",
+          "mac": "aa:c1:ab:be:f2:b7",
           "peer": "z"
         },
         "z": {
           "node": "sw",
           "interface": "eth1",
-          "mac": "aa:c1:ab:ed:4c:2e",
+          "mac": "aa:c1:ab:e6:01:3e",
           "peer": "a"
         }
       }
@@ -790,13 +790,13 @@
         "a": {
           "node": "csr26",
           "interface": "eth5",
-          "mac": "aa:c1:ab:82:b2:ca",
+          "mac": "aa:c1:ab:3f:20:1f",
           "peer": "z"
         },
         "z": {
           "node": "sw",
           "interface": "eth2",
-          "mac": "aa:c1:ab:94:c2:c5",
+          "mac": "aa:c1:ab:31:5b:db",
           "peer": "a"
         }
       }
@@ -806,13 +806,13 @@
         "a": {
           "node": "sw",
           "interface": "eth3",
-          "mac": "aa:c1:ab:70:0b:b1",
+          "mac": "aa:c1:ab:7c:37:f2",
           "peer": "z"
         },
         "z": {
           "node": "linux-bottom",
           "interface": "eth1",
-          "mac": "aa:c1:ab:43:cd:de",
+          "mac": "aa:c1:ab:e4:d2:63",
           "peer": "a"
         }
       }
@@ -822,13 +822,13 @@
         "a": {
           "node": "sw2",
           "interface": "eth2",
-          "mac": "aa:c1:ab:df:3e:f7",
+          "mac": "aa:c1:ab:10:2b:8e",
           "peer": "z"
         },
         "z": {
           "node": "linux-top",
           "interface": "eth1",
-          "mac": "aa:c1:ab:80:e6:83",
+          "mac": "aa:c1:ab:99:1c:7e",
           "peer": "a"
         }
       }
@@ -838,13 +838,13 @@
         "a": {
           "node": "sw2",
           "interface": "eth3",
-          "mac": "aa:c1:ab:ed:9c:7c",
+          "mac": "aa:c1:ab:db:7a:f7",
           "peer": "z"
         },
         "z": {
           "node": "elastic-agent-sw2",
           "interface": "eth1",
-          "mac": "aa:c1:ab:36:70:b7",
+          "mac": "aa:c1:ab:3d:e6:f0",
           "peer": "a"
         }
       }

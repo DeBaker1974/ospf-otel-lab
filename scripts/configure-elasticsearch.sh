@@ -933,13 +933,13 @@ suggest_port() {
 # ============================================
 
 update_otel_collector() {
-    local endpoint=$1
-    local api_key=$2
+    # We don't need the actual values here anymore since we use env vars
+    # But we'll keep the arguments for compatibility
     
     OTEL_CONFIG="$HOME/ospf-otel-lab/configs/otel/otel-collector.yml"
     
     echo ""
-    echo "Updating OTel Collector configuration..."
+    echo "Updating OTel Collector configuration to use environment variables..."
     
     if [ ! -f "$OTEL_CONFIG" ]; then
         echo "⚠ OTel config not found: $OTEL_CONFIG"
@@ -948,17 +948,20 @@ update_otel_collector() {
     
     cp "$OTEL_CONFIG" "${OTEL_CONFIG}.backup-$(date +%s)"
     
-    # Update endpoints and api_keys
-    sed -i "s|endpoints: \[ \"https://[^\"]*\" \]|endpoints: [ \"$endpoint\" ]|g" "$OTEL_CONFIG"
-    sed -i "s|api_key: \"[^\"]*\"|api_key: \"$api_key\"|g" "$OTEL_CONFIG"
+    # Force use of environment variable syntax
+    sed -i 's|endpoints: \[ "https://[^"]*" \]|endpoints: [ "${env:ES_ENDPOINT}" ]|g' "$OTEL_CONFIG"
+    sed -i 's|endpoints: \[ "http://[^"]*" \]|endpoints: [ "${env:ES_ENDPOINT}" ]|g' "$OTEL_CONFIG"
+    sed -i 's|api_key: "[^"]*"|api_key: "${env:ES_API_KEY}"|g' "$OTEL_CONFIG"
     
-    echo "✓ OTel Collector configuration updated"
+    echo "✓ OTel Collector configuration set to use \${env:ES_ENDPOINT}"
     
     if docker ps --format '{{.Names}}' 2>/dev/null | grep -q "clab-ospf-network-otel-collector"; then
         read -p "Restart OTel Collector? (Y/n): " restart
+        # We assume the container already has the env vars from .env file via clab
         [[ ! $restart =~ ^[Nn]$ ]] && docker restart clab-ospf-network-otel-collector >/dev/null 2>&1 && echo "✓ OTel Collector restarted"
     fi
 }
+
 
 update_logstash_pipeline() {
     local endpoint=$1
@@ -1129,6 +1132,34 @@ configure_elasticsearch() {
     return 0
 }
 
+update_topology_file() {
+    local agent_ver=$1
+    TOPOLOGY_FILE="$HOME/ospf-otel-lab/ospf-network.clab.yml"
+    
+    echo ""
+    echo "Updating topology configuration..."
+    
+    if [ ! -f "$TOPOLOGY_FILE" ]; then
+        echo "⚠ Topology file not found: $TOPOLOGY_FILE"
+        return 1
+    fi
+    
+    # Update Agent Version
+    if [ -n "$agent_ver" ]; then
+        sed -i "s|image: elastic/elastic-agent:[0-9.]*|image: elastic/elastic-agent:$agent_ver|g" "$TOPOLOGY_FILE"
+        sed -i "s|image: docker.elastic.co/logstash/logstash:[0-9.]*|image: docker.elastic.co/logstash/logstash:$agent_ver|g" "$TOPOLOGY_FILE"
+        echo "✓ Updated agent version to $agent_ver"
+    fi
+    
+    # Ensure OTEL collector has env vars
+    if ! grep -A 10 "otel-collector:" "$TOPOLOGY_FILE" | grep -q "ES_ENDPOINT"; then
+        sed -i '/otel-collector:/,/ports:/{
+            /cmd:/a\      env:\n        ES_ENDPOINT: ${ES_ENDPOINT}\n        ES_API_KEY: ${ES_API_KEY}
+        }' "$TOPOLOGY_FILE"
+        echo "✓ Added environment variables to OTEL collector"
+    fi
+}
+
 # ============================================
 # MAIN SCRIPT
 # ============================================
@@ -1242,6 +1273,7 @@ echo ""
 # Step 7: Update component configs
 update_logstash_pipeline "$ES_ENDPOINT" "$ES_API_KEY"
 update_otel_collector "$ES_ENDPOINT" "$ES_API_KEY"
+update_topology_file "$AGENT_VERSION"  # ← Add this line
 
 # Step 8: Update topology if script exists
 if [ -f "$HOME/ospf-otel-lab/scripts/update-topology-from-env.sh" ]; then

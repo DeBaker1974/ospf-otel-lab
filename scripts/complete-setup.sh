@@ -776,6 +776,34 @@ chmod +x "$LAB_DIR/scripts/netflow-startup.sh"
 echo "  ✓ NetFlow startup script created"
 
 # ============================================
+# PHASE 1.6: Update Topology with Env Vars
+# ============================================
+echo ""
+echo "Phase 1.6: Updating topology environment variables..."
+
+TOPOLOGY_FILE="ospf-network.clab.yml"
+
+# Update Agent Version dynamically
+if [ -n "$AGENT_VERSION" ]; then
+    echo "  Updating Agent/Logstash version to $AGENT_VERSION..."
+    # Use .* to match ANY content (variable or number) after the colon
+    sed -i "s|image: elastic/elastic-agent:.*|image: elastic/elastic-agent:$AGENT_VERSION|g" "$TOPOLOGY_FILE"
+    sed -i "s|image: docker.elastic.co/logstash/logstash:.*|image: docker.elastic.co/logstash/logstash:$AGENT_VERSION|g" "$TOPOLOGY_FILE"
+fi
+
+# Ensure OTEL collector has env vars in the topology
+if ! grep -A 10 "otel-collector:" "$TOPOLOGY_FILE" | grep -q "ES_ENDPOINT"; then
+    echo "  Adding environment variables to OTEL collector container definition..."
+    # Insert env block into the otel-collector definition
+    sed -i '/otel-collector:/,/ports:/{
+        /cmd:/a\      env:\n        ES_ENDPOINT: ${ES_ENDPOINT}\n        ES_API_KEY: ${ES_API_KEY}
+    }' "$TOPOLOGY_FILE"
+    echo "    ✓ Env vars added to OTEL collector"
+fi
+
+echo "  ✓ Topology updated"
+
+# ============================================
 # PHASE 2: Deploy Topology
 # ============================================
 echo ""
@@ -1428,34 +1456,27 @@ if [ -z "$ES_ENDPOINT" ] || [ -z "$ES_API_KEY" ]; then
 fi
 
 # ============================================
-# UPDATE 1: Elasticsearch Connection
+# UPDATE 1: Elasticsearch Connection (Use Env Vars)
 # ============================================
 echo ""
-echo "  Updating Elasticsearch connection..."
-echo "    New Endpoint: $ES_ENDPOINT"
-echo "    New API Key:  ${ES_API_KEY:0:20}..."
+echo "  Updating Elasticsearch connection to use environment variables..."
 
-# Find current endpoint in config
-OLD_ENDPOINT=$(grep -m 1 'endpoints: \[' "$OTEL_CONFIG" | grep -oP 'https://[^"]+' || echo "")
-OLD_API_KEY=$(grep -m 1 'api_key:' "$OTEL_CONFIG" | awk '{print $2}' | tr -d '"' || echo "")
+# Replace endpoints list with env var reference (handles http/https)
+# This forces the config file to say "${env:ES_ENDPOINT}" instead of the actual URL
+sed -i 's|endpoints: \[ "https://[^"]*" \]|endpoints: [ "${env:ES_ENDPOINT}" ]|g' "$OTEL_CONFIG"
+sed -i 's|endpoints: \[ "http://[^"]*" \]|endpoints: [ "${env:ES_ENDPOINT}" ]|g' "$OTEL_CONFIG"
 
-if [ -n "$OLD_ENDPOINT" ]; then
-    echo "    Replacing: $OLD_ENDPOINT"
-    sed -i "s|${OLD_ENDPOINT}|${ES_ENDPOINT}|g" "$OTEL_CONFIG"
-fi
-
-if [ -n "$OLD_API_KEY" ]; then
-    echo "    Replacing API key: ${OLD_API_KEY:0:20}..."
-    sed -i "s|${OLD_API_KEY}|${ES_API_KEY}|g" "$OTEL_CONFIG"
-fi
+# Replace api_key with env var reference
+# This forces the config file to say "${env:ES_API_KEY}"
+sed -i 's|api_key: "[^"]*"|api_key: "${env:ES_API_KEY}"|g' "$OTEL_CONFIG"
 
 # Verify replacement
-NEW_ENDPOINT_COUNT=$(grep -c "$ES_ENDPOINT" "$OTEL_CONFIG")
-if [ "$NEW_ENDPOINT_COUNT" -gt 0 ]; then
-    echo "    ✓ Endpoint updated ($NEW_ENDPOINT_COUNT occurrences)"
+if grep -q "\${env:ES_ENDPOINT}" "$OTEL_CONFIG"; then
+    echo "    ✓ OTEL config updated to use \${env:ES_ENDPOINT}"
 else
-    echo "    ✗ Warning: Endpoint not updated!"
+    echo "    ⚠ Warning: Could not update OTEL endpoints to use environment variables"
 fi
+
 
 # ============================================
 # UPDATE 2: Router IPs (SNMP endpoints)

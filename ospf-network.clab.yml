@@ -11,7 +11,7 @@ topology:
     # ============================================
     elastic-agent-sw2:
       kind: linux
-      image: elastic/elastic-agent:9.2.1
+      image: elastic/elastic-agent:9.2.4
       user: root
       memory: 1024m
       binds:
@@ -278,16 +278,18 @@ topology:
         - configs/otel/otel-collector.yml:/etc/otelcol-contrib/config.yaml:ro
         - .env:/etc/otelcol-contrib/.env:ro
       cmd: --config=/etc/otelcol-contrib/config.yaml
+      env:
+        ES_ENDPOINT: ${ES_ENDPOINT}
+        ES_API_KEY: ${ES_API_KEY}
       ports:
         - 8888:8888
         - 4317:4317
         - 5140:5140/udp
-      # REMOVED ip route commands - otel image doesn't have ip command
-      # Routes not needed for SNMP polling anyway
+
 
     logstash:
       kind: linux
-      image: docker.elastic.co/logstash/logstash:9.2.1
+      image: docker.elastic.co/logstash/logstash:9.2.4
       binds:
         - configs/logstash/pipeline:/usr/share/logstash/pipeline:ro
         - configs/logstash/logstash.yml:/usr/share/logstash/config/logstash.yml:ro
