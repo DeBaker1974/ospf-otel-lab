@@ -158,55 +158,7 @@ Derived from `frr.conf`:
 *   **Area:** All interfaces are in **Area 0**.
 *   **Network Type:** `point-to-point` is explicitly configured on links to reduce OSPF overhead (no DR/BDR election).
 
-## 6. Directory Structure
-
-Ensure your project directory (`~/ospf-otel-lab`) looks like this before starting:
-
-```text
-.
-└── ospf-otel-lab
-    ├── clab-ospf-network          # Deployment artifacts (auto-generated)
-    ├── logs
-    │   ├── journal
-    │   └── apt
-    ├── configs
-    │   ├── elasticsearch
-    │   ├── elastic-agent
-    │   │   ├── state
-    │   │   └── data
-    │   ├── elastic-agent-state    # Bind mount for Agent container
-    │   ├── kibana
-    │   │   └── dashboards
-    │   ├── logstash
-    │   │   ├── config
-    │   │   └── pipeline
-    │   │       └── backups
-    │   ├── otel
-    │   │   ├── backups
-    │   │   └── Archive
-    │   └── routers
-    │       ├── csr23
-    │       │   ├── agentx
-    │       │   └── archive
-    │       ├── csr24
-    │       │   └── agentx
-    │       ├── csr25
-    │       │   └── agentx
-    │       ├── csr26
-    │       │   └── agentx
-    │       ├── csr27
-    │       │   └── agentx
-    │       ├── csr28
-    │       │   └── agentx
-    │       └── csr29
-    │           └── agentx
-    └── scripts
-        ├── ./connect.sh
-        └── ./complete-setup.sh
-        └── ./configure-elasticsearch.sh
-```
-
-## 7. Detailed Deployment Steps
+## 6. Detailed Deployment Steps
 
 ### Step 1: Install Dependencies
 Run the prerequisite script to install Docker CE and Containerlab.
@@ -266,7 +218,7 @@ chmod +x scripts/complete-setup.sh
 *   **Converge:** Waits for OSPF adjacencies to form.
 *   **Verify:** Checks data flow for SNMP, LLDP, and Traps.
 
-## 8. Verification & Access
+## 7. Verification & Access
 
 ### Lab Status Summary
 At the end of the deployment, the script provides a health summary:
@@ -288,7 +240,7 @@ At the end of the deployment, the script provides a health summary:
     docker logs -f clab-ospf-network-logstash
     ```
 
-## 9. Telemetry Data Flow Summary
+## 8. Telemetry Data Flow Summary
 
 | Data Type | Source | Transport | Collector | Destination |
 | :---- | :---: | :---: | :---: | :---: |
@@ -297,7 +249,7 @@ At the end of the deployment, the script provides a health summary:
 | **NetFlow** | All Routers | UDP 2055 (NetFlow v5) | Elastic Agent | `logs-network_traffic.*` |
 | **Topology** | FRR Routers | AgentX (LLDP) | OTEL Collector | `lldp-topology` |
 
-## 10. Transform: net-lldp-edges
+## 9. Transform: net-lldp-edges
 
 To create the `net-lldp-edges` Index Mapping and Transform. This is required to summarize metrics to be used in our Status Dashboard
 *   Ensure the setup is complete before executing this transform.
@@ -366,7 +318,7 @@ PUT _transform/lldp-topology-to-edges
 ```json
 POST _transform/lldp-topology-to-edges/_start
 ```
-## 11. Import the CSR23 Interface Status Dashboard
+## 10. Import the CSR23 Interface Status Dashboard
 
 Import the pre-built dashboard to visualize interface health and neighbor relationships in real-time.
 
@@ -423,7 +375,7 @@ After import, verify the dashboard is populated:
 **5. Finalize**
 *   Import the Kibana dashboard: "CSR23 - Interface Status".
 
-## 12. Create Alert in Kibana
+## 11. Create Alert in Kibana
 
 1.  Navigate to: **Stack management > Rules > Create rules**
 2.  Search: **Elasticsearch query**
@@ -543,7 +495,7 @@ POST kbn:/api/alerting/rule
   }
 }
 ```
-## 13. Trigger a Failure
+## 12. Trigger a Failure
 
 Use the provided script to simulate network events and prove Elastic can handle real-world scenarios. Choose menu 40 to generate **Interface eth1 DOWN** on CSR23.
 
@@ -579,7 +531,7 @@ Navigate to `/scripts` and execute:
     *   Tests connectivity to Logstash.
     *   Sends a test trap to validate the pipeline.
 
-## 14. Kibana - Discover
+## 13. Kibana - Discover
 
 **Discover** is the primary tool for exploring your Elasticsearch data in Kibana. Search and filter documents, analyze field structures, visualize patterns, and save findings to reuse later or share with dashboards. Whether investigating issues, analyzing trends, or validating data quality, Discover offers a flexible interface for understanding your data.
 
