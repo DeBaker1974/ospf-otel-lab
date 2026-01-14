@@ -46,64 +46,9 @@ chmod +x *
 ./configure-elasticsearch.sh
 ./complete-setup.sh
 ```
-**5. Import the CSR23 Interface Status Dashboard**
 
-Import the pre-built dashboard to visualize interface health and neighbor relationships in real-time.
-
-### Import via Kibana UI
-
-1. In Kibana, navigate to: **Stack Management → Saved Objects**
-2. Click the **Import** button (top right corner)
-3. Click **Select a file to import**
-4. Browse to your local repository and select: ~/ospf-otel-lab/configs/kibana/dashboards/csr23-interface-status.ndjson
-5. Click **Import**
-
-### Post-Import Steps
-
-After importing, access your dashboard:
-
-1. Navigate to **Analytics → Dashboards** (or click **Dashboards** in the left sidebar)
-2. Search for: `CSR23`
-3. Click on **"CSR23 - Interface Status"** to open
-
-> **⚠️ Note:** This dashboard requires the `net-lldp-edges` transform from Step 10 to be running and populated with data. Allow 2-3 minutes after starting the transform for data to appear.
-
-### Dashboard Overview
-
-The **CSR23 - Interface Status** dashboard provides real-time visibility into router health and OSPF neighbor relationships.
-
-![CSR23 Interface Status Dashboard](Images/csr23-dashboard.png)
-
-### Dashboard Panels
-
-| Panel | Description |
-|-------|-------------|
-| **CSR23 - Interface Status** | Top-level view showing all neighbors with status indicators (🟢 ACTIVE), age display, and last-seen timestamps |
-| **Fault Detection (Missing Neighbors)** | Displays alerts when expected LLDP neighbors are missing — empty when healthy |
-| **Interface Health Summary** | Aggregated view showing neighbor count per router and overall health status (🟢 Healthy) |
-| **Real-Time Interface Monitor** | Per-interface breakdown (eth1-eth5) with neighbor names, live status, and packet counts |
-| **Global View - Router & Neighbor Table** | Detailed table with router-to-neighbor mappings, status, age, and link counts |
-| **Summary Dashboard (Neighbor Count per Router)** | Per-router summary showing health, neighbor count, last-seen time, and total packets |
-
-### Key Indicators
-
-- **🟢 ACTIVE / LIVE** — Interface is operational and LLDP neighbor is detected
-- **🟢 Healthy** — Router has expected neighbor count and all interfaces responding
-- **Seconds_Ago** — Time since last SNMP poll (should be ~30-40s when healthy)
-- **packet_count** — Running count of SNMP observations for this interface
-
-### Verifying Dashboard Data
-
-After import, verify the dashboard is populated:
-
-1. All 5 interfaces on CSR23 should show **LIVE** status
-2. Neighbors should display: `csr24`, `csr25`, `csr26`, `csr27`, `csr28`
-3. **Fault Detection** panel should show "No results found" (healthy state)
-4. **Seconds_Ago** values should be < 60 seconds
-**5. Finalize**
-*   Import the Kibana dashboard: "CSR23 - Interface Status".
-
----
+----
+----
 
 ## 1. High-Level Architecture
 
