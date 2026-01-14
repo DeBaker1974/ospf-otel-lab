@@ -24,6 +24,7 @@ scripts/archive/
 
 # TLS runtime certs
 clab-ospf-network/.tls/
+clab-ospf-network/authorized_keys
 
 # Environment files (secrets)
 .env
