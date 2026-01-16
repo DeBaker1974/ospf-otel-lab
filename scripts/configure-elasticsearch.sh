@@ -964,19 +964,18 @@ update_otel_collector() {
 
 
 update_logstash_pipeline() {
-    local endpoint=$1
-    local api_key=$2
+    # Arguments ignored to prevent hardcoding - purely relies on env variables now
     
     PIPELINE_FILE="$HOME/ospf-otel-lab/configs/logstash/pipeline/snmp-traps.conf"
     
     echo ""
-    echo "Updating Logstash pipeline..."
+    echo "Updating Logstash pipeline to use environment variables..."
     
     mkdir -p "$(dirname $PIPELINE_FILE)"
     [ -f "$PIPELINE_FILE" ] && cp "$PIPELINE_FILE" "${PIPELINE_FILE}.backup-$(date +%s)"
     
-    # IMPORTANT: Serverless, Cloud, and On-Premise ALL use the same format
-    # hosts + api_key works for all deployment types
+    # Use quoted 'PIPELINE_EOF' to prevent variable expansion during creation
+    # This writes "${ES_ENDPOINT}" literally into the file
     cat > "$PIPELINE_FILE" << 'PIPELINE_EOF'
 input {
   snmptrap {
@@ -1024,10 +1023,10 @@ output {
   # Console output for debugging
   stdout { codec => rubydebug }
   
-  # Elasticsearch output - works for Serverless, Cloud, and On-Premise
+  # Elasticsearch output - uses environment variables from container
   elasticsearch {
-    hosts => ["ENDPOINT_PLACEHOLDER"]
-    api_key => "API_KEY_PLACEHOLDER"
+    hosts => ["${ES_ENDPOINT}"]
+    api_key => "${ES_API_KEY}"
     data_stream => true
     data_stream_type => "logs"
     data_stream_dataset => "snmp.trap"
@@ -1036,21 +1035,7 @@ output {
 }
 PIPELINE_EOF
 
-    # Replace placeholders with actual values
-    sed -i "s|ENDPOINT_PLACEHOLDER|$endpoint|g" "$PIPELINE_FILE"
-    sed -i "s|API_KEY_PLACEHOLDER|$api_key|g" "$PIPELINE_FILE"
-    
-    echo "✓ Logstash pipeline updated"
-    echo "  Endpoint: $endpoint"
-    echo "  Target: logs-snmp.trap-prod"
-    
-    # Verify replacement worked
-    if grep -q "ENDPOINT_PLACEHOLDER\|API_KEY_PLACEHOLDER" "$PIPELINE_FILE"; then
-        echo "  ⚠ Warning: Some placeholders were not replaced!"
-        grep -n "PLACEHOLDER" "$PIPELINE_FILE" | sed 's/^/    /'
-    else
-        echo "  ✓ All placeholders replaced successfully"
-    fi
+    echo "✓ Logstash pipeline configured with dynamic \${ES_ENDPOINT}"
     
     # Restart Logstash if running
     if docker ps --format '{{.Names}}' 2>/dev/null | grep -q "clab-ospf-network-logstash"; then
@@ -1061,6 +1046,7 @@ PIPELINE_EOF
         fi
     fi
 }
+
 
 
 # ============================================

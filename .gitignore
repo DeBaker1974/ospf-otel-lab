@@ -29,3 +29,4 @@ clab-ospf-network/authorized_keys
 # Environment files (secrets)
 .env
 .env.*
+clab-ospf-network/
