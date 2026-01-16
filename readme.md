@@ -13,6 +13,7 @@ The primary focus is on comprehensive network observability, integrating three d
 **Implemented Use Cases:**
 *   Simulate SNMP Traps for CSR23 (eth1 down/up) and recover the trap in Elastic.
 *   Simulate CSR23 down/up and visualize the status in the "CSR23 - Interface Status" dashboard.
+*   Leverage AI to perform root cause analysis
 *   Utilize two Linux hosts to simulate additional workloads.
 
 ![Lab Topology](Images/lab-topology.jpg)
