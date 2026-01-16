@@ -36,7 +36,7 @@ Suggested instance sizes for deployment:
     *   Elasticsearch Endpoint and API Key
     *   Fleet URL and Token (from a policy with NetFlow integration)
 
-**4. Installation**
+**4. Prerequisites Installation**
 Run the following commands in your terminal:
 
 ```bash
