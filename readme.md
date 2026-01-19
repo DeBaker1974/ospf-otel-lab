@@ -36,19 +36,84 @@ Suggested instance sizes for deployment:
     *   Elasticsearch Endpoint and API Key
     *   Fleet URL and Token (from a policy with NetFlow integration)
 
-**4. Prerequisites Installation**
-Run the following commands in your terminal:
+
+Here is the corrected and updated version:
+
+**3. Prerequisites Installation**
+
+First, navigate to the scripts directory and make the scripts executable:
 
 ```bash
 cd ospf-otel-lab/scripts
 chmod +x *
+```
+
+**Select your Operating System below:**
+
+### 🐧 Option A: Linux VM (Ubuntu/Debian) — Recommended
+Run the automated installer script. This will install Docker and Containerlab for you.
+
+```bash
 ./install-lab-prereqs.sh
-# Log out and log back in here to apply Docker permissions
+```
+> **⚠️ Important:** You must **log out and log back in** (or run `newgrp docker`) after this step to apply Docker user permissions.
+
+### 🪟 Option B: Windows (WSL2)
+**Do NOT** run the `install-lab-prereqs.sh` script. Instead, ensure you have the following installed manually:
+
+1.  **Docker Desktop**: Install and ensure it is running with WSL2 backend enabled.
+2.  **Containerlab**: Inside your WSL2 terminal, run:
+    ```bash
+    sudo bash -c "$(curl -sL https://get.containerlab.dev)"
+    ```
+    Or follow the [official installation instructions](https://containerlab.dev/install/).
+
+### 🍎 Option C: macOS
+
+> **⚠️ Important: macOS Limitation**
+>
+> Containerlab **does not support macOS natively**. It requires Linux kernel features (network namespaces, veth pairs) that do not exist on macOS. Docker Desktop alone is **NOT sufficient**.
+
+**macOS users must run the lab inside a Linux environment using one of these methods:**
+
+#### Method 1: Multipass (Recommended — Free & Easy)
+[Multipass](https://multipass.run/) creates lightweight Ubuntu VMs on your Mac.
+
+```bash
+# Install Multipass
+brew install multipass
+
+# Create an Ubuntu VM with enough resources
+multipass launch --name clab --cpus 4 --memory 8G --disk 50G
+
+# Enter the VM
+multipass shell clab
+
+# Inside the VM: Clone the repo and install prerequisites
+git clone https://github.com/YOUR_REPO/ospf-otel-lab.git
+cd ospf-otel-lab/scripts
+chmod +x *
+./install-lab-prereqs.sh
+```
+
+#### Method 2: UTM or Parallels
+Use [UTM](https://mac.getutm.app/) (free) or [Parallels](https://www.parallels.com/) (paid) to run an Ubuntu 22.04 VM, then follow the **Linux VM** instructions above.
+
+#### Method 3: Cloud VM
+Spin up an Ubuntu VM on AWS, GCP, Azure, or DigitalOcean and run the lab there.
+
+---
+
+**4. Configuration & Deployment**
+
+Once the prerequisites are ready (and you are inside a Linux environment), run the configuration wizard followed by the main setup script:
+
+```bash
 ./configure-elasticsearch.sh
 ./complete-setup.sh
 ```
 
-----
+
 ----
 
 ## 1. High-Level Architecture

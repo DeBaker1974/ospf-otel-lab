@@ -1,162 +1,138 @@
 #!/bin/bash
 
 # Script: install_docker_containerlab.sh
-# Description: Automated installation of Docker and Containerlab
-# Author: Senior Software Engineer
+# Description: Smart installation of Containerlab (and Docker if missing)
+# Supports: Linux (Ubuntu/Debian), WSL2, and macOS
 # Usage: sudo bash install_docker_containerlab.sh
 
-set -e  # Exit on any error
+set -e
 
-# Color codes for output
+# Color codes
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
-# Function to print colored messages
-print_message() {
-    local color=$1
-    local message=$2
-    echo -e "${color}[$(date +'%Y-%m-%d %H:%M:%S')] ${message}${NC}"
+print_success() { echo -e "${GREEN}✓ $1${NC}"; }
+print_error() { echo -e "${RED}✗ $1${NC}"; }
+print_info() { echo -e "${YELLOW}→ $1${NC}"; }
+
+# Detect OS
+detect_os() {
+    unameOut="$(uname -s)"
+    case "${unameOut}" in
+        Linux*)     OS="Linux";;
+        Darwin*)    OS="Mac";;
+        *)          OS="UNKNOWN:${unameOut}"
+    esac
 }
 
-print_success() {
-    print_message "${GREEN}" "✓ $1"
-}
-
-print_error() {
-    print_message "${RED}" "✗ $1"
-}
-
-print_info() {
-    print_message "${YELLOW}" "→ $1"
-}
-
-# Function to check if running as root
-check_root() {
-    if [[ $EUID -ne 0 ]]; then
-        print_error "This script must be run as root or with sudo"
+# Check Root (Required for Linux installs, recommended for macOS binary placement)
+check_permissions() {
+    if [ "$OS" == "Linux" ] && [ "$EUID" -ne 0 ]; then
+        print_error "On Linux/WSL, this script must be run as root (sudo)"
         exit 1
     fi
 }
 
-# Main installation function
+install_docker_linux() {
+    print_info "Installing Docker Engine on Linux/WSL..."
+    
+    # 1. Update and install prereqs
+    apt-get update -qq
+    apt-get install -y ca-certificates curl gnupg lsb-release
+
+    # 2. Add GPG key
+    mkdir -p /etc/apt/keyrings
+    if [ ! -f /etc/apt/keyrings/docker.gpg ]; then
+        curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+    fi
+
+    # 3. Add Repo
+    echo \
+      "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
+      $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+    # 4. Install
+    apt-get update -qq
+    apt-get install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
+
+    # 5. Start Service (Skip if WSL systemd is missing)
+    if command -v systemctl &> /dev/null; then
+        systemctl start docker || print_info "Could not start Docker service (normal for some WSL configs)"
+        systemctl enable docker || true
+    fi
+}
+
 main() {
-    print_info "Starting Docker and Containerlab installation..."
+    detect_os
+    check_permissions
+    
+    print_info "Detected OS: $OS"
     echo ""
 
-    # Step 1: Update package list
-    print_info "Step 1: Updating package list..."
-    apt update || { print_error "Failed to update package list"; exit 1; }
-    print_success "Package list updated"
-    echo ""
-
-    # Step 2: Install required packages
-    print_info "Step 2: Installing required packages..."
-    apt install -y curl apt-transport-https ca-certificates software-properties-common gnupg lsb-release || {
-        print_error "Failed to install required packages"
-        exit 1
-    }
-    print_success "Required packages installed"
-    echo ""
-
-    # Step 3: Add Docker's official GPG key
-    print_info "Step 3: Adding Docker's official GPG key..."
-    curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg || {
-        print_error "Failed to add Docker GPG key"
-        exit 1
-    }
-    print_success "Docker GPG key added"
-    echo ""
-
-    # Step 4: Add Docker repository
-    print_info "Step 4: Adding Docker repository..."
-    echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/debian $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null || {
-        print_error "Failed to add Docker repository"
-        exit 1
-    }
-    print_success "Docker repository added"
-    echo ""
-
-    # Step 5: Update package list again
-    print_info "Step 5: Updating package list with Docker repository..."
-    apt update || { print_error "Failed to update package list"; exit 1; }
-    print_success "Package list updated"
-    echo ""
-
-    # Step 6: Install Docker
-    print_info "Step 6: Installing Docker Engine..."
-    apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin || {
-        print_error "Failed to install Docker"
-        exit 1
-    }
-    print_success "Docker installed successfully"
-    echo ""
-
-    # Step 7: Add user to docker group
-    print_info "Step 7: Adding user to docker group..."
-    ACTUAL_USER=${SUDO_USER:-$USER}
-    if [ -n "$ACTUAL_USER" ] && [ "$ACTUAL_USER" != "root" ]; then
-        usermod -aG docker "$ACTUAL_USER" || {
-            print_error "Failed to add user to docker group"
-            exit 1
-        }
-        print_success "User '$ACTUAL_USER' added to docker group"
+    # ============================================
+    # STEP 1: DOCKER CHECK
+    # ============================================
+    print_info "Checking Docker..."
+    
+    if command -v docker &> /dev/null; then
+        print_success "Docker is already installed!"
+        docker --version
     else
-        print_info "Running as root - skipping user group addition"
+        if [ "$OS" == "Mac" ]; then
+            print_error "Docker is missing on macOS."
+            print_error "Please install Docker Desktop manually: https://www.docker.com/products/docker-desktop"
+            exit 1
+        else
+            print_info "Docker not found. Installing..."
+            install_docker_linux
+            print_success "Docker installed."
+        fi
     fi
     echo ""
 
-    # Step 8: Start and enable Docker service
-    print_info "Step 8: Starting and enabling Docker service..."
-    systemctl start docker || { print_error "Failed to start Docker"; exit 1; }
-    systemctl enable docker || { print_error "Failed to enable Docker"; exit 1; }
-    print_success "Docker service started and enabled"
-    echo ""
+    # ============================================
+    # STEP 2: CONTAINERLAB INSTALLATION
+    # ============================================
+    print_info "Checking Containerlab..."
 
-    # Step 9: Verify Docker installation
-    print_info "Step 9: Verifying Docker installation..."
-    docker --version || { print_error "Docker verification failed"; exit 1; }
-    print_success "Docker version: $(docker --version)"
-    echo ""
+    if command -v containerlab &> /dev/null; then
+        print_success "Containerlab is already installed."
+    else
+        print_info "Installing Containerlab..."
+        
+        # Use the official install script
+        # It handles Linux and macOS binary placement automatically
+        bash -c "$(curl -sL https://get.containerlab.dev)"
+        
+        if command -v containerlab &> /dev/null; then
+            print_success "Containerlab installed successfully."
+        else
+            print_error "Containerlab installation failed."
+            exit 1
+        fi
+    fi
 
-    # Step 10: Install Containerlab
-    print_info "Step 10: Installing Containerlab..."
-    bash -c "$(curl -sL https://get.containerlab.dev)" || {
-        print_error "Failed to install Containerlab"
-        exit 1
-    }
-    print_success "Containerlab installed successfully"
+    # ============================================
+    # SUMMARY
+    # ============================================
     echo ""
-
-    # Step 11: Verify Containerlab installation
-    print_info "Step 11: Verifying Containerlab installation..."
-    containerlab version || { print_error "Containerlab verification failed"; exit 1; }
-    print_success "Containerlab version: $(containerlab version | head -n 1)"
-    echo ""
-
-    # Final summary
     echo "================================================"
-    print_success "Installation completed successfully!"
+    print_success "Prerequisites Ready!"
     echo "================================================"
+    echo "  OS:           $OS"
+    echo "  Docker:       $(docker --version)"
+    echo "  Containerlab: $(containerlab version | head -n 1)"
     echo ""
-    print_info "Docker version: $(docker --version)"
-    print_info "Containerlab version: $(containerlab version | head -n 1)"
-    echo ""
-    print_info "IMPORTANT: If you added a user to the docker group, you need to:"
-    print_info "  1. Log out and log back in, OR"
-    print_info "  2. Run 'newgrp docker' in your current terminal"
-    echo ""
-    print_info "Test your installation with:"
-    print_info "  docker run hello-world"
-    print_info "  containerlab help"
-    echo ""
+    
+    if [ "$OS" == "Linux" ] && [ -n "$SUDO_USER" ]; then
+        if ! groups "$SUDO_USER" | grep &>/dev/null "\bdocker\b"; then
+            print_info "Adding user $SUDO_USER to docker group..."
+            usermod -aG docker "$SUDO_USER"
+            print_info "NOTE: You must log out and back in for group changes to take effect."
+        fi
+    fi
 }
 
-# Check if running as root
-check_root
-
-# Run main installation
 main
-
-exit 0

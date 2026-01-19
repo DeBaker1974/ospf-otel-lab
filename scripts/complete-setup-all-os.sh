@@ -23,6 +23,26 @@ LAB_DIR="$(dirname "$SCRIPT_DIR")"
 echo "Setting working directory to: $LAB_DIR"
 cd "$LAB_DIR"
 
+# Detect OS
+OS="$(uname -s)"
+# Determine Containerlab command based on OS
+if [[ "$OS" == "Darwin" ]]; then
+    # macOS: Run as user (Docker Desktop handles privileges)
+    CLAB_RUN="clab"
+else
+    # Linux: Run as root (required for networking)
+    CLAB_RUN="sudo -E clab"
+fi
+
+# Cross-platform sed wrapper
+sedi() {
+    if [[ "$OS" == "Darwin" ]]; then
+        sed -i '' "$@"
+    else
+        sed -i "$@"
+    fi
+}
+
 
 # ============================================
 # PHASE 0: Pre-flight Checks
@@ -226,9 +246,15 @@ echo "✓ All required directories present"
 
 # Check if snmp tools installed on host
 if ! command -v snmpget &> /dev/null; then
-    echo "  Installing SNMP tools on host..."
-    sudo apt-get update -qq && sudo apt-get install -y snmp -qq
+    if [[ "$OS" == "Linux" ]]; then
+        echo "  Installing SNMP tools on host..."
+        sudo apt-get update -qq && sudo apt-get install -y snmp -qq
+    elif [[ "$OS" == "Darwin" ]]; then
+        echo "  ⚠ snmpget not found. On macOS, install with: brew install net-snmp"
+        # We don't exit, just warn
+    fi
 fi
+
 
 echo "✓ SNMP tools available"
 
@@ -408,7 +434,7 @@ if ! grep -q "user: root" ospf-network.clab.yml; then
         cp ospf-network.clab.yml ospf-network.clab.yml.backup-before-root
         
         # Add user: root after each frrouting image line
-        sed -i '/image: frrouting/a\      user: root' ospf-network.clab.yml
+        sedi '/image: frrouting/a\      user: root' ospf-network.clab.yml
         
         echo "  ✓ Added 'user: root' to topology file"
     else
@@ -519,11 +545,12 @@ if systemctl is-active --quiet lldp-export 2>/dev/null; then
 fi
 
 # Destroy existing lab
-if sudo -E clab inspect -t ospf-network.clab.yml &>/dev/null 2>&1; then
+if $CLAB_RUN inspect -t ospf-network.clab.yml &>/dev/null 2>&1; then
     echo "  Destroying existing lab..."
-    sudo -E clab destroy -t ospf-network.clab.yml --cleanup 2>/dev/null || true
+    $CLAB_RUN destroy -t ospf-network.clab.yml --cleanup 2>/dev/null || true
     sleep 10
 fi
+
 
 
 # Clean up any orphaned containers
@@ -724,7 +751,7 @@ DOCKERFILE_EOF
 
     # Build the image
     echo "    Building image (this may take 1-2 minutes)..."
-    if docker build -t ubuntu-lab:22.04 -f "$DOCKERFILE_DIR/Dockerfile.ubuntu-lab" "$DOCKERFILE_DIR" > "$LAB_DIR/logs/docker-build-ubuntu.log" 2>&1; then
+    if DOCKER_BUILDKIT=0 docker build -t ubuntu-lab:22.04 -f "$DOCKERFILE_DIR/Dockerfile.ubuntu-lab" "$DOCKERFILE_DIR" > "$LAB_DIR/logs/docker-build-ubuntu.log" 2>&1; then
         echo "  ✓ ubuntu-lab:22.04 built successfully"
         
         # Show image size
@@ -790,15 +817,15 @@ TOPOLOGY_FILE="ospf-network.clab.yml"
 if [ -n "$AGENT_VERSION" ]; then
     echo "  Updating Agent/Logstash version to $AGENT_VERSION..."
     # Use .* to match ANY content (variable or number) after the colon
-    sed -i "s|image: elastic/elastic-agent:.*|image: elastic/elastic-agent:$AGENT_VERSION|g" "$TOPOLOGY_FILE"
-    sed -i "s|image: docker.elastic.co/logstash/logstash:.*|image: docker.elastic.co/logstash/logstash:$AGENT_VERSION|g" "$TOPOLOGY_FILE"
+    sedi "s|image: elastic/elastic-agent:.*|image: elastic/elastic-agent:$AGENT_VERSION|g" "$TOPOLOGY_FILE"
+    sedi "s|image: docker.elastic.co/logstash/logstash:.*|image: docker.elastic.co/logstash/logstash:$AGENT_VERSION|g" "$TOPOLOGY_FILE"
 fi
 
 # Ensure OTEL collector has env vars in the topology
 if ! grep -A 10 "otel-collector:" "$TOPOLOGY_FILE" | grep -q "ES_ENDPOINT"; then
     echo "  Adding environment variables to OTEL collector container definition..."
     # Insert env block into the otel-collector definition
-    sed -i '/otel-collector:/,/ports:/{
+    sedi '/otel-collector:/,/ports:/{
         /cmd:/a\      env:\n        ES_ENDPOINT: ${ES_ENDPOINT}\n        ES_API_KEY: ${ES_API_KEY}
     }' "$TOPOLOGY_FILE"
     echo "    ✓ Env vars added to OTEL collector"
@@ -821,7 +848,7 @@ echo "  Topology backed up to: $BACKUP_FILE"
 # CRITICAL: Use sudo -E to preserve exported environment variables (FLEET_URL, etc.)
 echo "  Starting containerlab deployment (containers will run as root)..."
 echo "  Using sudo -E to preserve FLEET_URL and FLEET_ENROLLMENT_TOKEN..."
-if sudo -E clab deploy -t ospf-network.clab.yml --reconfigure; then
+if $CLAB_RUN deploy -t ospf-network.clab.yml --reconfigure; then
     echo "✓ Topology deployed successfully"
 else
     echo "✗ Deployment failed"
@@ -1466,12 +1493,12 @@ echo "  Updating Elasticsearch connection to use environment variables..."
 
 # Replace endpoints list with env var reference (handles http/https)
 # This forces the config file to say "${env:ES_ENDPOINT}" instead of the actual URL
-sed -i 's|endpoints: \[ "https://[^"]*" \]|endpoints: [ "${env:ES_ENDPOINT}" ]|g' "$OTEL_CONFIG"
-sed -i 's|endpoints: \[ "http://[^"]*" \]|endpoints: [ "${env:ES_ENDPOINT}" ]|g' "$OTEL_CONFIG"
+sedi 's|endpoints: \[ "https://[^"]*" \]|endpoints: [ "${env:ES_ENDPOINT}" ]|g' "$OTEL_CONFIG"
+sedi 's|endpoints: \[ "http://[^"]*" \]|endpoints: [ "${env:ES_ENDPOINT}" ]|g' "$OTEL_CONFIG"
 
 # Replace api_key with env var reference
 # This forces the config file to say "${env:ES_API_KEY}"
-sed -i 's|api_key: "[^"]*"|api_key: "${env:ES_API_KEY}"|g' "$OTEL_CONFIG"
+sedi 's|api_key: "[^"]*"|api_key: "${env:ES_API_KEY}"|g' "$OTEL_CONFIG"
 
 # Verify replacement
 if grep -q "\${env:ES_ENDPOINT}" "$OTEL_CONFIG"; then
@@ -1492,11 +1519,11 @@ for router in "${!ACTUAL_IPS[@]}"; do
     
     echo "    $router -> $ip:161"
     
-    sed -i "s|endpoint: udp://[0-9.]*:1*161.*${router}|endpoint: udp://${ip}:161 # ${router}|g" "$OTEL_CONFIG"
-    sed -i "s|endpoint: udp://172\.20\.20\.${router_num}:1*161|endpoint: udp://${ip}:161|g" "$OTEL_CONFIG"
+    sedi "s|endpoint: udp://[0-9.]*:1*161.*${router}|endpoint: udp://${ip}:161 # ${router}|g" "$OTEL_CONFIG"
+    sedi "s|endpoint: udp://172\.20\.20\.${router_num}:1*161|endpoint: udp://${ip}:161|g" "$OTEL_CONFIG"
 done
 
-sed -i 's/:1161\([^0-9]\)/:161\1/g' "$OTEL_CONFIG"
+sedi 's/:1161\([^0-9]\)/:161\1/g' "$OTEL_CONFIG"
 
 # ============================================
 # VERIFICATION
