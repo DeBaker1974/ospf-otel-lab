@@ -24,9 +24,9 @@ The primary focus is on comprehensive network observability, integrating three d
 
 **1. Infrastructure Requirements**
 Suggested instance sizes for deployment:
-*   **GCP:** e2-standard-2 (2 vCPU, 1 core, 8 GB memory)
-*   **AWS:** t3.large (2 vCPU, 8 GB memory)
-*   **Azure:** Standard_B2ms (2 vCPU, 8 GB memory)
+*   **GCP:** e2-standard-2 (2 vCPU, 1 core, 8 GB memory, 20GB storage)
+*   **AWS:** t3.large (2 vCPU, 8 GB memory, 20GB storage)
+*   **Azure:** Standard_B2ms (2 vCPU, 8 GB memory, 20GB storage)
 *   **Elasticsearch version:** 8.19 +,  9.x
 
 **2. Setup**
