@@ -50,23 +50,66 @@ chmod +x *
 
 **Select your Operating System below:**
 
+---
+
 ### 🐧 Option A: Linux VM (Ubuntu/Debian) — Recommended
+
 Run the automated installer script. This will install Docker and Containerlab for you.
 
 ```bash
 ./install-lab-prereqs.sh
 ```
+
 > **⚠️ Important:** You must **log out and log back in** (or run `newgrp docker`) after this step to apply Docker user permissions.
 
-### 🪟 Option B: Windows (WSL2)
-**Do NOT** run the `install-lab-prereqs.sh` script. Instead, ensure you have the following installed manually:
+---
 
-1.  **Docker Desktop**: Install and ensure it is running with WSL2 backend enabled.
-2.  **Containerlab**: Inside your WSL2 terminal, run:
-    ```bash
-    sudo bash -c "$(curl -sL https://get.containerlab.dev)"
-    ```
-    Or follow the [official installation instructions](https://containerlab.dev/install/).
+### 🪟 Option B: Windows (WSL2)
+
+> **⚠️ Critical: Docker Desktop is NOT compatible with Containerlab on WSL2**
+>
+> Containerlab requires direct access to Linux network namespaces to create virtual network links between containers. Docker Desktop runs containers inside a hidden LinuxKit VM, which prevents Containerlab from accessing these namespaces. You **must** use native Docker Engine inside WSL2.
+
+**If you have Docker Desktop installed:**
+
+1. **Quit Docker Desktop** completely (right-click the system tray icon → Quit)
+2. Disable WSL2 integration in Docker Desktop settings to prevent conflicts
+
+**Install native Docker Engine in WSL2:**
+
+```bash
+# Install Docker Engine (not Docker Desktop)
+curl -fsSL https://get.docker.com | sudo sh
+
+# Add your user to the docker group
+sudo usermod -aG docker $USER
+
+# Start Docker service
+sudo service docker start
+
+# Apply group membership (or log out and back in)
+newgrp docker
+
+# Verify Docker is working
+docker run --rm hello-world
+
+# Verify it's native Docker (should show "Ubuntu", NOT "Docker Desktop")
+docker info | grep "Operating System"
+```
+
+**Install Containerlab:**
+
+```bash
+sudo bash -c "$(curl -sL https://get.containerlab.dev)"
+```
+
+> **💡 Note:** You'll need to start Docker manually each time you open WSL2:
+> ```bash
+> sudo service docker start
+> ```
+> Or add it to your shell startup script (`~/.bashrc`).
+
+---
 
 ### 🍎 Option C: macOS
 
@@ -77,6 +120,7 @@ Run the automated installer script. This will install Docker and Containerlab fo
 **macOS users must run the lab inside a Linux environment using one of these methods:**
 
 #### Method 1: Multipass (Recommended — Free & Easy)
+
 [Multipass](https://multipass.run/) creates lightweight Ubuntu VMs on your Mac.
 
 ```bash
@@ -96,6 +140,9 @@ chmod +x *
 ./install-lab-prereqs.sh
 ```
 
+> **⚠️ Important:** After running `install-lab-prereqs.sh`, you must **log out and log back in** (or run `newgrp docker`) to apply Docker user permissions.
+
+
 #### Method 2: UTM or Parallels
 Use [UTM](https://mac.getutm.app/) (free) or [Parallels](https://www.parallels.com/) (paid) to run an Ubuntu 22.04 VM, then follow the **Linux VM** instructions above.
 
@@ -109,8 +156,8 @@ Spin up an Ubuntu VM on AWS, GCP, Azure, or DigitalOcean and run the lab there.
 Once the prerequisites are ready (and you are inside a Linux environment), run the configuration wizard followed by the main setup script:
 
 ```bash
-./configure-elasticsearch.sh
-./complete-setup.sh
+./configure-elasticsearch-all-os.sh
+./complete-setup-all-os.sh
 ```
 
 
