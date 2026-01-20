@@ -20,7 +20,7 @@ The primary focus is on comprehensive network observability, integrating three d
 
 ## Quick Start
 
-> **⚠️ IMPORTANT:** This lab is designed for Elastic Cloud Hosted and Serverless, or linux VMs. It has not been fully tested on local Docker Desktop .
+> **⚠️ IMPORTANT:** This lab is optimized for Elastic Serverless, Cloud Hosted, or linux VMs. On WSL2 Linux and macOS, specific prerequisites are required. Details are provided below.
 
 **1. Infrastructure Requirements**
 Suggested instance sizes for deployment:
