@@ -1,8 +1,6 @@
 name: ospf-network
 mgmt:
   network: clab
-  ipv4-subnet: 172.20.20.0/24
-  ipv6-subnet: 3fff:172:20:20::/64
 
 topology:
   nodes:

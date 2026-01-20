@@ -836,13 +836,14 @@ echo "  ✓ Topology updated"
 # ============================================
 # PHASE 2: Deploy Topology
 # ============================================
-echo ""
-echo "Phase 2: Deploying containerlab topology..."
-
-# Backup topology file
-BACKUP_FILE="ospf-network.clab.yml.backup-$(date +%s)"
-cp ospf-network.clab.yml "$BACKUP_FILE"
-echo "  Topology backed up to: $BACKUP_FILE"
+echo "  Ensuring Docker network exists..."
+if ! docker network inspect clab >/dev/null 2>&1; then
+  echo "  Creating 'clab' network..."
+  # We use || true to prevent script failure if it races
+  docker network create --driver=bridge --subnet=172.20.20.0/24 clab 2>/dev/null || true
+else
+  echo "  Network 'clab' already exists."
+fi
 
 # Deploy with detailed output
 # CRITICAL: Use sudo -E to preserve exported environment variables (FLEET_URL, etc.)
@@ -1192,7 +1193,7 @@ done
 echo ""
 echo "  Configuring LLDP with AgentX integration..."
 for router in $ROUTERS; do
-    echo "    Configuring $router..."
+    echo "    Configuring $router..." >&2
     docker exec "clab-ospf-network-$router" sh -c '
         # Start lldpd with AgentX support
         lldpd -x -X /var/agentx/master -d >/dev/null 2>&1 &
@@ -1257,8 +1258,8 @@ TOTAL_LLDP_NEIGHBORS=0
 for router in $ROUTERS; do
     container="clab-ospf-network-$router"
     neighbors=$(docker exec "$container" lldpcli show neighbors 2>/dev/null | grep -c "SysName:" || echo "0")
-    if [ "$neighbors" -gt 0 ]; then
-        echo "  ✓ $router: $neighbors LLDP neighbors"
+    neighbors=$(echo "$neighbors" | tr -d '[:space:]')
+    if [[ "$neighbors" =~ ^[0-9]+$ ]] && [ "$neighbors" -gt 0 ]; then
         LLDP_WORKING=$((LLDP_WORKING + 1))
         TOTAL_LLDP_NEIGHBORS=$((TOTAL_LLDP_NEIGHBORS + neighbors))
     else
