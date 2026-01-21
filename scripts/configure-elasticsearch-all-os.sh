@@ -1304,4 +1304,4 @@ if [[ "$RUNTIME_OS" == "wsl"* ]]; then
 fi
 
 echo ""
-echo "Run: ./scripts/complete-setup.sh"
+echo "Run: ./scripts/complete-setup-all-os.sh"
