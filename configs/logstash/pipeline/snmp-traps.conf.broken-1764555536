@@ -1,0 +1,88 @@
+input {
+  snmptrap {
+    host => "0.0.0.0"
+    port => 1062
+    community => ["public"]
+  }
+}
+
+filter {
+  # Map source IP to hostname
+  if [host] == "172.20.20.23" {
+    mutate { 
+      add_field => { "host.name" => "csr23" }
+    }
+  }
+
+  # Extract trap OID and flatten to simpler field name
+  if [iso][org][dod][internet][snmpV2][snmpModules][snmpMIB][snmpMIBObjects][snmpTrap][snmpTrapOID][0] {
+    mutate {
+      add_field => {
+        "trap.oid" => "%{[iso][org][dod][internet][snmpV2][snmpModules][snmpMIB][snmpMIBObjects][snmpTrap][snmpTrapOID][0]}"
+      }
+    }
+  }
+
+  # Classify trap types by OID
+  if [trap.oid] == "1.3.6.1.6.3.1.1.5.3" {
+    # Link Down
+    mutate { 
+      add_tag => ["interface_down"]
+      add_field => { 
+        "event.action" => "interface-down"
+        "event.kind" => "alert"
+        "event.category" => ["network"]
+        "event.type" => ["change", "end"]
+        "event.severity" => 3
+        "message" => "Interface down on %{[host.name]}"
+      }
+    }
+  } else if [trap.oid] == "1.3.6.1.6.3.1.1.5.4" {
+    # Link Up
+    mutate { 
+      add_tag => ["interface_up"]
+      add_field => { 
+        "event.action" => "interface-up"
+        "event.kind" => "event"
+        "event.category" => ["network"]
+        "event.type" => ["change", "start"]
+        "event.severity" => 1
+        "message" => "Interface up on %{[host.name]}"
+      }
+    }
+  } else if [trap.oid] == "1.0.8802.1.1.2.0.0.1" {
+    # LLDP Topology Change
+    mutate {
+      add_tag => ["lldp_change"]
+      add_field => {
+        "event.action" => "lldp-topology-change"
+        "event.kind" => "event"
+        "event.category" => ["network"]
+        "event.type" => ["info"]
+        "message" => "LLDP topology change on %{[host.name]}"
+      }
+    }
+  }
+
+  # Data stream routing
+  mutate {
+    add_field => {
+      "data_stream.type" => "logs"
+      "data_stream.dataset" => "snmp.trap"
+      "data_stream.namespace" => "prod"
+    }
+  }
+}
+
+output {
+  stdout { codec => rubydebug }
+  
+  elasticsearch {
+    hosts => ["${ES_ENDPOINT}"]
+    api_key => "${ES_API_KEY}"
+    data_stream => true
+    data_stream_type => "logs"
+    data_stream_dataset => "snmp.trap"
+    data_stream_namespace => "prod"
+  }
+}
