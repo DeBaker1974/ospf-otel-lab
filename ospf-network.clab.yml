@@ -9,7 +9,7 @@ topology:
     # ============================================
     elastic-agent-sw2:
       kind: linux
-      image: elastic/elastic-agent:9.2.4
+      image: elastic/elastic-agent:9.3.0
       user: root
       memory: 1024m
       binds:
@@ -287,7 +287,7 @@ topology:
 
     logstash:
       kind: linux
-      image: docker.elastic.co/logstash/logstash:9.2.4
+      image: docker.elastic.co/logstash/logstash:9.3.0
       binds:
         - configs/logstash/pipeline:/usr/share/logstash/pipeline:ro
         - configs/logstash/logstash.yml:/usr/share/logstash/config/logstash.yml:ro
