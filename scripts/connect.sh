@@ -2053,19 +2053,16 @@ TGEOF'
             echo -e "${CYAN}=== Large File Transfer (iperf) ===${NC}"
             echo ""
             
-            # Check iperf on both hosts
-            echo "Checking iperf3 installation..."
+            # Check if iperf3 exists (don't reinstall)
+            echo "Checking iperf3..."
             
-            if ! docker exec clab-ospf-network-linux-top command -v iperf3 &>/dev/null; then
-                echo "Installing iperf3 on linux-top..."
-                docker exec clab-ospf-network-linux-top apt-get update -qq
-                docker exec clab-ospf-network-linux-top apt-get install -y iperf3 -qq
-            fi
-            
-            if ! docker exec clab-ospf-network-linux-bottom command -v iperf3 &>/dev/null; then
-                echo "Installing iperf3 on linux-bottom..."
-                docker exec clab-ospf-network-linux-bottom apt-get update -qq
-                docker exec clab-ospf-network-linux-bottom apt-get install -y iperf3 -qq
+            if docker exec clab-ospf-network-linux-top which iperf3 &>/dev/null && \
+               docker exec clab-ospf-network-linux-bottom which iperf3 &>/dev/null; then
+                echo -e "  ${GREEN}✓${NC} iperf3 already installed on both hosts"
+            else
+                echo -e "${YELLOW}iperf3 missing, installing...${NC}"
+                docker exec clab-ospf-network-linux-top apt-get update -qq && docker exec clab-ospf-network-linux-top apt-get install -y iperf3 -qq 2>/dev/null
+                docker exec clab-ospf-network-linux-bottom apt-get update -qq && docker exec clab-ospf-network-linux-bottom apt-get install -y iperf3 -qq 2>/dev/null
             fi
             
             echo ""
@@ -2073,6 +2070,14 @@ TGEOF'
             docker exec clab-ospf-network-linux-bottom pkill iperf3 2>/dev/null
             docker exec -d clab-ospf-network-linux-bottom iperf3 -s
             sleep 2
+            
+            # Verify server started
+            if ! docker exec clab-ospf-network-linux-bottom pgrep iperf3 &>/dev/null; then
+                echo -e "${RED}✗${NC} Failed to start iperf3 server"
+                read -p "Press Enter to continue..."
+                continue
+            fi
+            echo -e "  ${GREEN}✓${NC} iperf3 server running"
             
             echo ""
             echo -e "${YELLOW}Select bandwidth test:${NC}"
@@ -2105,8 +2110,8 @@ TGEOF'
             echo "Check NetFlow for large byte counts between:"
             echo "  Source: 192.168.20.100"
             echo "  Destination: 192.168.10.20"
+            echo "  Port: 5201 (iperf)"
             ;;
-        
         106)
             clear
             echo -e "${CYAN}=== Traffic During Link Failure ===${NC}"
