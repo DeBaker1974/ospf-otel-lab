@@ -261,7 +261,7 @@ Your setup uses three distinct pipelines flowing into **Elastic Cloud**.
 *   **Configuration:** `trap2sink 172.20.20.31:1062`.
 *   **Triggers:** Interface Up/Down events (monitored `eth1` through `eth5`).
 *   **Target:** `logstash` (172.20.20.31) on **UDP 1062**.
-*   **Processing:** Logstash maps OIDs to human-readable events (e.g., "Interface down on csr23").
+*   **Processing:** Logstash
 *   **Destination:** Elastic Cloud (Data Stream: `logs-snmp.trap-prod`).
 
 ## 5. Routing Logic (OSPF)
