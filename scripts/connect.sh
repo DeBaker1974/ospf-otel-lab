@@ -1776,241 +1776,250 @@ MATRIX
                 echo "Cancelled"
             fi
             ;;
+
         # ========================================
         # NETFLOW TRAFFIC SIMULATION (100-108)
         # ========================================
         100)
             clear
-            echo -e "${CYAN}=== Starting Continuous Traffic Generator ===${NC}"
+            echo -e "${CYAN}=== Start Baseline Traffic (ML Training) ===${NC}"
+            echo ""
+            echo "This generates low, continuous traffic every 30 seconds"
+            echo "to feed the ML anomaly detection job."
             echo ""
             
             # Check if already running
-            if docker exec clab-ospf-network-linux-top pgrep -f "traffic-generator" &>/dev/null; then
-                echo -e "${YELLOW}⚠ Traffic generator already running${NC}"
+            if docker exec clab-ospf-network-linux-top pgrep -f "baseline-traffic" &>/dev/null; then
+                echo -e "${GREEN}● Baseline traffic already running${NC}"
                 echo ""
                 read -p "Restart it? (y/n): " restart
-                if [[ "$restart" =~ ^[Yy]$ ]]; then
-                    docker exec clab-ospf-network-linux-top pkill -9 -f "traffic-generator" 2>/dev/null
-                    sleep 3
-                else
-                    echo "Keeping existing generator running"
-                    read -p "Press Enter to continue..."
-                    continue
-                fi
+                [[ "$restart" =~ ^[Yy]$ ]] && docker exec clab-ospf-network-linux-top pkill -f "baseline-traffic"
+                [[ ! "$restart" =~ ^[Yy]$ ]] && continue
             fi
             
-            echo "Creating traffic generator script (no nc required)..."
+            # Copy and start script
+            echo "Starting baseline traffic generator..."
             
-            # Create the traffic generator script that uses bash built-ins
-            docker exec clab-ospf-network-linux-top bash -c 'cat > /usr/local/bin/traffic-generator.sh << '\''TGEOF'\''
+            docker exec clab-ospf-network-linux-top bash -c 'cat > /usr/local/bin/baseline-traffic.sh << '\''EOF'\''
 #!/bin/bash
-LOG="/var/log/traffic-gen.log"
+LOG="/var/log/baseline-traffic.log"
 TARGET="192.168.10.20"
+INTERVAL=30
 
-log() {
-    echo "[$(date "+%Y-%m-%d %H:%M:%S")] $1" | tee -a "$LOG"
-}
+log() { echo "[$(date "+%Y-%m-%d %H:%M:%S")] $1" >> "$LOG"; }
 
-# Bash TCP probe (no nc required)
-tcp_probe() {
-    timeout 2 bash -c "echo >/dev/tcp/$1/$2" 2>/dev/null
-    return $?
-}
+log "=== Baseline Traffic Started ==="
 
-log "Starting traffic generator - waiting for network..."
-echo "Press Ctrl+C to exit"
-echo ""
-
-# Wait for network
-for i in {1..30}; do
-    if ping -c 1 -W 2 $TARGET &>/dev/null; then
-        log "Target $TARGET reachable"
-        break
-    fi
-    sleep 2
-done
-
-if ! ping -c 1 -W 2 $TARGET &>/dev/null; then
-    log "ERROR: Target $TARGET not reachable"
-    exit 1
-fi
+while ! ping -c 1 -W 2 $TARGET &>/dev/null; do sleep 5; done
 
 while true; do
-    # ICMP Pings
-    log "Sending ICMP pings"
-    ping -c 10 -i 0.5 $TARGET
-    
-    # TCP probes using bash built-in
-    log "Sending TCP probes"
-    for port in 22 80 443 8080 5201; do
-        if tcp_probe $TARGET $port; then
-            echo "  TCP $TARGET:$port - open"
-        else
-            echo "  TCP $TARGET:$port - closed"
-        fi
+    ping -c 5 -i 0.5 $TARGET > /dev/null 2>&1
+    for port in 22 80 443; do
+        timeout 1 bash -c "echo >/dev/tcp/$TARGET/$port" 2>/dev/null
     done
-    
-    # UDP using bash
-    log "Sending UDP traffic"
-    for i in {1..5}; do
-        echo "udp-test-$i" > /dev/udp/$TARGET/9999 2>/dev/null || true
-    done
-    
-    # HTTP if curl available
-    log "Sending HTTP requests"
-    if command -v curl &>/dev/null; then
-        curl -s -o /dev/null -w "  HTTP %{http_code}\n" --connect-timeout 2 http://$TARGET/ 2>/dev/null || echo "  HTTP failed"
-    fi
-    
-    # iperf if available
-    log "Running iperf test"
-    if command -v iperf3 &>/dev/null; then
-        iperf3 -c $TARGET -t 5 -b 1M 2>/dev/null || echo "  iperf3 server not running on target"
-    fi
-    
-    log "Cycle complete, sleeping 30 seconds..."
-    echo ""
-    sleep 30
+    echo "baseline-$(date +%s)" > /dev/udp/$TARGET/9999 2>/dev/null
+    command -v iperf3 &>/dev/null && iperf3 -c $TARGET -t 2 -b 500K > /dev/null 2>&1
+    curl -s -o /dev/null --connect-timeout 2 http://$TARGET/ 2>/dev/null
+    log "Cycle complete"
+    sleep $INTERVAL
 done
-TGEOF'
+EOF'
             
-            docker exec clab-ospf-network-linux-top chmod +x /usr/local/bin/traffic-generator.sh
+            docker exec clab-ospf-network-linux-top chmod +x /usr/local/bin/baseline-traffic.sh
+            docker exec -d clab-ospf-network-linux-top /usr/local/bin/baseline-traffic.sh
             
-            echo "Starting traffic generator..."
-            docker exec -d clab-ospf-network-linux-top /usr/local/bin/traffic-generator.sh
-            
-            sleep 5
-            
-            if docker exec clab-ospf-network-linux-top pgrep -f "traffic-generator" &>/dev/null; then
-                echo -e "${GREEN}✓${NC} Traffic generator started successfully"
+            sleep 3
+            if docker exec clab-ospf-network-linux-top pgrep -f "baseline-traffic" &>/dev/null; then
+                echo -e "${GREEN}✓${NC} Baseline traffic generator started"
                 echo ""
-                echo "Traffic patterns (no nc required):"
-                echo "  • ICMP pings every 30 seconds"
-                echo "  • TCP probes using bash /dev/tcp"
-                echo "  • UDP packets using bash /dev/udp"
-                echo "  • HTTP requests (curl)"
-                echo "  • iperf tests (if server running)"
+                echo "Traffic pattern:"
+                echo "  • 5 ICMP pings"
+                echo "  • TCP probes to ports 22, 80, 443"
+                echo "  • 1 UDP packet"
+                echo "  • 2s iperf @ 500Kbps (if available)"
+                echo "  • Repeats every 30 seconds"
                 echo ""
-                echo "View live output:"
-                docker exec clab-ospf-network-linux-top tail -20 /var/log/traffic-gen.log
+                echo -e "${CYAN}This will continuously feed the ML job${NC}"
             else
                 echo -e "${RED}✗${NC} Failed to start"
-                docker exec clab-ospf-network-linux-top cat /var/log/traffic-gen.log 2>/dev/null | tail -10
             fi
             ;;
+        
         101)
             clear
-            echo -e "${CYAN}=== Stopping Traffic Generator ===${NC}"
+            echo -e "${CYAN}=== Stop Baseline Traffic ===${NC}"
             echo ""
-            
-            if docker exec clab-ospf-network-linux-top pgrep -f "traffic-generator" &>/dev/null; then
-                docker exec clab-ospf-network-linux-top pkill -f "traffic-generator"
-                sleep 2
-                
-                if ! docker exec clab-ospf-network-linux-top pgrep -f "traffic-generator" &>/dev/null; then
-                    echo -e "${GREEN}✓${NC} Traffic generator stopped"
-                else
-                    echo -e "${YELLOW}⚠${NC} Forcing stop..."
-                    docker exec clab-ospf-network-linux-top pkill -9 -f "traffic-generator"
-                    echo -e "${GREEN}✓${NC} Traffic generator force stopped"
-                fi
-            else
-                echo -e "${YELLOW}⚠${NC} Traffic generator not running"
-            fi
+            docker exec clab-ospf-network-linux-top pkill -f "baseline-traffic" 2>/dev/null
+            echo -e "${GREEN}✓${NC} Baseline traffic stopped"
             ;;
         
         102)
             clear
-            echo -e "${CYAN}=== Traffic Generator Status ===${NC}"
+            echo -e "${CYAN}=== Traffic Status ===${NC}"
             echo ""
-            
-            echo -e "${YELLOW}Process Status:${NC}"
-            if docker exec clab-ospf-network-linux-top pgrep -f "traffic-generator" &>/dev/null; then
+            echo -e "${YELLOW}Baseline Traffic:${NC}"
+            if docker exec clab-ospf-network-linux-top pgrep -f "baseline-traffic" &>/dev/null; then
                 echo -e "  ${GREEN}● Running${NC}"
-                docker exec clab-ospf-network-linux-top ps aux | grep -E "traffic-generator|iperf|ping" | grep -v grep
             else
                 echo -e "  ${RED}● Not running${NC}"
             fi
             
             echo ""
-            echo -e "${YELLOW}Log file (last 20 lines):${NC}"
-            docker exec clab-ospf-network-linux-top tail -20 /var/log/traffic-gen.log 2>/dev/null || echo "  No log file yet"
+            echo -e "${YELLOW}Burst Traffic:${NC}"
+            if docker exec clab-ospf-network-linux-top pgrep -f "burst-traffic\|iperf3" &>/dev/null; then
+                echo -e "  ${GREEN}● Active${NC}"
+            else
+                echo -e "  ${RED}● Not running${NC}"
+            fi
             
             echo ""
-            echo -e "${YELLOW}Network Connectivity:${NC}"
-            docker exec clab-ospf-network-linux-top bash -c '
-                ping -c 1 -W 2 192.168.10.20 &>/dev/null && echo "  ✓ linux-bottom (192.168.10.20) reachable" || echo "  ✗ linux-bottom unreachable"
-            '
-            
-            echo ""
-            echo -e "${YELLOW}Installed Tools:${NC}"
-            docker exec clab-ospf-network-linux-top bash -c '
-                command -v iperf3 &>/dev/null && echo "  ✓ iperf3" || echo "  ✗ iperf3 (use option 108 to install)"
-                command -v nmap &>/dev/null && echo "  ✓ nmap" || echo "  ✗ nmap"
-                command -v nc &>/dev/null && echo "  ✓ netcat" || echo "  ✗ netcat"
-                command -v hping3 &>/dev/null && echo "  ✓ hping3" || echo "  ✗ hping3"
-            '
+            echo -e "${YELLOW}Recent Baseline Log:${NC}"
+            docker exec clab-ospf-network-linux-top tail -10 /var/log/baseline-traffic.log 2>/dev/null || echo "  No log yet"
             ;;
         
         103)
             clear
-            echo -e "${CYAN}=== Burst Traffic Generation (60 seconds) ===${NC}"
+            echo -e "${CYAN}=== 🔥 Generate Burst Traffic ===${NC}"
             echo ""
-            echo "This will generate high-volume traffic for NetFlow analysis"
-            echo ""
-            read -p "Continue? (y/n): " confirm
-            if [[ "$confirm" =~ ^[Yy]$ ]]; then
-                echo ""
-                echo -e "${YELLOW}[$(date +%H:%M:%S)]${NC} Starting burst traffic..."
-                
-                # Parallel traffic generation
-                echo "  1/4: ICMP flood (backgrounded)"
-                docker exec -d clab-ospf-network-linux-top bash -c 'ping -c 500 -i 0.1 192.168.10.20 > /tmp/burst-ping.log 2>&1'
-                
-                echo "  2/4: TCP connections"
-                docker exec clab-ospf-network-linux-top bash -c '
-                    for i in $(seq 1 100); do
-                        for port in 22 80 443 8080; do
-                            nc -zw1 192.168.10.20 $port 2>/dev/null &
-                        done
-                        sleep 0.5
-                    done
-                    wait
-                ' &
-                
-                echo "  3/4: UDP packets"
-                docker exec clab-ospf-network-linux-top bash -c '
-                    for i in $(seq 1 200); do
-                        echo "burst-$i" | nc -u -w1 192.168.10.20 9999 2>/dev/null
-                        sleep 0.2
-                    done
-                ' &
-                
-                # iperf if available
-                if docker exec clab-ospf-network-linux-top command -v iperf3 &>/dev/null; then
-                    echo "  4/4: iperf bandwidth test"
-                    docker exec clab-ospf-network-linux-top iperf3 -c 192.168.10.20 -t 30 -b 10M > /dev/null 2>&1 &
-                else
-                    echo "  4/4: Skipped iperf (not installed)"
-                fi
-                
-                echo ""
-                echo "Traffic running in background for ~60 seconds..."
-                echo "Monitor in Kibana: logs-netflow.log-default"
-                echo ""
-                
-                # Progress bar
-                for i in {1..60}; do
-                    echo -ne "\r  Progress: ["
-                    for j in $(seq 1 $i); do echo -n "="; done
-                    for j in $(seq $i 59); do echo -n " "; done
-                    echo -ne "] $i/60s"
-                    sleep 1
-                done
-                echo ""
-                echo ""
-                echo -e "${GREEN}✓${NC} Burst traffic complete"
+            
+            # Check if baseline is running and stop it temporarily
+            RESTART_BASELINE=false
+            if docker exec clab-ospf-network-linux-top pgrep -f "baseline-traffic" &>/dev/null; then
+                echo -e "${YELLOW}⏸ Pausing baseline traffic for burst test...${NC}"
+                docker exec clab-ospf-network-linux-top pkill -f "baseline-traffic" 2>/dev/null
+                RESTART_BASELINE=true
+                sleep 1
             fi
+            
+            # Kill any iperf3 processes
+            docker exec clab-ospf-network-linux-bottom pkill -9 iperf3 2>/dev/null
+            docker exec clab-ospf-network-linux-top pkill -9 iperf3 2>/dev/null
+            sleep 2
+            
+            echo "This creates HIGH traffic to trigger ML anomaly detection"
+            echo ""
+            echo -e "${YELLOW}Select burst intensity:${NC}"
+            echo "  1) Light   - 30s @ 10Mbps  (small anomaly)"
+            echo "  2) Medium  - 60s @ 50Mbps  (clear anomaly)"
+            echo "  3) Heavy   - 60s @ 100Mbps (large anomaly)"
+            echo "  4) Extreme - 120s @ 200Mbps (major anomaly)"
+            echo "  5) Custom"
+            echo ""
+            read -p "Choice (1-5): " burst_choice
+            
+            case $burst_choice in
+                1) DURATION=30; BW="10M" ;;
+                2) DURATION=60; BW="50M" ;;
+                3) DURATION=60; BW="100M" ;;
+                4) DURATION=120; BW="200M" ;;
+                5) 
+                    read -p "Duration (seconds): " DURATION
+                    read -p "Bandwidth (e.g., 50M): " BW
+                    ;;
+                *) DURATION=60; BW="50M" ;;
+            esac
+            
+            echo ""
+            echo -e "${RED}Starting burst: ${DURATION}s @ ${BW}${NC}"
+            echo ""
+            
+            # Start fresh iperf3 server
+            echo "Preparing iperf3 server..."
+            docker exec -d clab-ospf-network-linux-bottom iperf3 -s
+            sleep 2
+            
+            if docker exec clab-ospf-network-linux-bottom pgrep iperf3 &>/dev/null; then
+                echo -e "  ${GREEN}✓${NC} iperf3 server ready"
+            else
+                echo -e "  ${RED}✗${NC} Failed to start iperf3 server"
+                if [ "$RESTART_BASELINE" = true ]; then
+                    docker exec -d clab-ospf-network-linux-top /usr/local/bin/baseline-traffic.sh
+                fi
+                read -p "Press Enter to continue..."
+                continue
+            fi
+            echo ""
+            
+            # Run burst traffic in background
+            echo "Starting traffic generators..."
+            echo ""
+            
+            # 1/3: ICMP flood (background)
+            echo "  • ICMP flood"
+            docker exec -d clab-ospf-network-linux-top bash -c "ping -c $((DURATION * 10)) -i 0.1 192.168.10.20 > /dev/null 2>&1"
+            
+            # 2/3: TCP connections (background)
+            echo "  • TCP connection flood"
+            docker exec -d clab-ospf-network-linux-top bash -c "
+                for i in \$(seq 1 $((DURATION * 5))); do
+                    for port in 22 80 443 8080; do
+                        timeout 1 bash -c 'echo >/dev/tcp/192.168.10.20/'\$port 2>/dev/null &
+                    done
+                    sleep 0.2
+                done
+            "
+            
+            # 3/3: iperf bandwidth (background)
+            echo "  • iperf3 @ ${BW}"
+            docker exec -d clab-ospf-network-linux-top iperf3 -c 192.168.10.20 -t $DURATION -b $BW
+            
+            echo ""
+            echo -e "${YELLOW}Running burst traffic for ${DURATION} seconds...${NC}"
+            echo ""
+            
+            # Progress bar
+            for i in $(seq 1 $DURATION); do
+                PERCENT=$((i * 100 / DURATION))
+                FILLED=$((i * 40 / DURATION))
+                EMPTY=$((40 - FILLED))
+                
+                # Build progress bar
+                BAR="["
+                for j in $(seq 1 $FILLED); do BAR="${BAR}="; done
+                for j in $(seq 1 $EMPTY); do BAR="${BAR} "; done
+                BAR="${BAR}]"
+                
+                echo -ne "\r  ${BAR} ${PERCENT}% (${i}/${DURATION}s)"
+                sleep 1
+            done
+            echo ""
+            echo ""
+            
+            echo -e "${GREEN}✓${NC} Burst complete!"
+            
+            # Restart baseline if it was running before
+            if [ "$RESTART_BASELINE" = true ]; then
+                echo ""
+                echo -e "${YELLOW}▶ Restarting baseline traffic...${NC}"
+                
+                # Restart iperf server for baseline
+                docker exec clab-ospf-network-linux-bottom pkill -9 iperf3 2>/dev/null
+                sleep 1
+                docker exec -d clab-ospf-network-linux-bottom iperf3 -s
+                
+                # Restart baseline script
+                docker exec -d clab-ospf-network-linux-top /usr/local/bin/baseline-traffic.sh
+                sleep 2
+                
+                if docker exec clab-ospf-network-linux-top pgrep -f "baseline-traffic" &>/dev/null; then
+                    echo -e "  ${GREEN}✓${NC} Baseline traffic resumed"
+                else
+                    echo -e "  ${RED}✗${NC} Failed to restart baseline (run option 100 manually)"
+                fi
+            fi
+            
+            echo ""
+            echo -e "${CYAN}════════════════════════════════════════${NC}"
+            echo -e "${CYAN}  Check for alerts in Kibana:${NC}"
+            echo -e "${CYAN}════════════════════════════════════════${NC}"
+            echo ""
+            echo "  📊 ES|QL Alert (threshold rule):"
+            echo "     → Should trigger in ~1 minute"
+            echo ""
+            echo "  🤖 ML Anomaly Detection:"
+            echo "     → Machine Learning → Anomaly Explorer"
+            echo "     → Should appear in ~2-3 minutes"
+            echo ""
             ;;
         
         104)
