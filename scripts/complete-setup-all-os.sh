@@ -281,7 +281,7 @@ if [ -n "$HOST_CONTAINERS" ]; then
         echo
         if [[ ! $REPLY =~ ^[Nn]$ ]]; then
             echo "  Removing all host containers..."
-            cp ospf-network.clab.yml ospf-network.clab.yml.backup-multi-host-removal-$(date +%s)
+            cp ospf-network.clab.yml ospf-network.clab.yml.backup
             
             # Use Python for clean removal
             if command -v python3 &> /dev/null; then
@@ -357,7 +357,7 @@ EOFPYTHON
         echo
         if [[ $REPLY =~ ^[Yy]$ ]]; then
             echo "  Removing $SINGLE_HOST..."
-            cp ospf-network.clab.yml ospf-network.clab.yml.backup-before-removal-$(date +%s)
+            cp ospf-network.clab.yml ospf-network.clab.yml.backup
             
             if command -v python3 &> /dev/null; then
                 python3 << EOFPYTHON
@@ -431,7 +431,7 @@ if ! grep -q "user: root" ospf-network.clab.yml; then
     echo
     if [[ $REPLY =~ ^[Yy]$ ]]; then
         # Backup first
-        cp ospf-network.clab.yml ospf-network.clab.yml.backup-before-root
+        cp ospf-network.clab.yml ospf-network.clab.yml.backup
         
         # Add user: root after each frrouting image line
         sedi '/image: frrouting/a\      user: root' ospf-network.clab.yml
@@ -795,7 +795,8 @@ apk add --no-cache softflowd >/dev/null 2>&1
 STARTED=0
 for iface in eth1 eth2 eth3 eth4 eth5; do
   if ip link show $iface >/dev/null 2>&1 && ip addr show $iface | grep -q "inet "; then
-    softflowd -i $iface -n ${AGENT_IP}:${AGENT_PORT} -v 5 -t maxlife=60 -d
+    # UPDATED: Aggressive timeouts for Real-Time Lab
+    softflowd -i $iface -n ${AGENT_IP}:${AGENT_PORT} -v 9 -t maxlife=10s -t tcp=5s -t udp=5s -t general=5s
     STARTED=$((STARTED + 1))
   fi
 done
@@ -1046,6 +1047,39 @@ echo ""
 echo "✓ Ubuntu hosts ready"
 echo "  linux-bottom: 192.168.10.20 (on sw)"
 echo "  linux-top:    192.168.20.100 (on sw2)"
+
+
+# ============================================
+# Fix Linux Host Routing (Containerlab overrides)
+# ============================================
+echo ""
+echo "  Fixing Linux host routing (post-deploy fix)..."
+
+# Wait for containerlab to finish its network setup
+sleep 15
+
+# Fix linux-top
+docker exec clab-ospf-network-linux-top bash -c '
+  ip link set eth1 up
+  ip addr add 192.168.20.100/24 dev eth1 2>/dev/null || true
+  ip route del default 2>/dev/null || true
+  ip route add default via 192.168.20.1 dev eth1
+' 2>/dev/null && echo "  ✓ linux-top routes fixed" || echo "  ⚠ linux-top route fix failed"
+
+# Fix linux-bottom
+docker exec clab-ospf-network-linux-bottom bash -c '
+  ip link set eth1 up
+  ip addr add 192.168.10.20/24 dev eth1 2>/dev/null || true
+  ip route del default 2>/dev/null || true
+  ip route add default via 192.168.10.2 dev eth1
+' 2>/dev/null && echo "  ✓ linux-bottom routes fixed" || echo "  ⚠ linux-bottom route fix failed"
+
+# Verify connectivity
+if docker exec clab-ospf-network-linux-top ping -c 1 -W 2 192.168.10.20 >/dev/null 2>&1; then
+  echo "  ✓ End-to-end connectivity verified"
+else
+  echo "  ⚠ End-to-end connectivity failed - check OSPF"
+fi
 
 # ============================================
 # PHASE 4: Container Initialization Wait
@@ -1321,89 +1355,90 @@ if [ "$LLDP_SNMP_WORKING" -lt 5 ]; then
 fi
 
 # ============================================
-# PHASE 5.5: Start NetFlow Exporters
+# PHASE 5.5: Start NetFlow Exporters with Supervisor
 # ============================================
 echo ""
-echo "Phase 5.5: Starting NetFlow exporters..."
+echo "Phase 5.5: Starting NetFlow exporters with supervisor..."
 
 # Wait for routers to be fully ready
 sleep 10
 
-NETFLOW_STARTED=0
+# Create the netflow-supervisor script on each router and start it
 for router in $ROUTERS; do
     container="clab-ospf-network-$router"
     
-    echo "  Starting NetFlow on $router..."
+    echo -n "  $router: "
     
-    # Start NetFlow exporters in background
-    docker exec "$container" sh -c '
-        # Kill any existing instances
-        pkill softflowd 2>/dev/null || true
-        sleep 1
-        
-        # Ensure softflowd is installed
-        if ! command -v softflowd >/dev/null 2>&1; then
-            apk add --no-cache softflowd >/dev/null 2>&1
-        fi
-        
-        # Start exporters on data interfaces
-        STARTED=0
-        for iface in eth1 eth2 eth3 eth4 eth5; do
-            if ip link show $iface >/dev/null 2>&1 && ip addr show $iface | grep -q "inet "; then
-                # Run in background and detach
-                nohup softflowd -i $iface -n 172.20.20.50:2055 -v 5 -t maxlife=60 -d >/dev/null 2>&1 &
-                STARTED=$((STARTED + 1))
-                sleep 0.5
+    # Kill any existing instances and clean stale files
+    docker exec "$container" sh -c 'pkill softflowd 2>/dev/null; pkill -f netflow-supervisor 2>/dev/null; rm -f /var/run/softflowd* /tmp/softflowd* 2>/dev/null' 2>/dev/null || true
+    
+    # Create the supervisor script inside the container
+    docker exec "$container" sh -c 'cat > /usr/local/bin/netflow-supervisor.sh << "INNEREOF"
+#!/bin/sh
+COLLECTOR="172.20.20.50:2055"
+LOG_FILE="/tmp/netflow-supervisor.log"
+echo "$(date): NetFlow Supervisor starting" >> $LOG_FILE
+while true; do
+    for iface in eth1 eth2 eth3 eth4 eth5; do
+        if ip link show $iface >/dev/null 2>&1 && ip addr show $iface | grep -q "inet "; then
+            if ! pgrep -f "softflowd.*-i $iface" >/dev/null 2>&1; then
+                rm -f /tmp/softflowd-${iface}.pid /tmp/softflowd-${iface}.ctl 2>/dev/null
+                # UPDATED: Aggressive timeouts and NetFlow v9
+                softflowd -D -i $iface -n $COLLECTOR -v 9 -t maxlife=10s -t tcp=5s -t udp=5s -t general=5s -p /tmp/softflowd-${iface}.pid -c /tmp/softflowd-${iface}.ctl &
+                echo "$(date): Started softflowd on $iface" >> $LOG_FILE
             fi
-        done
-        
-        echo $STARTED
-    ' 2>&1 | tail -1 &
+        fi
+    done
+    sleep 30
+done
+INNEREOF
+chmod +x /usr/local/bin/netflow-supervisor.sh'
+
+    # Ensure softflowd is installed
+    docker exec "$container" sh -c 'command -v softflowd >/dev/null 2>&1 || apk add --no-cache softflowd >/dev/null 2>&1' || true
     
-    # Don't wait for the background process
+    # Start the supervisor using docker exec -d
+    docker exec -d "$container" /bin/sh -c 'exec /usr/local/bin/netflow-supervisor.sh' || true
+    
+    echo "supervisor started"
 done
 
-# Wait for all background jobs to complete
-wait
-
+# Wait for supervisors to start all exporters
 echo ""
-echo "  Waiting 5 seconds for exporters to initialize..."
-sleep 5
+echo "  Waiting 15 seconds for supervisors to initialize exporters..."
+sleep 15
 
-# Now verify what actually started
+# Verify NetFlow exporters
+echo ""
 echo "  Verifying NetFlow exporters..."
 NETFLOW_STARTED=0
 for router in $ROUTERS; do
     container="clab-ospf-network-$router"
-    count=$(docker exec "$container" ps aux 2>/dev/null | grep "softflowd.*172.20.20.50" | grep -v grep | wc -l)
     
-    if [ "$count" -gt 0 ]; then
-        echo "    ✓ $router: $count NetFlow exporters running"
+    # Check supervisor is running
+    sup_count=$(docker exec "$container" sh -c 'ps aux | grep -c "[n]etflow-supervisor"' 2>/dev/null || echo "0")
+    
+    # Check softflowd processes
+    soft_count=$(docker exec "$container" sh -c 'ps aux | grep -c "[s]oftflowd"' 2>/dev/null || echo "0")
+    
+    if [ "$sup_count" -gt 0 ] && [ "$soft_count" -gt 0 ]; then
+        echo "    ✓ $router: supervisor running, $soft_count exporters active"
+        NETFLOW_STARTED=$((NETFLOW_STARTED + 1))
+    elif [ "$sup_count" -gt 0 ]; then
+        echo "    ⚠ $router: supervisor running, waiting for exporters..."
         NETFLOW_STARTED=$((NETFLOW_STARTED + 1))
     else
-        echo "    ⚠ $router: No exporters running"
+        echo "    ✗ $router: supervisor not running"
     fi
 done
 
 echo ""
-echo "  NetFlow exporters started on $NETFLOW_STARTED/7 routers"
+echo "  NetFlow supervisors running on $NETFLOW_STARTED/7 routers"
 
 if [ "$NETFLOW_STARTED" -lt 5 ]; then
     echo ""
-    echo "  ⚠ Warning: Less than 5 routers exporting NetFlow"
-    echo "  Troubleshooting one router..."
-    docker exec clab-ospf-network-csr28 sh -c '
-        echo "  Checking processes:"
-        ps aux | grep softflowd | grep -v grep || echo "  No softflowd running"
-        echo ""
-        echo "  Checking softflowd installation:"
-        command -v softflowd && echo "  ✓ softflowd installed" || echo "  ✗ softflowd missing"
-        echo ""
-        echo "  Checking interfaces:"
-        ip -br addr show | grep eth
-    '
+    echo "  ⚠ Warning: Less than 5 routers have NetFlow supervisors"
 fi
-
 
 # ============================================
 # NetFlow Exporters Check
@@ -1575,46 +1610,32 @@ fi
 echo ""
 echo "Phase 7: Verifying NetFlow collection..."
 
-# Check Elastic Agent status
-if docker ps --format '{{.Names}}' | grep -q "clab-ospf-network-elastic-agent-sw2"; then
-    AGENT_CONTAINER="clab-ospf-network-elastic-agent-sw2"
-    AGENT_STATUS=$(docker inspect --format='{{.State.Status}}' "$AGENT_CONTAINER" 2>/dev/null)
-    
-    if [ "$AGENT_STATUS" = "running" ]; then
-        echo "  ✓ Elastic Agent: running"
-        
-        # Check if NetFlow integration is active
-        AGENT_HEALTH=$(docker exec "$AGENT_CONTAINER" elastic-agent status 2>/dev/null)
-        
-        if echo "$AGENT_HEALTH" | grep -qi "netflow"; then
-            echo "  ✓ NetFlow integration: active"
-        else
-            echo "  ⓘ NetFlow integration: configure in Fleet UI"
-        fi
-    else
-        echo "  ✗ Elastic Agent: $AGENT_STATUS"
-    fi
-else
-    echo "  ✗ Elastic Agent: not deployed"
-fi
-
-# Verify NetFlow exporters are still running
-echo ""
-echo "  Verifying NetFlow exporters..."
+# Verify NetFlow supervisors and exporters are running
+echo "  Checking NetFlow supervisors and exporters..."
 NETFLOW_RUNNING=0
+TOTAL_EXPORTERS=0
 for router in $ROUTERS; do
-    count=$(docker exec "clab-ospf-network-$router" ps aux 2>/dev/null | grep "softflowd.*172.20.20.50" | grep -v grep | wc -l)
-    if [ "$count" -gt 0 ]; then
+    container="clab-ospf-network-$router"
+    
+    sup=$(docker exec "$container" sh -c 'ps aux | grep -c "[n]etflow-supervisor" || echo 0')
+    soft=$(docker exec "$container" sh -c 'ps aux | grep -c "[s]oftflowd" || echo 0')
+    
+    if [ "$sup" -gt 0 ] && [ "$soft" -gt 0 ]; then
         NETFLOW_RUNNING=$((NETFLOW_RUNNING + 1))
+        TOTAL_EXPORTERS=$((TOTAL_EXPORTERS + soft))
     fi
 done
 
-echo "  NetFlow exporters: $NETFLOW_RUNNING/7 routers"
+echo "  NetFlow Status:"
+echo "    Routers with supervisors: $NETFLOW_RUNNING/7"
+echo "    Total exporters running: $TOTAL_EXPORTERS"
+echo "    Target collector: 172.20.20.50:2055 (Elastic Agent)"
 
 if [ "$NETFLOW_RUNNING" -ge 5 ]; then
-    echo "  ✓ NetFlow exporters operational"
+    echo "  ✓ NetFlow collection operational"
 else
-    echo "  ⚠ Some NetFlow exporters not running"
+    echo "  ⚠ Some NetFlow supervisors not running"
+    echo "    Run: ./scripts/start-netflow.sh to restart"
 fi
 
 # ============================================

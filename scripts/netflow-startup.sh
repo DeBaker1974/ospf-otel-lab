@@ -11,7 +11,8 @@ apk add --no-cache softflowd >/dev/null 2>&1
 STARTED=0
 for iface in eth1 eth2 eth3 eth4 eth5; do
   if ip link show $iface >/dev/null 2>&1 && ip addr show $iface | grep -q "inet "; then
-    softflowd -i $iface -n ${AGENT_IP}:${AGENT_PORT} -v 5 -t maxlife=60 -d
+    # UPDATED: Aggressive timeouts for Real-Time Lab
+    softflowd -i $iface -n ${AGENT_IP}:${AGENT_PORT} -v 9 -t maxlife=10s -t tcp=5s -t udp=5s -t general=5s
     STARTED=$((STARTED + 1))
   fi
 done

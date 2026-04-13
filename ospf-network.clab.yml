@@ -48,9 +48,9 @@ topology:
         - ip link set eth1 up
         - ip link set eth2 up
         - ip link set eth3 up
-        - ip addr add 10.0.1.1/31 dev eth1 || true
-        - ip addr add 10.0.2.1/31 dev eth2 || true
-        - ip addr add 192.168.20.1/24 dev eth3 || true
+        - sh -c "ip addr add 10.0.1.1/31 dev eth1 2>/dev/null || true"
+        - sh -c "ip addr add 10.0.2.1/31 dev eth2 2>/dev/null || true"
+        - sh -c "ip addr add 192.168.20.1/24 dev eth3 2>/dev/null || true"
         - touch /etc/frr/vtysh.conf
         - /usr/lib/frr/frrinit.sh start
         # SNMP/LLDP will be installed by setup script - NOT at container start
@@ -72,11 +72,11 @@ topology:
         - ip link set eth3 up
         - ip link set eth4 up
         - ip link set eth5 up
-        - ip addr add 10.0.1.0/31 dev eth1 || true
-        - ip addr add 10.0.9.0/31 dev eth2 || true
-        - ip addr add 10.0.3.1/31 dev eth3 || true
-        - ip addr add 10.0.4.0/31 dev eth4 || true
-        - ip addr add 10.0.6.0/31 dev eth5 || true
+        - sh -c "ip addr add 10.0.1.0/31 dev eth1 2>/dev/null || true"
+        - sh -c "ip addr add 10.0.9.0/31 dev eth2 2>/dev/null || true"
+        - sh -c "ip addr add 10.0.3.1/31 dev eth3 2>/dev/null || true"
+        - sh -c "ip addr add 10.0.4.0/31 dev eth4 2>/dev/null || true"
+        - sh -c "ip addr add 10.0.6.0/31 dev eth5 2>/dev/null || true"
         - touch /etc/frr/vtysh.conf
         - /usr/lib/frr/frrinit.sh start
       mgmt-ipv4: 172.20.20.24
@@ -97,11 +97,11 @@ topology:
         - ip link set eth3 up
         - ip link set eth4 up
         - ip link set eth5 up
-        - ip addr add 10.0.7.0/31 dev eth1 || true
-        - ip addr add 10.0.2.0/31 dev eth2 || true
-        - ip addr add 10.0.3.0/31 dev eth3 || true
-        - ip addr add 10.0.5.0/31 dev eth4 || true
-        - ip addr add 10.0.11.0/31 dev eth5 || true
+        - sh -c "ip addr add 10.0.7.0/31 dev eth1 2>/dev/null || true"
+        - sh -c "ip addr add 10.0.2.0/31 dev eth2 2>/dev/null || true"
+        - sh -c "ip addr add 10.0.3.0/31 dev eth3 2>/dev/null || true"
+        - sh -c "ip addr add 10.0.5.0/31 dev eth4 2>/dev/null || true"
+        - sh -c "ip addr add 10.0.11.0/31 dev eth5 2>/dev/null || true"
         - touch /etc/frr/vtysh.conf
         - /usr/lib/frr/frrinit.sh start
       mgmt-ipv4: 172.20.20.23
@@ -119,8 +119,8 @@ topology:
       exec:
         - ip link set eth1 up
         - ip link set eth2 up
-        - ip addr add 10.0.9.1/31 dev eth1 || true
-        - ip addr add 10.0.10.1/31 dev eth2 || true
+        - sh -c "ip addr add 10.0.9.1/31 dev eth1 2>/dev/null || true"
+        - sh -c "ip addr add 10.0.10.1/31 dev eth2 2>/dev/null || true"
         - touch /etc/frr/vtysh.conf
         - /usr/lib/frr/frrinit.sh start
       mgmt-ipv4: 172.20.20.29
@@ -138,8 +138,8 @@ topology:
       exec:
         - ip link set eth1 up
         - ip link set eth2 up
-        - ip addr add 10.0.11.1/31 dev eth1 || true
-        - ip addr add 10.0.12.1/31 dev eth2 || true
+        - sh -c "ip addr add 10.0.11.1/31 dev eth1 2>/dev/null || true"
+        - sh -c "ip addr add 10.0.12.1/31 dev eth2 2>/dev/null || true"
         - touch /etc/frr/vtysh.conf
         - /usr/lib/frr/frrinit.sh start
       mgmt-ipv4: 172.20.20.27
@@ -160,11 +160,11 @@ topology:
         - ip link set eth3 up
         - ip link set eth4 up
         - ip link set eth5 up
-        - ip addr add 10.0.10.0/31 dev eth1 || true
-        - ip addr add 10.0.7.1/31 dev eth2 || true
-        - ip addr add 10.0.4.1/31 dev eth3 || true
-        - ip addr add 10.0.8.1/31 dev eth4 || true
-        - ip addr add 192.168.10.3/24 dev eth5 || true
+        - sh -c "ip addr add 10.0.10.0/31 dev eth1 2>/dev/null || true"
+        - sh -c "ip addr add 10.0.7.1/31 dev eth2 2>/dev/null || true"
+        - sh -c "ip addr add 10.0.4.1/31 dev eth3 2>/dev/null || true"
+        - sh -c "ip addr add 10.0.8.1/31 dev eth4 2>/dev/null || true"
+        - sh -c "ip addr add 192.168.10.3/24 dev eth5 2>/dev/null || true"
         - touch /etc/frr/vtysh.conf
         - /usr/lib/frr/frrinit.sh start
       mgmt-ipv4: 172.20.20.26
@@ -185,11 +185,11 @@ topology:
         - ip link set eth3 up
         - ip link set eth4 up
         - ip link set eth5 up
-        - ip addr add 10.0.5.1/31 dev eth1 || true
-        - ip addr add 10.0.6.1/31 dev eth2 || true
-        - ip addr add 10.0.8.0/31 dev eth3 || true
-        - ip addr add 10.0.12.0/31 dev eth4 || true
-        - ip addr add 192.168.10.2/24 dev eth5 || true
+        - sh -c "ip addr add 10.0.5.1/31 dev eth1 2>/dev/null || true"
+        - sh -c "ip addr add 10.0.6.1/31 dev eth2 2>/dev/null || true"
+        - sh -c "ip addr add 10.0.8.0/31 dev eth3 2>/dev/null || true"
+        - sh -c "ip addr add 10.0.12.0/31 dev eth4 2>/dev/null || true"
+        - sh -c "ip addr add 192.168.10.2/24 dev eth5 2>/dev/null || true"
         - touch /etc/frr/vtysh.conf
         - /usr/lib/frr/frrinit.sh start
       mgmt-ipv4: 172.20.20.25
@@ -230,24 +230,6 @@ topology:
     # ============================================
     # Ubuntu Hosts
     # ============================================
-    linux-bottom:
-      kind: linux
-      image: ubuntu-lab:22.04
-      user: root
-      binds:
-        - scripts:/scripts
-        - logs:/var/log/linux-bottom
-      exec:
-        # First install iproute2, THEN configure network
-        - bash -c "DEBIAN_FRONTEND=noninteractive apt-get update -qq && apt-get install -y iproute2 curl wget vim net-tools iputils-ping bash jq systemd procps -qq"
-        - ip addr add 192.168.10.20/24 dev eth1 || true
-        - ip link set eth1 up
-        - ip route add default via 192.168.10.1 || true
-      env:
-        DEBIAN_FRONTEND: noninteractive
-      ports:
-        - 2057:2057/udp
-
     linux-top:
       kind: linux
       image: ubuntu-lab:22.04
@@ -256,15 +238,31 @@ topology:
         - scripts:/scripts
         - logs:/var/log/linux-top
       exec:
-        # First install iproute2, THEN configure network
-        - bash -c "DEBIAN_FRONTEND=noninteractive apt-get update -qq && apt-get install -y iproute2 curl wget vim net-tools iputils-ping bash jq systemd procps -qq"
-        - ip addr add 192.168.20.100/24 dev eth1 || true
         - ip link set eth1 up
-        - ip route add default via 192.168.20.1 || true
+        - ip addr add 192.168.20.100/24 dev eth1 || true
+        # Use a background job to fix routes AFTER containerlab finishes
+        - bash -c "sleep 10 && ip route del default via 172.20.20.1 2>/dev/null; ip route add default via 192.168.20.1 dev eth1 2>/dev/null" &
       env:
         DEBIAN_FRONTEND: noninteractive
       ports:
         - 2058:2058/udp
+
+    linux-bottom:
+      kind: linux
+      image: ubuntu-lab:22.04
+      user: root
+      binds:
+        - scripts:/scripts
+        - logs:/var/log/linux-bottom
+      exec:
+        - ip link set eth1 up
+        - ip addr add 192.168.10.20/24 dev eth1 || true
+        # Use a background job to fix routes AFTER containerlab finishes
+        - bash -c "sleep 10 && ip route del default via 172.20.20.1 2>/dev/null; ip route add default via 192.168.10.2 dev eth1 2>/dev/null" &
+      env:
+        DEBIAN_FRONTEND: noninteractive
+      ports:
+        - 2057:2057/udp
 
     # ============================================
     # Telemetry Collectors
