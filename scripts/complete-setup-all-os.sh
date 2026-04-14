@@ -5,7 +5,7 @@ set -e  # Exit on error
 echo "========================================="
 echo "Complete OSPF OTEL Lab Redeployment v27.0"
 echo "  Full cleanup and rebuild"
-echo "  7 FRR routers (AS ROOT) + OTEL + Logstash"
+echo "  7 FRR routers (AS ROOT) + Logstash"
 echo "  2 Ubuntu 22.04 hosts (linux-bottom + linux-top)"
 echo "  REMOVED: node1, win-bottom"
 echo "  STATIC IPs (172.20.20.23-29)"
@@ -83,7 +83,6 @@ if [ -z "$ES_ENDPOINT" ] || [ -z "$ES_API_KEY" ]; then
     exit 1
 fi
 echo "✓ Elasticsearch configured: $ES_ENDPOINT"
-
 # ============================================
 # CHECK FLEET CONFIGURATION
 # ============================================
@@ -116,7 +115,6 @@ REQUIRED_DIRS=(
     "configs/routers/csr27"
     "configs/routers/csr28"
     "configs/routers/csr29"
-    "configs/otel"
     "configs/logstash/pipeline"  # Already there
 )
 
@@ -126,113 +124,82 @@ REQUIRED_DIRS=(
 echo ""
 echo "Checking Logstash pipeline configuration..."
 
-# Check if snmp-traps.conf exists
+# Verify snmp-polling.conf exists
+if [ ! -f "configs/logstash/pipeline/snmp-polling.conf" ]; then
+    echo "  ✗ SNMP polling pipeline missing!"
+    echo "  Expected: configs/logstash/pipeline/snmp-polling.conf"
+    echo "  This file replaces the OTEL Collector for SNMP polling."
+    exit 1
+fi
+echo "  ✓ snmp-polling.conf found"
+
+# Verify snmp-traps.conf exists
 if [ ! -f "configs/logstash/pipeline/snmp-traps.conf" ]; then
-    echo "  ⚠ SNMP traps pipeline missing"
-    echo "  Creating configs/logstash/pipeline/snmp-traps.conf..."
-    
-    mkdir -p configs/logstash/pipeline
-    
-    cat > configs/logstash/pipeline/snmp-traps.conf << 'EOF'
-input {
-  snmp_trap {
-    host => "0.0.0.0"
-    port => 1062
-    community => ["public"]
-  }
-}
+    echo "  ✗ SNMP traps pipeline missing!"
+    echo "  Expected: configs/logstash/pipeline/snmp-traps.conf"
+    exit 1
+fi
+echo "  ✓ snmp-traps.conf found"
 
-filter {
-  # Add CSR23 hostname
-  if [host] == "172.20.20.23" {
-    mutate { 
-      add_field => { 
-        "host.name" => "csr23"
-        "host.ip" => "172.20.20.23"
-      }
-    }
-  }
+# Verify pipelines.yml exists
+if [ ! -f "configs/logstash/pipelines.yml" ]; then
+    echo "  ⚠ pipelines.yml missing - creating..."
+    cat > configs/logstash/pipelines.yml << 'EOF'
+- pipeline.id: snmp-polling
+  path.config: "/usr/share/logstash/pipeline/snmp-polling.conf"
+  pipeline.workers: 2
+  pipeline.batch.size: 125
 
-  # Identify trap type by OID
-  if [oid] == "1.3.6.1.6.3.1.1.5.3" {
-    mutate { 
-      add_tag => ["interface_down"]
-      add_field => { 
-        "event.action" => "interface-down"
-        "message" => "Interface down on %{[host.name]}"
-      }
-    }
-  } else if [oid] == "1.3.6.1.6.3.1.1.5.4" {
-    mutate { 
-      add_tag => ["interface_up"]
-      add_field => { 
-        "event.action" => "interface-up"
-        "message" => "Interface up on %{[host.name]}"
-      }
-    }
-  }
-
-  # Add data stream fields
-  mutate {
-    add_field => {
-      "data_stream.type" => "logs"
-      "data_stream.dataset" => "snmp.trap"
-      "data_stream.namespace" => "prod"
-    }
-  }
-}
-
-output {
-  # Console output for debugging
-  stdout {
-    codec => rubydebug
-  }
-
-  # Send to Elasticsearch
-  elasticsearch {
-    hosts => ["${ES_ENDPOINT}"]
-    api_key => "${ES_API_KEY}"
-    data_stream => true
-    data_stream_type => "logs"
-    data_stream_dataset => "snmp.trap"
-    data_stream_namespace => "prod"
-  }
-}
+- pipeline.id: snmp-traps
+  path.config: "/usr/share/logstash/pipeline/snmp-traps.conf"
+  pipeline.workers: 1
+  pipeline.batch.size: 50
 EOF
+    echo "  ✓ pipelines.yml created"
+else
+    echo "  ✓ pipelines.yml found"
+fi
 
-    echo "  ✓ SNMP traps pipeline created"
-fi  # ← THIS fi WAS MISSING!
+# CRITICAL: Verify logstash.yml does NOT have path.config
+# path.config conflicts with pipelines.yml
+if grep -q "path.config" configs/logstash/logstash.yml 2>/dev/null; then
+    echo "  ⚠ logstash.yml has path.config (conflicts with pipelines.yml)"
+    echo "  Fixing logstash.yml..."
+    cat > configs/logstash/logstash.yml << 'EOF'
+# Logstash Configuration - SNMP Polling + Traps
+# Pipeline definitions are in pipelines.yml
+api.http.host: "0.0.0.0"
+api.http.port: 9600
+xpack.monitoring.enabled: false
+log.level: info
+log.format: plain
+queue.type: memory
+queue.max_bytes: 1gb
+config.reload.automatic: true
+config.reload.interval: 30s
+EOF
+    echo "  ✓ logstash.yml fixed (path.config removed)"
+else
+    echo "  ✓ logstash.yml compatible with pipelines.yml"
+fi
 
-# Remove netflow.conf if it exists (not needed)
+# Remove old netflow.conf if it exists
 if [ -f "configs/logstash/pipeline/netflow.conf" ]; then
     echo "  Removing unused netflow.conf..."
     rm configs/logstash/pipeline/netflow.conf
     echo "  ✓ netflow.conf removed"
 fi
 
-# Update logstash.yml if needed
-if [ -f "configs/logstash/logstash.yml" ]; then
-    if ! grep -q 'path.config: "/usr/share/logstash/pipeline/\*.conf"' configs/logstash/logstash.yml; then
-        echo "  Updating logstash.yml to load all pipeline files..."
-        cat > configs/logstash/logstash.yml << 'EOF'
-http.host: "0.0.0.0"
-xpack.monitoring.enabled: false
-path.config: "/usr/share/logstash/pipeline/*.conf"
-EOF
-        echo "  ✓ logstash.yml updated"
-    fi
-else
-    echo "  Creating logstash.yml..."
-    mkdir -p configs/logstash
-    cat > configs/logstash/logstash.yml << 'EOF'
-http.host: "0.0.0.0"
-xpack.monitoring.enabled: false
-path.config: "/usr/share/logstash/pipeline/*.conf"
-EOF
-    echo "  ✓ logstash.yml created"
+# Verify Logstash topology has pipelines.yml bind mount
+if ! grep -q "pipelines.yml" ospf-network.clab.yml 2>/dev/null; then
+    echo "  ⚠ WARNING: ospf-network.clab.yml missing pipelines.yml bind mount"
+    echo "  Logstash node should have:"
+    echo "    - configs/logstash/pipelines.yml:/usr/share/logstash/config/pipelines.yml:ro"
 fi
 
 echo "✓ Logstash pipeline configuration verified"
+echo "  Pipelines: snmp-polling (SNMP pull) + snmp-traps (trap receiver)"
+echo "  OTEL Collector: NOT REQUIRED (Logstash handles all SNMP)"
 
 # Continue with rest of script...
 for dir in "${REQUIRED_DIRS[@]}"; do
@@ -251,10 +218,8 @@ if ! command -v snmpget &> /dev/null; then
         sudo apt-get update -qq && sudo apt-get install -y snmp -qq
     elif [[ "$OS" == "Darwin" ]]; then
         echo "  ⚠ snmpget not found. On macOS, install with: brew install net-snmp"
-        # We don't exit, just warn
     fi
 fi
-
 
 echo "✓ SNMP tools available"
 
@@ -822,16 +787,6 @@ if [ -n "$AGENT_VERSION" ]; then
     sedi "s|image: docker.elastic.co/logstash/logstash:.*|image: docker.elastic.co/logstash/logstash:$AGENT_VERSION|g" "$TOPOLOGY_FILE"
 fi
 
-# Ensure OTEL collector has env vars in the topology
-if ! grep -A 10 "otel-collector:" "$TOPOLOGY_FILE" | grep -q "ES_ENDPOINT"; then
-    echo "  Adding environment variables to OTEL collector container definition..."
-    # Insert env block into the otel-collector definition
-    sedi '/otel-collector:/,/ports:/{
-        /cmd:/a\      env:\n        ES_ENDPOINT: ${ES_ENDPOINT}\n        ES_API_KEY: ${ES_API_KEY}
-    }' "$TOPOLOGY_FILE"
-    echo "    ✓ Env vars added to OTEL collector"
-fi
-
 echo "  ✓ Topology updated"
 
 # ============================================
@@ -922,7 +877,7 @@ done
 # Verify support containers
 echo ""
 echo "  Verifying support containers..."
-SUPPORT_CONTAINERS=("otel-collector" "logstash" "linux-bottom" "linux-top")
+SUPPORT_CONTAINERS=("logstash" "linux-bottom" "linux-top")
 
 for container in "${SUPPORT_CONTAINERS[@]}"; do
     status=$(docker inspect --format='{{.State.Status}}' "clab-ospf-network-$container" 2>/dev/null || echo "missing")
@@ -1495,113 +1450,59 @@ if [ "$NETFLOW_WORKING" -lt 5 ]; then
 fi
 
 # ============================================
-# PHASE 6: Configure OTEL Collector (ENHANCED)
+# PHASE 6: Verify Logstash SNMP Polling
+# (Replaces old OTEL Collector configuration)
 # ============================================
 echo ""
-echo "Phase 6: Configuring OTEL Collector..."
+echo "Phase 6: Verifying Logstash SNMP Polling..."
 
-OTEL_CONFIG="configs/otel/otel-collector.yml"
+LOGSTASH_STATUS=$(docker inspect --format='{{.State.Status}}' clab-ospf-network-logstash 2>/dev/null)
 
-if [ ! -f "$OTEL_CONFIG" ]; then
-    echo "✗ OTEL config not found: $OTEL_CONFIG"
-    exit 1
-fi
-
-# Backup original config
-BACKUP_CONFIG="${OTEL_CONFIG}.backup-$(date +%s)"
-cp "$OTEL_CONFIG" "$BACKUP_CONFIG"
-echo "  Config backed up to: $(basename $BACKUP_CONFIG)"
-
-# Load Elasticsearch configuration
-source "$ENV_FILE"
-
-if [ -z "$ES_ENDPOINT" ] || [ -z "$ES_API_KEY" ]; then
-    echo "✗ Elasticsearch not configured in .env"
-    echo "  Run: ./scripts/configure-elasticsearch.sh"
-    exit 1
-fi
-
-# ============================================
-# UPDATE 1: Elasticsearch Connection (Use Env Vars)
-# ============================================
-echo ""
-echo "  Updating Elasticsearch connection to use environment variables..."
-
-# Replace endpoints list with env var reference (handles http/https)
-# This forces the config file to say "${env:ES_ENDPOINT}" instead of the actual URL
-sedi 's|endpoints: \[ "https://[^"]*" \]|endpoints: [ "${env:ES_ENDPOINT}" ]|g' "$OTEL_CONFIG"
-sedi 's|endpoints: \[ "http://[^"]*" \]|endpoints: [ "${env:ES_ENDPOINT}" ]|g' "$OTEL_CONFIG"
-
-# Replace api_key with env var reference
-# This forces the config file to say "${env:ES_API_KEY}"
-sedi 's|api_key: "[^"]*"|api_key: "${env:ES_API_KEY}"|g' "$OTEL_CONFIG"
-
-# Verify replacement
-if grep -q "\${env:ES_ENDPOINT}" "$OTEL_CONFIG"; then
-    echo "    ✓ OTEL config updated to use \${env:ES_ENDPOINT}"
-else
-    echo "    ⚠ Warning: Could not update OTEL endpoints to use environment variables"
-fi
-
-
-# ============================================
-# UPDATE 2: Router IPs (SNMP endpoints)
-# ============================================
-echo ""
-echo "  Updating router IPs (port 161)..."
-for router in "${!ACTUAL_IPS[@]}"; do
-    ip="${ACTUAL_IPS[$router]}"
-    router_num="${router#csr}"
+if [ "$LOGSTASH_STATUS" = "running" ]; then
+    echo "  ✓ Logstash: running"
     
-    echo "    $router -> $ip:161"
+    # Check pipelines loaded
+    echo "  Pipeline files:"
+    docker exec clab-ospf-network-logstash ls /usr/share/logstash/pipeline/ 2>/dev/null | sed 's/^/    /'
     
-    sedi "s|endpoint: udp://[0-9.]*:1*161.*${router}|endpoint: udp://${ip}:161 # ${router}|g" "$OTEL_CONFIG"
-    sedi "s|endpoint: udp://172\.20\.20\.${router_num}:1*161|endpoint: udp://${ip}:161|g" "$OTEL_CONFIG"
-done
-
-sedi 's/:1161\([^0-9]\)/:161\1/g' "$OTEL_CONFIG"
-
-# ============================================
-# VERIFICATION
-# ============================================
-echo ""
-echo "  Verification:"
-CONFIG_LINES=$(wc -l < "$OTEL_CONFIG")
-RECEIVER_COUNT=$(grep -c "endpoint: udp://" "$OTEL_CONFIG")
-EXPORTER_COUNT=$(grep -c "^  elasticsearch/" "$OTEL_CONFIG")
-echo "    Config size: $CONFIG_LINES lines"
-echo "    SNMP receivers: $RECEIVER_COUNT"
-echo "    ES exporters: $EXPORTER_COUNT"
-
-# Show first exporter
-echo ""
-echo "  Sample exporter config:"
-grep -A 3 "elasticsearch/system:" "$OTEL_CONFIG" | sed 's/^/    /'
-
-# ============================================
-# RESTART
-# ============================================
-echo ""
-echo "  Restarting OTEL Collector..."
-docker restart clab-ospf-network-otel-collector
-sleep 20
-
-# Check status
-OTEL_STATUS=$(docker inspect --format='{{.State.Status}}' clab-ospf-network-otel-collector 2>/dev/null)
-if [ "$OTEL_STATUS" = "running" ]; then
-    echo "✓ OTEL Collector running"
+    # Check pipelines.yml loaded
+    if docker exec clab-ospf-network-logstash cat /usr/share/logstash/config/pipelines.yml >/dev/null 2>&1; then
+        echo "  ✓ pipelines.yml loaded"
+    else
+        echo "  ⚠ pipelines.yml not found"
+    fi
     
-    # Quick health check
-    RECENT_LOGS=$(docker logs --tail 50 clab-ospf-network-otel-collector 2>&1)
-    if echo "$RECENT_LOGS" | grep -qi "started successfully\|ready"; then
-        echo "  ✓ Collector started successfully"
-    elif echo "$RECENT_LOGS" | grep -qi "error.*elasticsearch\|failed.*elasticsearch"; then
-        echo "  ⚠ Elasticsearch connection errors detected"
-        echo "$RECENT_LOGS" | grep -i "elasticsearch" | tail -3 | sed 's/^/    /'
+    # Wait for Logstash to fully start
+    echo "  Waiting 30s for Logstash pipelines to initialize..."
+    sleep 30
+    
+    # Check for pipeline startup
+    POLLING_PIPELINE=$(docker logs --tail 200 clab-ospf-network-logstash 2>&1 | grep -i "snmp-polling\|pipeline.*started" | tail -3)
+    TRAP_PIPELINE=$(docker logs --tail 200 clab-ospf-network-logstash 2>&1 | grep -i "snmp-traps\|1062" | tail -3)
+    
+    if [ -n "$POLLING_PIPELINE" ]; then
+        echo "  ✓ SNMP polling pipeline detected"
+    else
+        echo "  ⚠ SNMP polling pipeline not yet visible in logs"
+    fi
+    
+    if [ -n "$TRAP_PIPELINE" ]; then
+        echo "  ✓ SNMP traps pipeline detected"
+    else
+        echo "  ⚠ SNMP traps pipeline not yet visible in logs"
+    fi
+    
+    # Check for errors
+    ERRORS=$(docker logs --tail 100 clab-ospf-network-logstash 2>&1 | grep -iE "error|exception|failed" | grep -v "DEBUG" | tail -5)
+    if [ -n "$ERRORS" ]; then
+        echo "  ⚠ Recent errors:"
+        echo "$ERRORS" | sed 's/^/    /'
+    else
+        echo "  ✓ No errors in recent logs"
     fi
 else
-    echo "✗ OTEL Collector failed (status: $OTEL_STATUS)"
-    exit 1
+    echo "  ✗ Logstash not running (status: $LOGSTASH_STATUS)"
+    echo "  Check: docker logs clab-ospf-network-logstash"
 fi
 
 # ============================================
@@ -1766,92 +1667,54 @@ done
 echo "  Total OSPF adjacencies: $TOTAL_NEIGHBORS (expected: 22)"
 
 # ============================================
-# PHASE 9: Verify OTEL is Collecting All SNMP Data
+# PHASE 9: Verify Logstash SNMP Data Collection
 # ============================================
 echo ""
-echo "Phase 9: Verifying OTEL-only SNMP collection..."
+echo "Phase 9: Verifying Logstash SNMP data collection..."
 
 # Ensure redundant LLDP service is disabled
 if systemctl is-active --quiet lldp-export 2>/dev/null; then
-    echo "  ⚠ Found redundant LLDP service running"
-    echo "  Disabling (OTEL now handles all SNMP including LLDP)..."
+    echo "  Disabling redundant LLDP service..."
     sudo systemctl stop lldp-export 2>/dev/null || true
     sudo systemctl disable lldp-export 2>/dev/null || true
     echo "  ✓ LLDP service disabled"
 else
-    echo "  ✓ No redundant LLDP service (good)"
+    echo "  ✓ No redundant LLDP service"
 fi
 
-# Verify OTEL is collecting data
 echo ""
-echo "  Checking OTEL data collection..."
-
-# Wait for OTEL to collect some data
+echo "  Waiting 60s for Logstash to collect SNMP data..."
 sleep 60
 
 # Check total SNMP metrics
-OTEL_SNMP_DOCS=$(curl -s -H "Authorization: ApiKey $ES_API_KEY" \
+SNMP_DOCS=$(curl -s -H "Authorization: ApiKey $ES_API_KEY" \
   "$ES_ENDPOINT/metrics-*/_count" \
   -H 'Content-Type: application/json' \
-  -d '{
-    "query": {
-      "range": {
-        "@timestamp": {"gte": "now-5m"}
-      }
-    }
-  }' 2>/dev/null | jq -r '.count // 0')
+  -d '{"query":{"range":{"@timestamp":{"gte":"now-5m"}}}}' 2>/dev/null | jq -r '.count // 0')
 
-# Check LLDP specifically
-LLDP_FROM_OTEL=$(curl -s -H "Authorization: ApiKey $ES_API_KEY" \
-  "$ES_ENDPOINT/metrics-*/_count" \
-  -H 'Content-Type: application/json' \
-  -d '{
-    "query": {
-      "bool": {
-        "must": [
-          {"exists": {"field": "network.lldp"}},
-          {"range": {"@timestamp": {"gte": "now-5m"}}}
-        ]
-      }
-    }
-  }' 2>/dev/null | jq -r '.count // 0')
+echo "  Total SNMP docs (last 5min): $SNMP_DOCS"
 
-echo "  Total SNMP docs (last 5min): $OTEL_SNMP_DOCS"
-echo "  LLDP docs (last 5min): $LLDP_FROM_OTEL"
-
-if [ "$OTEL_SNMP_DOCS" -gt 100 ]; then
-    echo "  ✓ OTEL collecting SNMP data successfully"
+if [ "$SNMP_DOCS" -gt 50 ]; then
+    echo "  ✓ Logstash collecting SNMP data successfully"
 else
-    echo "  ⚠ Low SNMP data volume from OTEL"
-fi
-
-if [ "$LLDP_FROM_OTEL" -gt 0 ]; then
-    echo "  ✓ OTEL collecting LLDP via SNMP AgentX"
-    echo "  ✓ Single data pipeline confirmed: Routers → SNMP → OTEL → Elasticsearch"
-else
-    echo "  ⚠ No LLDP data from OTEL yet"
-    echo "  This may improve after a few minutes"
-    echo "  Check: docker logs clab-ospf-network-otel-collector | grep -i lldp"
+    echo "  ⚠ Low SNMP data - checking Logstash logs..."
+    docker logs --tail 20 clab-ospf-network-logstash 2>&1 | grep -iE "snmp|error" | tail -5 | sed 's/^/    /'
 fi
 
 # Breakdown by dataset
 echo ""
-echo "  OTEL Data Breakdown:"
-curl -s -H "Authorization: ApiKey $ES_API_KEY" \
-  "$ES_ENDPOINT/metrics-*/_search?size=0" \
-  -H 'Content-Type: application/json' \
-  -d '{
-    "query": {"range": {"@timestamp": {"gte": "now-5m"}}},
-    "aggs": {
-      "by_dataset": {
-        "terms": {"field": "data_stream.dataset", "size": 10}
-      }
-    }
-  }' 2>/dev/null | jq -r '.aggregations.by_dataset.buckets[] | "    \(.key): \(.doc_count) docs"'
+echo "  Data Breakdown (last 5 min):"
+for dataset in snmp.system snmp.interface snmp.ipstats snmp.tcp snmp.udp snmp.arp snmp.lldp snmp.memory; do
+    count=$(curl -s -H "Authorization: ApiKey $ES_API_KEY" \
+      "$ES_ENDPOINT/metrics-${dataset}-prod/_count" \
+      -H 'Content-Type: application/json' \
+      -d '{"query":{"range":{"@timestamp":{"gte":"now-5m"}}}}' 2>/dev/null | jq -r '.count // 0')
+    printf "    %-25s %s docs\n" "$dataset:" "$count"
+done
 
 echo ""
-echo "✓ OTEL is your single source for all SNMP data"
-
+echo "  Data Pipeline: Routers → SNMP → Logstash → Elasticsearch"
+echo "  Trap Pipeline: CSR23 → SNMP Trap → Logstash → Elasticsearch"
 
 # ============================================
 # PHASE 9.5: Verify Elastic Agent Deployment
@@ -1997,13 +1860,13 @@ for container in $(docker ps -a --filter "name=clab-ospf-network" --format "{{.N
     printf "  %-30s %-15s %-10s\n" "${container#clab-ospf-network-}" "$status" "$restarts"
 done
 
-# 2. SNMP Connectivity
+# 2. SNMP Connectivity (via Logstash)
 echo ""
-echo "SNMP Status (Port 161):"
-SNMP_ERRORS=$(docker logs --tail 500 clab-ospf-network-otel-collector 2>&1 | grep -ci "connection refused" || echo "0")
-SNMP_SUCCESS=$(docker logs --tail 500 clab-ospf-network-otel-collector 2>&1 | grep -ci "successfully\|exported" || echo "0")
-echo "  Connection errors: $SNMP_ERRORS"
-echo "  Successful operations: $SNMP_SUCCESS"
+echo "SNMP Status (Port 161 - via Logstash):"
+LOGSTASH_ERRORS=$(docker logs --tail 500 clab-ospf-network-logstash 2>&1 | grep -ci "error\|failed" || echo "0")
+LOGSTASH_SNMP=$(docker logs --tail 500 clab-ospf-network-logstash 2>&1 | grep -ci "snmp" || echo "0")
+echo "  Logstash errors: $LOGSTASH_ERRORS"
+echo "  SNMP log entries: $LOGSTASH_SNMP"
 
 # 3. LLDP Status
 echo ""
@@ -2177,7 +2040,7 @@ echo "  linux-top: $LT_STATUS (Ubuntu 22.04 @ 192.168.20.100)"
 echo "  Elasticsearch: $ES_ENDPOINT"
 echo "  Data: $SNMP_DOCS total SNMP documents (includes LLDP via AgentX)"
 echo "  Recent data: $RECENT_COUNT documents in last 5 minutes"
-echo "  LLDP: Collected via OTEL SNMP receivers (AgentX integration)"
+echo "  LLDP: Collected via Logstash SNMP receivers (AgentX integration)"
 
 echo "  NetFlow: DISABLED (troubleshoot separately)"
 echo ""
@@ -2201,7 +2064,7 @@ elif [ $RUNNING_CONTAINERS -eq $TOTAL_CONTAINERS ] && [ "$SNMP_DOCS" -gt 0 ]; th
     echo "  NetFlow deferred for separate troubleshooting"
 elif [ "$SNMP_WORKING" -lt 5 ]; then
     echo "⚠ Lab deployment complete but SNMP issues detected"
-    echo "  Check: docker logs clab-ospf-network-otel-collector"
+    echo "  Check: docker logs clab-ospf-network-logstash"
 else
     echo "⚠ Lab deployment complete with warnings"
     echo "  Review the verification output above"
@@ -2212,8 +2075,10 @@ echo "Configuration Details:"
 echo "  SNMP: Port 161 (standard, containers run as root)"
 echo "  SNMP Community: public"
 echo "  SNMP AgentX: Enabled for LLDP integration"
-echo "  LLDP: TX interval 10s, exporting via SNMP AgentX to OTEL"
-echo "  Data Pipeline: Routers → SNMP (port 161) → OTEL → Elasticsearch"
+echo "  LLDP: TX interval 10s, exporting via SNMP AgentX to Logstash"
+echo "  Data Pipeline: Routers → SNMP (port 161) → Logstash → Elasticsearch"
+echo "  Trap Pipeline: CSR23 → Logstash (172.20.20.31:1062) → Elasticsearch"
+echo "  OTEL Collector: REMOVED (replaced by Logstash)"
 echo "  Logstash: Running (NetFlow disabled)"
 echo "  Elasticsearch: Auto-configured from $ENV_FILE"
 echo "  linux-bottom: Ubuntu 22.04 at 192.168.10.20 (on sw)"
@@ -2225,10 +2090,8 @@ echo "Quick Tests:"
 echo "  SNMP: snmpget -v2c -c public 172.20.20.28 1.3.6.1.2.1.1.1.0"
 echo "  LLDP: docker exec clab-ospf-network-csr28 lldpcli show neighbors"
 echo "  LLDP SNMP: snmpwalk -v2c -c public 172.20.20.28 1.0.8802.1.1.2.1.4.1.1.9"
-echo "  Verify ES endpoint: grep elasticsearch/system configs/otel/otel-collector.yml"
+echo "  Verify Logstash: docker exec clab-ospf-network-logstash cat /usr/share/logstash/config/pipelines.yml"
 echo "  linux-bottom: docker exec -it clab-ospf-network-linux-bottom bash"
-echo "  linux-top: docker exec -it clab-ospf-network-linux-top bash"
-
 echo ""
 
 # Run status script if available
@@ -2240,7 +2103,7 @@ fi
 
 echo ""
 echo "========================================="
-echo "  version: 29 - 03-12-2025"
+echo "  Last update: April 2026"
 echo "  Setup complete with LLDP SNMP AgentX!"
 echo "  Topology: 7 routers + 2 Ubuntu hosts + 2 switches + 1 Agent"
 echo "  SNMP: ✓ Enabled (port 161)"

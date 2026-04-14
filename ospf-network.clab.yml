@@ -9,7 +9,7 @@ topology:
     # ============================================
     elastic-agent-sw2:
       kind: linux
-      image: elastic/elastic-agent:9.3.0
+      image: elastic/elastic-agent:9.3.3
       user: root
       memory: 1024m
       binds:
@@ -267,36 +267,38 @@ topology:
     # ============================================
     # Telemetry Collectors
     # ============================================
-    otel-collector:
-      kind: linux
-      image: otel/opentelemetry-collector-contrib:0.111.0
-      binds:
-        - configs/otel/otel-collector.yml:/etc/otelcol-contrib/config.yaml:ro
-        - .env:/etc/otelcol-contrib/.env:ro
-      cmd: --config=/etc/otelcol-contrib/config.yaml
-      env:
-        ES_ENDPOINT: ${ES_ENDPOINT}
-        ES_API_KEY: ${ES_API_KEY}
-      ports:
-        - 8888:8888
-        - 4317:4317
-        - 5140:5140/udp
+    # otel-collector:
+    #   kind: linux
+    #   image: otel/opentelemetry-collector-contrib:0.111.0
+    #   binds:
+    #     - configs/otel/otel-collector.yml:/etc/otelcol-contrib/config.yaml:ro
+    #     - .env:/etc/otelcol-contrib/.env:ro
+    #   cmd: --config=/etc/otelcol-contrib/config.yaml
+    #   env:
+    #     ES_ENDPOINT: ${ES_ENDPOINT}
+    #     ES_API_KEY: ${ES_API_KEY}
+    #   ports:
+    #     - 8888:8888
+    #     - 4317:4317
+    #     - 5140:5140/udp
 
 
     logstash:
       kind: linux
-      image: docker.elastic.co/logstash/logstash:9.3.0
+      image: docker.elastic.co/logstash/logstash:9.3.3
       binds:
         - configs/logstash/pipeline:/usr/share/logstash/pipeline:ro
         - configs/logstash/logstash.yml:/usr/share/logstash/config/logstash.yml:ro
+        - configs/logstash/pipelines.yml:/usr/share/logstash/config/pipelines.yml:ro
       env:
-        LS_JAVA_OPTS: -Xmx512m -Xms512m
+        LS_JAVA_OPTS: -Xms1g -Xmx1g
         ES_ENDPOINT: ${ES_ENDPOINT}
         ES_API_KEY: ${ES_API_KEY}
+      memory: 2048m
       mgmt-ipv4: 172.20.20.31
       ports:
-        - 2055:2055/udp
         - 1062:1062/udp
+        - 9600:9600
 
   # ============================================
   # Network Links

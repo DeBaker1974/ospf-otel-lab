@@ -16,7 +16,7 @@ The primary focus is on comprehensive network observability, integrating three d
 *   Leverage AI to perform root cause analysis
 *   Utilize two Linux hosts to simulate additional workloads.
 
-![Lab Topology](Images/lab-topology.jpg)
+![Lab Topology](Images/lab-topology-logstash.png)
 
 ## Quick Start
 

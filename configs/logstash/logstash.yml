@@ -1,3 +1,11 @@
+# Logstash Configuration - SNMP Polling + Traps
+# Pipeline definitions are in pipelines.yml
 api.http.host: "0.0.0.0"
+api.http.port: 9600
 xpack.monitoring.enabled: false
-path.config: "/usr/share/logstash/pipeline/*.conf"
+log.level: info
+log.format: plain
+queue.type: memory
+queue.max_bytes: 1gb
+config.reload.automatic: true
+config.reload.interval: 30s

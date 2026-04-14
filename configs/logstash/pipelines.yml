@@ -1,0 +1,15 @@
+# ============================================================
+# Logstash Multi-Pipeline Configuration
+# Pipeline 1: SNMP Polling (replaces OTEL Collector)
+# Pipeline 2: SNMP Traps (unchanged)
+# ============================================================
+
+- pipeline.id: snmp-polling
+  path.config: "/usr/share/logstash/pipeline/snmp-polling.conf"
+  pipeline.workers: 2
+  pipeline.batch.size: 125
+
+- pipeline.id: snmp-traps
+  path.config: "/usr/share/logstash/pipeline/snmp-traps.conf"
+  pipeline.workers: 1
+  pipeline.batch.size: 50

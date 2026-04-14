@@ -33,5 +33,5 @@ dead_letter_queue.enable: false
 monitoring.enabled: false
 
 # Config reload
-config.reload.automatic: false
+config.reload.automatic: true
 config.reload.interval: 3s
