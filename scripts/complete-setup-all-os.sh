@@ -516,7 +516,12 @@ if $CLAB_RUN inspect -t ospf-network.clab.yml &>/dev/null 2>&1; then
     sleep 10
 fi
 
-
+# Stop OSPF poller service
+if systemctl is-active --quiet ospf-poller 2>/dev/null; then
+    echo "  Stopping OSPF poller service..."
+    sudo systemctl stop ospf-poller 2>/dev/null || true
+fi
+pkill -f "ospf-poller.sh" 2>/dev/null || true
 
 # Clean up any orphaned containers
 echo "  Cleaning orphaned containers..."
@@ -590,6 +595,11 @@ echo "  ✓ Old AgentX directories cleaned"
 # Create required directories and placeholder files for each router
 for router in $ROUTERS; do
     ROUTER_DIR="$LAB_DIR/configs/routers/$router"
+    # SAFETY: Ensure daemons files NEVER have -M snmp (FRR image lacks SNMP module)
+    if grep -q "\-M snmp" "$ROUTER_DIR/daemons" 2>/dev/null; then
+        echo "  ⚠ Removing -M snmp from $router/daemons (unsupported by FRR image)"
+        sed -i 's/ -M snmp//g' "$ROUTER_DIR/daemons"
+    fi
     
     # Create router config directory if missing
     mkdir -p "$ROUTER_DIR"
@@ -770,6 +780,100 @@ echo "[${ROUTER_NAME}] Started ${STARTED} NetFlow exporters" >> /var/log/netflow
 NETFLOW_SCRIPT
 chmod +x "$LAB_DIR/scripts/netflow-startup.sh"
 echo "  ✓ NetFlow startup script created"
+
+# ============================================
+# PHASE 1.55: Create OSPF Poller Script
+# ============================================
+echo ""
+echo "Phase 1.55: Creating OSPF vtysh poller script..."
+
+cat > "$LAB_DIR/scripts/ospf-poller.sh" << 'OSPF_SCRIPT'
+#!/bin/bash
+# OSPF Poller - Collects OSPF data via vtysh and sends to Logstash HTTP input
+# FRR 10.5.0 image lacks ospfd_snmp.so, so we poll via vtysh JSON instead
+# Usage: ./ospf-poller.sh        (run once)
+#        ./ospf-poller.sh loop    (run forever every 15s)
+
+LOGSTASH_URL="http://172.20.20.31:5044"
+ROUTERS="csr23 csr24 csr25 csr26 csr27 csr28 csr29"
+
+poll_ospf() {
+  for router in $ROUTERS; do
+    # Get OSPF overview
+    ospf_json=$(docker exec clab-ospf-network-$router vtysh -c "show ip ospf json" 2>/dev/null)
+
+    if [ -z "$ospf_json" ] || ! echo "$ospf_json" | jq -e . >/dev/null 2>&1; then
+      continue
+    fi
+
+    router_id=$(echo "$ospf_json" | jq -r '.routerId // empty' 2>/dev/null)
+    extern_lsa=$(echo "$ospf_json" | jq -r '.lsaExternalCounter // 0' 2>/dev/null)
+
+    # Get OSPF neighbors
+    nbr_json=$(docker exec clab-ospf-network-$router vtysh -c "show ip ospf neighbor json" 2>/dev/null)
+
+    if [ -z "$nbr_json" ] || ! echo "$nbr_json" | jq -e . >/dev/null 2>&1; then
+      # Send router-level data even without neighbors
+      curl -s -X POST "$LOGSTASH_URL" \
+        -H "Content-Type: application/json" \
+        -d "{
+          \"host\":{\"name\":\"$router\",\"hostname\":\"$router\"},
+          \"ospf.router.id\":\"$router_id\",
+          \"ospf.admin.status\":1,
+          \"ospf.lsa.external.count\":$extern_lsa,
+          \"ospf.neighbor.count\":0
+        }" >/dev/null 2>&1
+      continue
+    fi
+
+    # Count total neighbors for this router
+    total_nbrs=$(echo "$nbr_json" | jq '[.. | objects | select(has("state")) ] | length' 2>/dev/null || echo "0")
+
+    # Parse each neighbor and send individually
+    echo "$nbr_json" | jq -c --arg router "$router" --arg rid "$router_id" --arg lsa "$extern_lsa" --arg total "$total_nbrs" '
+      . as $root | to_entries[] | select(.key != "default" and .key != "") |
+      .value | to_entries[] |
+      .key as $nbr_ip | .value[] |
+      {
+        "host": {"name": $router, "hostname": $router},
+        "ospf.router.id": $rid,
+        "ospf.admin.status": 1,
+        "ospf.lsa.external.count": ($lsa | tonumber),
+        "ospf.neighbor.count": ($total | tonumber),
+        "ospf.neighbor.ip": $nbr_ip,
+        "ospf.neighbor.router_id": (.nbrRouterId // $nbr_ip),
+        "ospf.neighbor.state": (.state // "unknown"),
+        "ospf.neighbor.state_code": (if .state == "Full" then 8 elif .state == "2-Way" then 4 elif .state == "Init" then 3 elif .state == "Down" then 1 else 0 end),
+        "ospf.neighbor.is_full": (.state == "Full"),
+        "ospf.neighbor.dead_timer_ms": (.deadTimeMsecs // 0),
+        "ospf.neighbor.retrans_q": (.retransmitCounter // 0),
+        "ospf.neighbor.events": (.stateChangeCounter // 0),
+        "ospf.interface.name": (.ifaceName // "unknown")
+      }
+    ' 2>/dev/null | while IFS= read -r doc; do
+      curl -s -X POST "$LOGSTASH_URL" \
+        -H "Content-Type: application/json" \
+        -d "$doc" >/dev/null 2>&1
+    done
+  done
+}
+
+# Main
+if [ "$1" = "loop" ]; then
+  echo "$(date): OSPF Poller started (loop mode, every 15s)"
+  echo "Sending to: $LOGSTASH_URL"
+  while true; do
+    poll_ospf
+    sleep 15
+  done
+else
+  poll_ospf
+  echo "OSPF poll complete"
+fi
+OSPF_SCRIPT
+chmod +x "$LAB_DIR/scripts/ospf-poller.sh"
+echo "  ✓ OSPF vtysh poller script created"
+echo "  Note: FRR 10.5.0 lacks ospfd_snmp.so — OSPF collected via vtysh JSON"
 
 # ============================================
 # PHASE 1.6: Update Topology with Env Vars
@@ -1667,6 +1771,90 @@ done
 echo "  Total OSPF adjacencies: $TOTAL_NEIGHBORS (expected: 22)"
 
 # ============================================
+# PHASE 8.5: Start OSPF vtysh Poller
+# ============================================
+echo ""
+echo "Phase 8.5: Starting OSPF vtysh poller..."
+
+# Kill any existing poller
+pkill -f "ospf-poller.sh" 2>/dev/null || true
+sleep 2
+
+# Verify Logstash HTTP input is ready
+LOGSTASH_HTTP_READY=false
+for i in $(seq 1 5); do
+    HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" -X POST http://172.20.20.31:5044 \
+      -H "Content-Type: application/json" \
+      -d '{"test":"healthcheck"}' 2>/dev/null || echo "000")
+    if [ "$HTTP_CODE" = "200" ]; then
+        LOGSTASH_HTTP_READY=true
+        break
+    fi
+    echo "  Waiting for Logstash HTTP input (attempt $i/5)..."
+    sleep 10
+done
+
+if [ "$LOGSTASH_HTTP_READY" = true ]; then
+    echo "  ✓ Logstash HTTP input ready on port 5044"
+else
+    echo "  ⚠ Logstash HTTP input not responding — poller may fail initially"
+fi
+
+# Test the poller once
+echo "  Testing OSPF poller..."
+"$LAB_DIR/scripts/ospf-poller.sh"
+
+# Create systemd service for persistence
+if [[ "$OS" == "Linux" ]]; then
+    echo "  Creating systemd service for OSPF poller..."
+    sudo tee /etc/systemd/system/ospf-poller.service > /dev/null << SYSTEMD_EOF
+[Unit]
+Description=OSPF vtysh Poller for Containerlab
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=simple
+ExecStart=$LAB_DIR/scripts/ospf-poller.sh loop
+Restart=always
+RestartSec=10
+User=$(whoami)
+WorkingDirectory=$LAB_DIR
+StandardOutput=append:$LAB_DIR/logs/ospf-poller.log
+StandardError=append:$LAB_DIR/logs/ospf-poller.log
+
+[Install]
+WantedBy=multi-user.target
+SYSTEMD_EOF
+
+    sudo systemctl daemon-reload
+    sudo systemctl enable ospf-poller.service
+    sudo systemctl restart ospf-poller.service
+    sleep 5
+
+    if systemctl is-active --quiet ospf-poller.service; then
+        echo "  ✓ OSPF poller running as systemd service"
+        echo "    Service: ospf-poller.service"
+        echo "    Log: $LAB_DIR/logs/ospf-poller.log"
+        echo "    Status: sudo systemctl status ospf-poller"
+    else
+        echo "  ⚠ Systemd service failed — falling back to nohup"
+        nohup "$LAB_DIR/scripts/ospf-poller.sh" loop > "$LAB_DIR/logs/ospf-poller.log" 2>&1 &
+        echo "  ✓ OSPF poller running in background (PID: $!)"
+    fi
+elif [[ "$OS" == "Darwin" ]]; then
+    # macOS: use nohup
+    nohup "$LAB_DIR/scripts/ospf-poller.sh" loop > "$LAB_DIR/logs/ospf-poller.log" 2>&1 &
+    echo "  ✓ OSPF poller running in background (PID: $!)"
+fi
+
+echo ""
+echo "  OSPF Data Pipeline:"
+echo "    Routers → vtysh JSON → ospf-poller.sh → HTTP → Logstash → Elasticsearch"
+echo "    Index: metrics-snmp.ospf-prod"
+echo "    Poll interval: 15s"
+
+# ============================================
 # PHASE 9: Verify Logstash SNMP Data Collection
 # ============================================
 echo ""
@@ -1704,7 +1892,7 @@ fi
 # Breakdown by dataset
 echo ""
 echo "  Data Breakdown (last 5 min):"
-for dataset in snmp.system snmp.interface snmp.ipstats snmp.tcp snmp.udp snmp.arp snmp.lldp snmp.memory; do
+for dataset in snmp.system snmp.interface snmp.ipstats snmp.tcp snmp.udp snmp.arp snmp.lldp snmp.memory snmp.ospf; do
     count=$(curl -s -H "Authorization: ApiKey $ES_API_KEY" \
       "$ES_ENDPOINT/metrics-${dataset}-prod/_count" \
       -H 'Content-Type: application/json' \
@@ -2084,6 +2272,7 @@ echo "  Elasticsearch: Auto-configured from $ENV_FILE"
 echo "  linux-bottom: Ubuntu 22.04 at 192.168.10.20 (on sw)"
 echo "  linux-top: Ubuntu 22.04 at 192.168.20.100 (on sw2)"
 echo "  REMOVED: node1, win-bottom"
+echo "  OSPF: Collected via vtysh poller → Logstash HTTP (metrics-snmp.ospf-prod)"
 
 echo ""
 echo "Quick Tests:"
