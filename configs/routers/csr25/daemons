@@ -20,6 +20,7 @@ zebra=yes
 mgmtd=yes
 
 vtysh_enable=yes
-zebra_options="  -A 127.0.0.1 -s 90000000"
-ospfd_options="  -A 127.0.0.1"
+zebra_options="  -A 127.0.0.1 -s 90000000 -M snmp"
+ospfd_options="  -A 127.0.0.1 -M snmp"
 lldpd=yes
+agentx=yes
