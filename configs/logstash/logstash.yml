@@ -7,5 +7,5 @@ log.level: info
 log.format: plain
 queue.type: memory
 queue.max_bytes: 1gb
-config.reload.automatic: true
+config.reload.automatic: false
 config.reload.interval: 30s

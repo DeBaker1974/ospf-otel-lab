@@ -381,8 +381,7 @@ PUT net-lldp-edges
       "dst_router": { "type": "keyword" },
       "last_seen": { "type": "date" },
       "first_seen": { "type": "date" },
-      "observation_count": { "type": "long" },
-      "neighbor_count": { "type": "long" }
+      "observation_count": { "type": "long" }
     }
   }
 }
@@ -398,32 +397,31 @@ PUT _transform/lldp-topology-to-edges
     "query": {
       "bool": {
         "must": [
-          { "exists": { "field": "network.lldp.rem.sysname" } }
+          { "exists": { "field": "lldp.neighbor.system_name" } },
+          { "exists": { "field": "lldp.source.router" } }
         ],
         "must_not": [
-          { "term": { "network.lldp.rem.sysname": "" } }
+          { "term": { "lldp.neighbor.system_name": "" } },
+          { "term": { "lldp.source.router": "unknown" } }
         ]
       }
     }
   },
   "dest": { "index": "net-lldp-edges" },
   "frequency": "1m",
-  "sync": {
-    "time": { "field": "@timestamp", "delay": "60s" }
-  },
+  "sync": { "time": { "field": "@timestamp", "delay": "60s" } },
   "pivot": {
     "group_by": {
-      "src_router": { "terms": { "field": "host.name" } },
-      "dst_router": { "terms": { "field": "network.lldp.rem.sysname" } }
+      "src_router": { "terms": { "field": "lldp.source.router" } },
+      "dst_router": { "terms": { "field": "lldp.neighbor.system_name" } }
     },
     "aggregations": {
       "last_seen": { "max": { "field": "@timestamp" } },
       "first_seen": { "min": { "field": "@timestamp" } },
-      "observation_count": { "value_count": { "field": "@timestamp" } },
-      "neighbor_count": { "max": { "field": "network.lldp.neighbors" } }
+      "observation_count": { "value_count": { "field": "@timestamp" } }
     }
   },
-  "description": "LLDP network topology - router-to-router connections (simplified)",
+  "description": "LLDP network topology - router-to-router connections",
   "settings": { "max_page_search_size": 500 }
 }
 ```
