@@ -9,3 +9,4 @@ queue.type: memory
 queue.max_bytes: 1gb
 config.reload.automatic: false
 config.reload.interval: 30s
+monitoring.cluster_uuid: PRODUCTION_ES_CLUSTER_UUID
