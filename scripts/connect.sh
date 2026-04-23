@@ -91,6 +91,12 @@ while true; do
     echo "  48) 📋 Show CSR23 interface status"
     echo "  49) 🔧 Verify trap configuration"
     echo ""
+    echo -e "${MAGENTA}SYNTHETICS MONITOR SIMULATION:${NC}"
+    echo "  110) 🔴 Take router DOWN (block ICMP)"
+    echo "  111) 🟢 Bring router UP (restore ICMP)"
+    echo "  112) 📊 Show router reachability status"
+    echo "  113) ⚡ Flap router (down 2min → up)"
+    echo ""
     echo  -e "${MAGENTA}NETFLOW TRAFFIC SIMULATION:${NC}"
     echo "  100) 🚀 Start continuous traffic generator"
     echo "  101) 🛑 Stop traffic generator"
@@ -2243,6 +2249,285 @@ EOF'
             echo "  • iperf3 server: 5201"
             ;;
         # ========================================
+        # SYNTHETICS MONITOR SIMULATION (110-113)
+        # ========================================
+        110)
+            clear
+            echo -e "${RED}=== Take Router DOWN (Synthetics Monitor) ===${NC}"
+            echo ""
+            echo "This blocks ICMP on a router so the Elastic"
+            echo "Synthetics monitor reports it as DOWN."
+            echo ""
+            echo "Select router:"
+            echo "  1) csr23 (172.20.20.23)"
+            echo "  2) csr24 (172.20.20.24)"
+            echo "  3) csr25 (172.20.20.25)"
+            echo "  4) csr26 (172.20.20.26)"
+            echo "  5) csr27 (172.20.20.27)"
+            echo "  6) csr28 (172.20.20.28)"
+            echo "  7) csr29 (172.20.20.29)"
+            echo ""
+            read -p "Choice (1-7): " router_choice
+            
+            case $router_choice in
+                1) ROUTER="csr23"; IP="172.20.20.23" ;;
+                2) ROUTER="csr24"; IP="172.20.20.24" ;;
+                3) ROUTER="csr25"; IP="172.20.20.25" ;;
+                4) ROUTER="csr26"; IP="172.20.20.26" ;;
+                5) ROUTER="csr27"; IP="172.20.20.27" ;;
+                6) ROUTER="csr28"; IP="172.20.20.28" ;;
+                7) ROUTER="csr29"; IP="172.20.20.29" ;;
+                *) echo "Invalid choice"; continue ;;
+            esac
+            
+            echo ""
+            echo -e "${YELLOW}This will block ALL ICMP on ${ROUTER} (${IP})${NC}"
+            echo "The Synthetics monitor will report DOWN within 1-2 minutes"
+            echo "SNMP polling will continue working (only ICMP blocked)"
+            echo ""
+            read -p "Continue? (y/n): " confirm
+            if [[ "$confirm" =~ ^[Yy]$ ]]; then
+                # Ensure iptables is installed
+                if ! docker exec clab-ospf-network-${ROUTER} which iptables &>/dev/null; then
+                    echo ""
+                    echo "Installing iptables on ${ROUTER}..."
+                    docker exec clab-ospf-network-${ROUTER} apk add --no-cache iptables >/dev/null 2>&1
+                    if docker exec clab-ospf-network-${ROUTER} which iptables &>/dev/null; then
+                        echo -e "  ${GREEN}✓${NC} iptables installed"
+                    else
+                        echo -e "  ${RED}✗${NC} Failed to install iptables"
+                        echo "  Falling back to eth0 down (will also stop SNMP)"
+                        read -p "  Continue with eth0 down? (y/n): " fallback
+                        if [[ "$fallback" =~ ^[Yy]$ ]]; then
+                            docker exec clab-ospf-network-${ROUTER} ip link set eth0 down
+                            echo -e "  ${RED}✓${NC} eth0 DOWN on ${ROUTER} (all services affected)"
+                        fi
+                        continue
+                    fi
+                fi
+                
+                echo ""
+                # Block ICMP echo requests and replies
+                docker exec clab-ospf-network-${ROUTER} iptables -A INPUT -p icmp --icmp-type echo-request -j DROP
+                docker exec clab-ospf-network-${ROUTER} iptables -A OUTPUT -p icmp --icmp-type echo-reply -j DROP
+                
+                echo -e "${RED}✓${NC} ICMP blocked on ${ROUTER}"
+                echo ""
+                
+                # Verify from the agent container
+                echo "Verifying from Elastic Agent..."
+                if timeout 3 docker exec clab-ospf-network-elastic-agent-sw2 ping -c 2 -W 1 ${IP} &>/dev/null; then
+                    echo -e "${YELLOW}⚠ Still reachable — trying alternate verify...${NC}"
+                    # Try from the host
+                    if timeout 3 ping -c 2 -W 1 ${IP} &>/dev/null; then
+                        echo -e "${YELLOW}⚠ Host can still reach ${ROUTER}${NC}"
+                        echo "  Check: docker exec clab-ospf-network-${ROUTER} iptables -L -n"
+                    else
+                        echo -e "${GREEN}✓ Confirmed: ${ROUTER} is unreachable${NC}"
+                    fi
+                else
+                    echo -e "${GREEN}✓ Confirmed: ${ROUTER} is unreachable from Agent${NC}"
+                fi
+                
+                echo ""
+                echo -e "${CYAN}═══════════════════════════════════════════════${NC}"
+                echo -e "${CYAN}  Go to Observability → Synthetics${NC}"
+                echo -e "${CYAN}  'Ping ${ROUTER^^}' should show DOWN in ~1 min${NC}"
+                echo -e "${CYAN}═══════════════════════════════════════════════${NC}"
+                echo ""
+                echo -e "${YELLOW}Current iptables rules on ${ROUTER}:${NC}"
+                docker exec clab-ospf-network-${ROUTER} iptables -L -n --line-numbers 2>/dev/null
+                echo ""
+                echo -e "${YELLOW}Restore with option 111${NC}"
+            fi
+            ;;
+        
+        111)
+            clear
+            echo -e "${GREEN}=== Bring Router UP (Restore ICMP) ===${NC}"
+            echo ""
+            echo "Select router to restore:"
+            echo "  1) csr23    5) csr27"
+            echo "  2) csr24    6) csr28"
+            echo "  3) csr25    7) csr29"
+            echo "  4) csr26    8) ALL routers"
+            echo ""
+            read -p "Choice (1-8): " router_choice
+            
+            if [ "$router_choice" = "8" ]; then
+                echo ""
+                echo "Restoring ICMP on ALL routers..."
+                for r in csr23 csr24 csr25 csr26 csr27 csr28 csr29; do
+                    docker exec clab-ospf-network-${r} iptables -F 2>/dev/null
+                    # Also bring eth0 back up in case fallback was used
+                    docker exec clab-ospf-network-${r} ip link set eth0 up 2>/dev/null
+                    echo -e "  ${GREEN}✓${NC} ${r} - ICMP restored"
+                done
+                echo ""
+                echo -e "${GREEN}✓${NC} All routers restored"
+                echo ""
+                echo "Verifying reachability..."
+                for i in 23 24 25 26 27 28 29; do
+                    if timeout 2 docker exec clab-ospf-network-elastic-agent-sw2 ping -c 1 -W 1 172.20.20.$i &>/dev/null; then
+                        echo -e "  ${GREEN}●${NC} csr$i (172.20.20.$i) - reachable"
+                    else
+                        echo -e "  ${RED}●${NC} csr$i (172.20.20.$i) - still unreachable"
+                    fi
+                done
+            else
+                case $router_choice in
+                    1) ROUTER="csr23"; IP="172.20.20.23" ;;
+                    2) ROUTER="csr24"; IP="172.20.20.24" ;;
+                    3) ROUTER="csr25"; IP="172.20.20.25" ;;
+                    4) ROUTER="csr26"; IP="172.20.20.26" ;;
+                    5) ROUTER="csr27"; IP="172.20.20.27" ;;
+                    6) ROUTER="csr28"; IP="172.20.20.28" ;;
+                    7) ROUTER="csr29"; IP="172.20.20.29" ;;
+                    *) echo "Invalid choice"; continue ;;
+                esac
+                
+                echo ""
+                # Flush all iptables rules
+                docker exec clab-ospf-network-${ROUTER} iptables -F 2>/dev/null
+                # Also bring eth0 back up in case fallback was used
+                docker exec clab-ospf-network-${ROUTER} ip link set eth0 up 2>/dev/null
+                
+                echo -e "${GREEN}✓${NC} ICMP restored on ${ROUTER}"
+                echo ""
+                echo "Verifying..."
+                sleep 1
+                if timeout 3 docker exec clab-ospf-network-elastic-agent-sw2 ping -c 2 -W 1 ${IP} &>/dev/null; then
+                    echo -e "${GREEN}✓ Confirmed: ${ROUTER} is reachable again${NC}"
+                else
+                    echo -e "${RED}⚠ Still unreachable — try: docker exec clab-ospf-network-${ROUTER} ip link set eth0 up${NC}"
+                fi
+                echo ""
+                echo "Synthetics monitor will show UP within 1-2 minutes"
+            fi
+            ;;
+        
+        112)
+            clear
+            echo -e "${CYAN}=== Router Reachability Status (from Agent) ===${NC}"
+            echo ""
+            echo "Pinging all routers from the Elastic Agent container..."
+            echo ""
+            for i in 23 24 25 26 27 28 29; do
+                ROUTER="csr$i"
+                IP="172.20.20.$i"
+                
+                # Check iptables rules (if iptables is installed)
+                BLOCKED=$(docker exec clab-ospf-network-${ROUTER} iptables -L INPUT -n 2>/dev/null | grep -c "icmp" || echo "0")
+                
+                # Check eth0 status
+                ETH0_STATE=$(docker exec clab-ospf-network-${ROUTER} ip -br link show eth0 2>/dev/null | awk '{print $2}')
+                
+                # Ping from agent
+                if timeout 2 docker exec clab-ospf-network-elastic-agent-sw2 ping -c 1 -W 1 ${IP} &>/dev/null; then
+                    echo -e "  ${GREEN}●${NC} ${ROUTER} (${IP}) - UP"
+                else
+                    if [ "$BLOCKED" -gt 0 ]; then
+                        echo -e "  ${RED}●${NC} ${ROUTER} (${IP}) - DOWN (ICMP blocked)"
+                    elif [ "$ETH0_STATE" = "DOWN" ]; then
+                        echo -e "  ${RED}●${NC} ${ROUTER} (${IP}) - DOWN (eth0 down)"
+                    else
+                        echo -e "  ${RED}●${NC} ${ROUTER} (${IP}) - DOWN (unreachable)"
+                    fi
+                fi
+            done
+            echo ""
+            echo -e "${YELLOW}Tip: Use option 110 to block ICMP, 111 to restore${NC}"
+            ;;
+        
+        113)
+            clear
+            echo -e "${MAGENTA}=== Flap Router (Down → Wait → Up) ===${NC}"
+            echo ""
+            echo "This takes a router down then restores it."
+            echo "Perfect for triggering a Synthetics DOWN → UP alert cycle."
+            echo ""
+            echo "Select router:"
+            echo "  1) csr23    5) csr27"
+            echo "  2) csr24    6) csr28"
+            echo "  3) csr25    7) csr29"
+            echo "  4) csr26"
+            echo ""
+            read -p "Choice (1-7): " router_choice
+            
+            case $router_choice in
+                1) ROUTER="csr23"; IP="172.20.20.23" ;;
+                2) ROUTER="csr24"; IP="172.20.20.24" ;;
+                3) ROUTER="csr25"; IP="172.20.20.25" ;;
+                4) ROUTER="csr26"; IP="172.20.20.26" ;;
+                5) ROUTER="csr27"; IP="172.20.20.27" ;;
+                6) ROUTER="csr28"; IP="172.20.20.28" ;;
+                7) ROUTER="csr29"; IP="172.20.20.29" ;;
+                *) echo "Invalid choice"; continue ;;
+            esac
+            
+            read -p "Down duration in seconds (default 120): " DOWNTIME
+            DOWNTIME=${DOWNTIME:-120}
+            
+            # Ensure iptables is installed
+            if ! docker exec clab-ospf-network-${ROUTER} which iptables &>/dev/null; then
+                echo ""
+                echo "Installing iptables on ${ROUTER}..."
+                docker exec clab-ospf-network-${ROUTER} apk add --no-cache iptables >/dev/null 2>&1
+                if ! docker exec clab-ospf-network-${ROUTER} which iptables &>/dev/null; then
+                    echo -e "${RED}✗${NC} Failed to install iptables. Cannot proceed."
+                    continue
+                fi
+                echo -e "${GREEN}✓${NC} iptables installed"
+            fi
+            
+            echo ""
+            echo -e "${RED}[$(date +%H:%M:%S)] Blocking ICMP on ${ROUTER}...${NC}"
+            docker exec clab-ospf-network-${ROUTER} iptables -A INPUT -p icmp --icmp-type echo-request -j DROP
+            docker exec clab-ospf-network-${ROUTER} iptables -A OUTPUT -p icmp --icmp-type echo-reply -j DROP
+            echo -e "  ${RED}●${NC} ${ROUTER} is now DOWN (ICMP blocked)"
+            
+            # Verify
+            sleep 1
+            if timeout 2 docker exec clab-ospf-network-elastic-agent-sw2 ping -c 1 -W 1 ${IP} &>/dev/null; then
+                echo -e "  ${YELLOW}⚠ Warning: still reachable${NC}"
+            else
+                echo -e "  ${GREEN}✓ Confirmed unreachable${NC}"
+            fi
+            
+            echo ""
+            echo -e "${YELLOW}Waiting ${DOWNTIME} seconds for Synthetics to detect...${NC}"
+            echo ""
+            for i in $(seq $DOWNTIME -1 1); do
+                MINS=$((i / 60))
+                SECS=$((i % 60))
+                echo -ne "\r  ⏱  ${MINS}m ${SECS}s remaining...   "
+                sleep 1
+            done
+            echo ""
+            
+            echo ""
+            echo -e "${GREEN}[$(date +%H:%M:%S)] Restoring ICMP on ${ROUTER}...${NC}"
+            docker exec clab-ospf-network-${ROUTER} iptables -F
+            echo -e "  ${GREEN}●${NC} ${ROUTER} is now UP (ICMP restored)"
+            
+            # Verify
+            sleep 1
+            if timeout 3 docker exec clab-ospf-network-elastic-agent-sw2 ping -c 2 -W 1 ${IP} &>/dev/null; then
+                echo -e "  ${GREEN}✓ Confirmed: ${ROUTER} is reachable${NC}"
+            else
+                echo -e "  ${RED}⚠ Still unreachable — check manually${NC}"
+            fi
+            
+            echo ""
+            echo -e "${CYAN}═══════════════════════════════════════════════${NC}"
+            echo -e "${CYAN}  Check Synthetics for the DOWN → UP cycle${NC}"
+            echo -e "${CYAN}  Timeline:${NC}"
+            echo -e "${CYAN}    • DOWN detected ~1 min after block${NC}"
+            echo -e "${CYAN}    • UP detected ~1 min after restore${NC}"
+            echo -e "${CYAN}    • Alert should show in Observability → Alerts${NC}"
+            echo -e "${CYAN}═══════════════════════════════════════════════${NC}"
+            ;;
+        # ========================================
         # EXIT
         # ========================================
         0) 
@@ -2257,7 +2542,7 @@ EOF'
             echo -e "${RED}Invalid option${NC}"
             ;;
     esac
-    
+
     echo ""
     echo -e "${CYAN}Press Enter to continue...${NC}"
     read -r
