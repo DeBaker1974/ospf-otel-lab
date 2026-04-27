@@ -14,7 +14,7 @@ if [ -f "$ENV_FILE" ]; then
 fi
 clear
 echo -e "${CYAN}=========================================${NC}"
-echo -e "${CYAN}   OSPF OTEL Lab - Menu v21.4${NC}"
+echo -e "${CYAN}   OSPF OTEL Lab - Menu v21.5${NC}"
 echo -e "${CYAN}  Full Mesh Topology + VRRP${NC}"
 echo -e "${CYAN}  Elasticsearch Serverless${NC}"
 echo -e "${CYAN}=========================================${NC}"
@@ -91,23 +91,6 @@ while true; do
     echo "  48) 📋 Show CSR23 interface status"
     echo "  49) 🔧 Verify trap configuration"
     echo ""
-    echo -e "${MAGENTA}SYNTHETICS MONITOR SIMULATION:${NC}"
-    echo "  110) 🔴 Take router DOWN (block ICMP)"
-    echo "  111) 🟢 Bring router UP (restore ICMP)"
-    echo "  112) 📊 Show router reachability status"
-    echo "  113) ⚡ Flap router (down 2min → up)"
-    echo ""
-    echo  -e "${MAGENTA}NETFLOW TRAFFIC SIMULATION:${NC}"
-    echo "  100) 🚀 Start continuous traffic generator"
-    echo "  101) 🛑 Stop traffic generator"
-    echo "  102) 📊 Traffic generator status"
-    echo "  103) 🔥 Generate burst traffic (60 seconds)"
-    echo "  104) 🔍 Port scan simulation"
-    echo "  105) 📈 Large file transfer (iperf)"
-    echo "  106) 🔄 Traffic during link failure"
-    echo "  107) 📋 View traffic generator logs"
-    echo "  108) 🛠️  Install traffic tools on hosts"
-    echo ""
     echo -e "${YELLOW}ELASTICSEARCH COMMANDS:${NC}"
     echo "  50) Configure Elasticsearch"
     echo "  51) Test Elasticsearch connection"
@@ -145,6 +128,34 @@ while true; do
     echo -e "${YELLOW}CLEANUP:${NC}"
     echo "  90) Quick cleanup (destroy lab)"
     echo "  91) Full cleanup (lab + logs + configs)"
+    echo ""
+    echo  -e "${MAGENTA}NETFLOW TRAFFIC SIMULATION:${NC}"
+    echo "  100) 🚀 Start continuous traffic generator"
+    echo "  101) 🛑 Stop traffic generator"
+    echo "  102) 📊 Traffic generator status"
+    echo "  103) 🔥 Generate burst traffic (60 seconds)"
+    echo "  104) 🔍 Port scan simulation"
+    echo "  105) 📈 Large file transfer (iperf)"
+    echo "  106) 🔄 Traffic during link failure"
+    echo "  107) 📋 View traffic generator logs"
+    echo "  108) 🛠️  Install traffic tools on hosts"
+    echo ""
+    echo -e "${MAGENTA}SYNTHETICS MONITOR SIMULATION:${NC}"
+    echo "  110) 🔴 Take router DOWN (block ICMP)"
+    echo "  111) 🟢 Bring router UP (restore ICMP)"
+    echo "  112) 📊 Show router reachability status"
+    echo "  113) ⚡ Flap router (down 2min → up)"
+    echo ""
+    echo -e "${MAGENTA}CISCO IOS SYSLOG SIMULATION:${NC}"
+    SYSLOG_SIM_STATUS="${RED}●${NC}"
+    if pgrep -f "cisco_ios_simulator.py" &>/dev/null; then
+        SYSLOG_SIM_STATUS="${GREEN}●${NC}"
+    fi
+    echo "  120) $SYSLOG_SIM_STATUS Start Cisco IOS syslog simulator"
+    echo "  121) 🛑 Stop syslog simulator"
+    echo "  122) 📊 Syslog simulator status"
+    echo "  123) 📋 View syslog simulator logs"
+    echo "  124) ⚙️  Configure syslog simulator (EPS/verbosity)"
     echo ""
     echo "  0)  Exit"
     echo ""
@@ -2526,6 +2537,364 @@ EOF'
             echo -e "${CYAN}    • UP detected ~1 min after restore${NC}"
             echo -e "${CYAN}    • Alert should show in Observability → Alerts${NC}"
             echo -e "${CYAN}═══════════════════════════════════════════════${NC}"
+            ;;
+        # ========================================
+        # CISCO IOS SYSLOG SIMULATION (120-124)
+        # ========================================
+        120)
+            clear
+            echo -e "${CYAN}=== Start Cisco IOS Syslog Simulator ===${NC}"
+            echo ""
+
+            SCRIPT_PATH="$HOME/ospf-otel-lab/scripts/cisco_ios_simulator.py"
+
+            if [ ! -f "$SCRIPT_PATH" ]; then
+                echo -e "${RED}✗${NC} Simulator script not found at:"
+                echo "  $SCRIPT_PATH"
+                echo ""
+                echo "Expected location: ~/demo/cisco_ios_generator/cisco_ios_simulator.py"
+                read -p "Press Enter to continue..."
+                continue
+            fi
+
+            # Check if already running
+            if pgrep -f "cisco_ios_simulator.py" &>/dev/null; then
+                echo -e "${GREEN}● Syslog simulator already running${NC}"
+                PID=$(pgrep -f "cisco_ios_simulator.py" | head -1)
+                echo "  PID: $PID"
+                echo ""
+                echo -e "${YELLOW}Select action:${NC}"
+                echo "  1) Restart with default settings (3 EPS)"
+                echo "  2) Restart with custom settings"
+                echo "  3) Cancel"
+                echo ""
+                read -p "Choice (1-3): " restart_choice
+                case $restart_choice in
+                    1)
+                        echo "Stopping existing simulator..."
+                        pkill -f "cisco_ios_simulator.py" 2>/dev/null
+                        sleep 2
+                        ;;
+                    2)
+                        echo "Stopping existing simulator..."
+                        pkill -f "cisco_ios_simulator.py" 2>/dev/null
+                        sleep 2
+                        read -p "Events per second (default 3): " CUSTOM_EPS
+                        CUSTOM_EPS=${CUSTOM_EPS:-3}
+                        ;;
+                    *) continue ;;
+                esac
+            fi
+
+            # Verify Elastic Agent is running and reachable
+            echo "Checking Elastic Agent..."
+            if docker ps --filter "name=clab-ospf-network-elastic-agent-sw2" --filter "status=running" -q &>/dev/null; then
+                echo -e "  ${GREEN}✓${NC} Elastic Agent container running"
+            else
+                echo -e "  ${RED}✗${NC} Elastic Agent container not running!"
+                echo "  Syslog messages will have nowhere to go."
+                read -p "  Start anyway? (y/n): " force_start
+                [[ ! "$force_start" =~ ^[Yy]$ ]] && continue
+            fi
+
+            if timeout 2 ping -c 1 172.20.20.50 &>/dev/null; then
+                echo -e "  ${GREEN}✓${NC} Agent reachable at 172.20.20.50"
+            else
+                echo -e "  ${RED}✗${NC} Cannot reach 172.20.20.50"
+                read -p "  Start anyway? (y/n): " force_start
+                [[ ! "$force_start" =~ ^[Yy]$ ]] && continue
+            fi
+
+            echo ""
+
+            # Determine EPS
+            EPS=${CUSTOM_EPS:-3}
+
+            # Check if systemd service exists
+            if systemctl list-unit-files cisco-ios-sim.service &>/dev/null 2>&1; then
+                echo "Starting via systemd service..."
+                sudo systemctl start cisco-ios-sim.service
+                sleep 3
+                if systemctl is-active --quiet cisco-ios-sim.service; then
+                    echo -e "${GREEN}✓${NC} Syslog simulator started (systemd)"
+                    echo ""
+                    echo "  Service: cisco-ios-sim.service"
+                    echo "  Target:  172.20.20.50:9001 (UDP)"
+                    echo "  Rate:    ~${EPS} events/sec"
+                    echo "  Routers: csr23-csr29 (topology-aware)"
+                    echo ""
+                    echo "  Status:  sudo systemctl status cisco-ios-sim"
+                    echo "  Logs:    option 123 or journalctl -u cisco-ios-sim -f"
+                else
+                    echo -e "${RED}✗${NC} Systemd service failed to start"
+                    echo "  Check: sudo systemctl status cisco-ios-sim"
+                    echo ""
+                    echo "Falling back to direct execution..."
+                fi
+            fi
+
+            # If not running yet (no systemd or systemd failed), start directly
+            if ! pgrep -f "cisco_ios_simulator.py" &>/dev/null; then
+                LOG_DIR="$HOME/ospf-otel-lab/logs"
+                mkdir -p "$LOG_DIR"
+                LOG_FILE="$LOG_DIR/cisco-ios-sim.log"
+
+                echo "Starting syslog simulator (background)..."
+                nohup python3 "$SCRIPT_PATH" \
+                    --host 172.20.20.50 \
+                    --port 9001 \
+                    --eps "$EPS" \
+                    >> "$LOG_FILE" 2>&1 &
+
+                SIM_PID=$!
+                sleep 2
+
+                if kill -0 $SIM_PID 2>/dev/null; then
+                    echo -e "${GREEN}✓${NC} Syslog simulator started"
+                    echo ""
+                    echo "  PID:     $SIM_PID"
+                    echo "  Target:  172.20.20.50:9001 (UDP)"
+                    echo "  Rate:    ~${EPS} events/sec"
+                    echo "  Routers: csr23-csr29 (topology-aware)"
+                    echo "  Log:     $LOG_FILE"
+                    echo ""
+                    echo "  Simulated events:"
+                    echo "    • OSPF adjacency changes (real neighbor IPs)"
+                    echo "    • Interface flaps"
+                    echo "    • ACL deny/permit hits"
+                    echo "    • SSH login success/failure"
+                    echo "    • Config changes"
+                    echo "    • SNMP auth failures"
+                    echo "    • BGP session events"
+                    echo "    • NTP sync/unsync"
+                    echo "    • Environmental alerts (fan/temp/PSU)"
+                    echo ""
+                    echo -e "${CYAN}  Verify in Kibana → Discover:${NC}"
+                    echo -e "${CYAN}    data_stream.dataset: \"cisco_ios.log\"${NC}"
+                else
+                    echo -e "${RED}✗${NC} Failed to start simulator"
+                    echo "  Check: tail -20 $LOG_FILE"
+                fi
+            fi
+            ;;
+
+        121)
+            clear
+            echo -e "${CYAN}=== Stop Cisco IOS Syslog Simulator ===${NC}"
+            echo ""
+
+            STOPPED=false
+
+            # Try systemd first
+            if systemctl is-active --quiet cisco-ios-sim.service 2>/dev/null; then
+                echo "Stopping systemd service..."
+                sudo systemctl stop cisco-ios-sim.service
+                echo -e "  ${GREEN}✓${NC} systemd service stopped"
+                STOPPED=true
+            fi
+
+            # Also kill any direct processes
+            if pgrep -f "cisco_ios_simulator.py" &>/dev/null; then
+                PIDS=$(pgrep -f "cisco_ios_simulator.py")
+                echo "Stopping process(es): $PIDS"
+                pkill -f "cisco_ios_simulator.py" 2>/dev/null
+                sleep 2
+
+                if pgrep -f "cisco_ios_simulator.py" &>/dev/null; then
+                    echo "Force killing..."
+                    pkill -9 -f "cisco_ios_simulator.py" 2>/dev/null
+                fi
+                echo -e "  ${GREEN}✓${NC} Simulator process stopped"
+                STOPPED=true
+            fi
+
+            if [ "$STOPPED" = false ]; then
+                echo -e "${YELLOW}⚠${NC} Simulator was not running"
+            else
+                echo ""
+                echo -e "${GREEN}✓${NC} Cisco IOS syslog simulator stopped"
+            fi
+            ;;
+
+        122)
+            clear
+            echo -e "${CYAN}=== Cisco IOS Syslog Simulator Status ===${NC}"
+            echo ""
+
+            # Process status
+            echo -e "${YELLOW}Process:${NC}"
+            if pgrep -f "cisco_ios_simulator.py" &>/dev/null; then
+                PID=$(pgrep -f "cisco_ios_simulator.py" | head -1)
+                UPTIME=$(ps -p "$PID" -o etime= 2>/dev/null | tr -d ' ')
+                CMD=$(ps -p "$PID" -o args= 2>/dev/null)
+                echo -e "  ${GREEN}● Running${NC}"
+                echo "  PID:     $PID"
+                echo "  Uptime:  $UPTIME"
+                echo "  Command: $CMD"
+            else
+                echo -e "  ${RED}● Not running${NC}"
+            fi
+
+            # Systemd status
+            echo ""
+            echo -e "${YELLOW}Systemd Service:${NC}"
+            if systemctl list-unit-files cisco-ios-sim.service &>/dev/null 2>&1; then
+                STATUS=$(systemctl is-active cisco-ios-sim.service 2>/dev/null)
+                ENABLED=$(systemctl is-enabled cisco-ios-sim.service 2>/dev/null)
+                echo "  Status:  $STATUS"
+                echo "  Enabled: $ENABLED"
+            else
+                echo "  Not installed as systemd service"
+            fi
+
+            # Target agent status
+            echo ""
+            echo -e "${YELLOW}Target:${NC}"
+            echo "  Agent: 172.20.20.50:9001 (UDP)"
+            if timeout 2 ping -c 1 172.20.20.50 &>/dev/null; then
+                echo -e "  ${GREEN}✓${NC} Agent reachable"
+            else
+                echo -e "  ${RED}✗${NC} Agent unreachable"
+            fi
+
+            # Log file info
+            echo ""
+            echo -e "${YELLOW}Log File:${NC}"
+            LOG_FILE="$HOME/ospf-otel-lab/logs/cisco-ios-sim.log"
+            if [ -f "$LOG_FILE" ]; then
+                SIZE=$(du -h "$LOG_FILE" | cut -f1)
+                LINES=$(wc -l < "$LOG_FILE")
+                echo "  Path:  $LOG_FILE"
+                echo "  Size:  $SIZE ($LINES lines)"
+                echo ""
+                echo -e "${YELLOW}Last 5 log lines:${NC}"
+                tail -5 "$LOG_FILE" | sed 's/^/  /'
+            else
+                echo "  No log file found"
+            fi
+
+            # Elasticsearch data check
+            echo ""
+            echo -e "${YELLOW}Elasticsearch Data:${NC}"
+            if [ -f "$ENV_FILE" ]; then
+                source "$ENV_FILE"
+                SYSLOG_COUNT=$(curl -s -H "Authorization: ApiKey $ES_API_KEY" \
+                    "$ES_ENDPOINT/logs-cisco_ios.log-*/_count" \
+                    -H 'Content-Type: application/json' \
+                    -d '{"query":{"range":{"@timestamp":{"gte":"now-5m"}}}}' 2>/dev/null | jq -r '.count // 0')
+                SYSLOG_TOTAL=$(curl -s -H "Authorization: ApiKey $ES_API_KEY" \
+                    "$ES_ENDPOINT/logs-cisco_ios.log-*/_count" 2>/dev/null | jq -r '.count // 0')
+                echo "  Last 5 min: $SYSLOG_COUNT documents"
+                echo "  Total:      $SYSLOG_TOTAL documents"
+                echo "  Index:      logs-cisco_ios.log-*"
+            else
+                echo "  Elasticsearch not configured"
+            fi
+            ;;
+
+        123)
+            clear
+            echo -e "${CYAN}=== Cisco IOS Syslog Simulator Logs ===${NC}"
+            echo ""
+            echo "Press Ctrl+C to exit"
+            echo ""
+
+            LOG_FILE="$HOME/ospf-otel-lab/logs/cisco-ios-sim.log"
+
+            # Try systemd journal first, then log file
+            if systemctl is-active --quiet cisco-ios-sim.service 2>/dev/null; then
+                echo "(Streaming from journalctl)"
+                echo ""
+                journalctl -u cisco-ios-sim -f --no-pager
+            elif [ -f "$LOG_FILE" ]; then
+                echo "(Streaming from $LOG_FILE)"
+                echo ""
+                tail -100 -f "$LOG_FILE"
+            else
+                echo -e "${RED}✗${NC} No log file found"
+                echo ""
+                echo "Start the simulator first with option 120"
+            fi
+            ;;
+
+        124)
+            clear
+            echo -e "${CYAN}=== Configure Syslog Simulator ===${NC}"
+            echo ""
+
+            SCRIPT_PATH="$HOME/demo/cisco_ios_generator/cisco_ios_simulator.py"
+
+            if [ ! -f "$SCRIPT_PATH" ]; then
+                echo -e "${RED}✗${NC} Script not found: $SCRIPT_PATH"
+                continue
+            fi
+
+            # Show current settings
+            echo -e "${YELLOW}Current Settings:${NC}"
+            if pgrep -f "cisco_ios_simulator.py" &>/dev/null; then
+                CMD=$(ps -p $(pgrep -f "cisco_ios_simulator.py" | head -1) -o args= 2>/dev/null)
+                echo "  Running: $CMD"
+            else
+                echo "  Not currently running"
+            fi
+
+            echo ""
+            echo -e "${YELLOW}Configure and restart:${NC}"
+            echo ""
+            read -p "  Events per second [default: 3]: " NEW_EPS
+            NEW_EPS=${NEW_EPS:-3}
+
+            read -p "  Target host [default: 172.20.20.50]: " NEW_HOST
+            NEW_HOST=${NEW_HOST:-172.20.20.50}
+
+            read -p "  Target port [default: 9001]: " NEW_PORT
+            NEW_PORT=${NEW_PORT:-9001}
+
+            echo ""
+            echo "New settings:"
+            echo "  Host: $NEW_HOST"
+            echo "  Port: $NEW_PORT"
+            echo "  EPS:  $NEW_EPS"
+            echo ""
+            read -p "Apply and restart? (y/n): " confirm
+
+            if [[ "$confirm" =~ ^[Yy]$ ]]; then
+                # Stop existing
+                pkill -f "cisco_ios_simulator.py" 2>/dev/null
+                sleep 2
+
+                # Update systemd service if it exists
+                if [ -f /etc/systemd/system/cisco-ios-sim.service ]; then
+                    echo "Updating systemd service..."
+                    sudo sed -i "s|ExecStart=.*|ExecStart=/usr/bin/python3 $SCRIPT_PATH --host $NEW_HOST --port $NEW_PORT --eps $NEW_EPS|" \
+                        /etc/systemd/system/cisco-ios-sim.service
+                    sudo systemctl daemon-reload
+                    sudo systemctl restart cisco-ios-sim.service
+                    sleep 2
+                    if systemctl is-active --quiet cisco-ios-sim.service; then
+                        echo -e "${GREEN}✓${NC} Service restarted with new settings"
+                    else
+                        echo -e "${RED}✗${NC} Service failed — falling back to direct start"
+                    fi
+                fi
+
+                # If not running via systemd, start directly
+                if ! pgrep -f "cisco_ios_simulator.py" &>/dev/null; then
+                    LOG_DIR="$HOME/ospf-otel-lab/logs"
+                    mkdir -p "$LOG_DIR"
+                    nohup python3 "$SCRIPT_PATH" \
+                        --host "$NEW_HOST" \
+                        --port "$NEW_PORT" \
+                        --eps "$NEW_EPS" \
+                        >> "$LOG_DIR/cisco-ios-sim.log" 2>&1 &
+                    sleep 2
+                    if pgrep -f "cisco_ios_simulator.py" &>/dev/null; then
+                        echo -e "${GREEN}✓${NC} Simulator restarted with new settings"
+                    else
+                        echo -e "${RED}✗${NC} Failed to start"
+                    fi
+                fi
+            fi
             ;;
         # ========================================
         # EXIT

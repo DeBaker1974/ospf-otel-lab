@@ -11,7 +11,7 @@ topology:
       kind: linux
       image: elastic/elastic-agent:9.3.3
       user: root
-      memory: 1024m
+      memory: 2g
       binds:
         - configs/elastic-agent-state:/usr/share/elastic-agent/state
         - /var/run/docker.sock:/var/run/docker.sock:ro
