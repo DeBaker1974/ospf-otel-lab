@@ -1,12 +1,16 @@
-# Logstash Configuration - SNMP Polling + Traps
-# Pipeline definitions are in pipelines.yml
+# Auto-generated from .env by complete-setup-all-os.sh
+# Centralized Pipeline Management - pipelines stored in Elasticsearch
 api.http.host: "0.0.0.0"
 api.http.port: 9600
+
+xpack.management.enabled: true
+xpack.management.elasticsearch.hosts: ["https://demo-9-4-27aca9.es.us-west2.gcp.elastic-cloud.com:443"]
+xpack.management.elasticsearch.api_key: "b0dlV2pKMEJUT0JpLUlNRGpTcFo6bGdpY3FCQ0ZuQnh5dDJYNm1fTnZTUQ=="
+xpack.management.pipeline.id: ["snmp-polling", "snmp-traps"]
+xpack.management.logstash.poll_interval: 5s
+
 xpack.monitoring.enabled: false
 log.level: info
 log.format: plain
 queue.type: memory
 queue.max_bytes: 1gb
-config.reload.automatic: false
-config.reload.interval: 30s
-monitoring.cluster_uuid: PRODUCTION_ES_CLUSTER_UUID

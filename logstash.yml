@@ -1,0 +1,37 @@
+# Logstash Configuration 9.4.1 - Centralized Pipeline Management
+# ============================================
+
+api.http.host: "0.0.0.0"
+api.http.port: 9600
+
+# ============================================
+# Centralized Pipeline Management
+# ============================================
+xpack.management.enabled: true
+xpack.management.elasticsearch.hosts: ["${ES_ENDPOINT}"]
+xpack.management.elasticsearch.api_key: "${ES_API_KEY}"
+xpack.management.elasticsearch.ssl.enabled: true
+xpack.management.elasticsearch.ssl.verification_mode: certificate
+xpack.management.pipeline.id: ["snmp-polling", "snmp-traps"]
+xpack.management.logstash.poll_interval: 5s
+
+# ============================================
+# Monitoring (optional)
+# ============================================
+xpack.monitoring.enabled: false
+
+# ============================================
+# General Settings
+# ============================================
+log.level: info
+log.format: plain
+queue.type: memory
+queue.max_bytes: 1gb
+
+# ============================================
+# IMPORTANT: These are DISABLED for central management
+# Local pipeline files are ignored when xpack.management.enabled: true
+# ============================================
+# config.reload.automatic: false
+# config.reload.interval: 30s
+# path.config: /usr/share/logstash/pipeline  ← DO NOT SET

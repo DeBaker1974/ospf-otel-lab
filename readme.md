@@ -21,7 +21,7 @@ The primary focus is on comprehensive network observability, integrating three d
 
 ## Quick Start
 
-> **⚠️ IMPORTANT:** This lab is optimized for Elastic Serverless, Cloud Hosted, or linux VMs. On WSL2 Linux and macOS, specific prerequisites are required. Details are provided below.
+> <span style="color:red;">**⚠️ IMPORTANT:** At this time, this lab is optimized for Elastic Serverless</span>
 
 **1. Infrastructure Requirements**
 Suggested instance sizes for deployment:

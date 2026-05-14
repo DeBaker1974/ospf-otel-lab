@@ -119,87 +119,36 @@ REQUIRED_DIRS=(
 )
 
 # ============================================
-# Logstash Pipeline Configuration Check
+# Logstash Configuration (Centralized Pipeline Management)
 # ============================================
 echo ""
-echo "Checking Logstash pipeline configuration..."
+echo "Configuring Logstash for Centralized Pipeline Management..."
 
-# Verify snmp-polling.conf exists
-if [ ! -f "configs/logstash/pipeline/snmp-polling.conf" ]; then
-    echo "  ✗ SNMP polling pipeline missing!"
-    echo "  Expected: configs/logstash/pipeline/snmp-polling.conf"
-    echo "  This file replaces the OTEL Collector for SNMP polling."
-    exit 1
-fi
-echo "  ✓ snmp-polling.conf found"
+mkdir -p "$LAB_DIR/configs/logstash"
 
-# Verify snmp-traps.conf exists
-if [ ! -f "configs/logstash/pipeline/snmp-traps.conf" ]; then
-    echo "  ✗ SNMP traps pipeline missing!"
-    echo "  Expected: configs/logstash/pipeline/snmp-traps.conf"
-    exit 1
-fi
-echo "  ✓ snmp-traps.conf found"
-
-# Verify pipelines.yml exists
-if [ ! -f "configs/logstash/pipelines.yml" ]; then
-    echo "  ⚠ pipelines.yml missing - creating..."
-    cat > configs/logstash/pipelines.yml << 'EOF'
-- pipeline.id: snmp-polling
-  path.config: "/usr/share/logstash/pipeline/snmp-polling.conf"
-  pipeline.workers: 2
-  pipeline.batch.size: 125
-
-- pipeline.id: snmp-traps
-  path.config: "/usr/share/logstash/pipeline/snmp-traps.conf"
-  pipeline.workers: 1
-  pipeline.batch.size: 50
-EOF
-    echo "  ✓ pipelines.yml created"
-else
-    echo "  ✓ pipelines.yml found"
-fi
-
-# CRITICAL: Verify logstash.yml does NOT have path.config
-# path.config conflicts with pipelines.yml
-if grep -q "path.config" configs/logstash/logstash.yml 2>/dev/null; then
-    echo "  ⚠ logstash.yml has path.config (conflicts with pipelines.yml)"
-    echo "  Fixing logstash.yml..."
-    cat > configs/logstash/logstash.yml << 'EOF'
-# Logstash Configuration - SNMP Polling + Traps
-# Pipeline definitions are in pipelines.yml
+cat > "$LAB_DIR/configs/logstash/logstash.yml" << EOF
+# Auto-generated from .env by complete-setup-all-os.sh
+# Centralized Pipeline Management - pipelines stored in Elasticsearch
 api.http.host: "0.0.0.0"
 api.http.port: 9600
+
+xpack.management.enabled: true
+xpack.management.elasticsearch.hosts: ["${ES_ENDPOINT}"]
+xpack.management.elasticsearch.api_key: "${ES_API_KEY}"
+xpack.management.pipeline.id: ["snmp-polling", "snmp-traps"]
+xpack.management.logstash.poll_interval: 5s
+
 xpack.monitoring.enabled: false
 log.level: info
 log.format: plain
 queue.type: memory
 queue.max_bytes: 1gb
-config.reload.automatic: true
-config.reload.interval: 30s
 EOF
-    echo "  ✓ logstash.yml fixed (path.config removed)"
-else
-    echo "  ✓ logstash.yml compatible with pipelines.yml"
-fi
 
-# Remove old netflow.conf if it exists
-if [ -f "configs/logstash/pipeline/netflow.conf" ]; then
-    echo "  Removing unused netflow.conf..."
-    rm configs/logstash/pipeline/netflow.conf
-    echo "  ✓ netflow.conf removed"
-fi
-
-# Verify Logstash topology has pipelines.yml bind mount
-if ! grep -q "pipelines.yml" ospf-network.clab.yml 2>/dev/null; then
-    echo "  ⚠ WARNING: ospf-network.clab.yml missing pipelines.yml bind mount"
-    echo "  Logstash node should have:"
-    echo "    - configs/logstash/pipelines.yml:/usr/share/logstash/config/pipelines.yml:ro"
-fi
-
-echo "✓ Logstash pipeline configuration verified"
-echo "  Pipelines: snmp-polling (SNMP pull) + snmp-traps (trap receiver)"
-echo "  OTEL Collector: NOT REQUIRED (Logstash handles all SNMP)"
+echo "  ✓ logstash.yml generated (CPM mode)"
+echo "    ES: ${ES_ENDPOINT}"
+echo "    Pipelines: snmp-polling, snmp-traps (fetched from Elasticsearch)"
+echo "    Note: Pipeline configs are managed in Kibana/LogstashUI, NOT local files"
 
 # Continue with rest of script...
 for dir in "${REQUIRED_DIRS[@]}"; do
