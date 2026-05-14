@@ -1,0 +1,16 @@
+# Auto-generated from .env by complete-setup-all-os.sh
+# DO NOT EDIT - edit logstash.yml.template instead
+api.http.host: "0.0.0.0"
+api.http.port: 9600
+
+xpack.management.enabled: true
+xpack.management.elasticsearch.hosts: ["${ES_ENDPOINT}"]
+xpack.management.elasticsearch.api_key: "${ES_API_KEY}"
+xpack.management.pipeline.id: ["snmp-polling", "snmp-traps"]
+xpack.management.logstash.poll_interval: 5s
+
+xpack.monitoring.enabled: false
+log.level: info
+log.format: plain
+queue.type: memory
+queue.max_bytes: 1gb

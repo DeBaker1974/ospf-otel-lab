@@ -14,6 +14,7 @@ configs/logstash/pipeline/backups/
 configs/otel/backups/
 configs/otel/Archive/
 configs/elasticsearch/Archive/
+configs/logstash/logstash.yml
 scripts/archive/
 /Archive/
 *.backup-*

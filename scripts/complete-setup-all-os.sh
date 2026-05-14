@@ -54,6 +54,18 @@ echo "Phase 0: Pre-flight checks..."
 # Check Elasticsearch configuration
 ENV_FILE="$LAB_DIR/.env"
 
+# Ensure secrets are never committed
+GITIGNORE="$LAB_DIR/.gitignore"
+if [ ! -f "$GITIGNORE" ] || ! grep -q "configs/logstash/logstash.yml" "$GITIGNORE"; then
+    cat >> "$GITIGNORE" << 'EOF'
+
+# Generated files containing secrets - never commit
+.env
+configs/logstash/logstash.yml
+EOF
+    echo "✓ .gitignore updated (logstash.yml and .env protected)"
+fi
+
 if [ ! -f "$ENV_FILE" ]; then
     echo "✗ Elasticsearch not configured"
     echo "Run: ./scripts/configure-elasticsearch.sh"
@@ -115,7 +127,6 @@ REQUIRED_DIRS=(
     "configs/routers/csr27"
     "configs/routers/csr28"
     "configs/routers/csr29"
-    "configs/logstash/pipeline"  # Already there
 )
 
 # ============================================
@@ -126,9 +137,14 @@ echo "Configuring Logstash for Centralized Pipeline Management..."
 
 mkdir -p "$LAB_DIR/configs/logstash"
 
-cat > "$LAB_DIR/configs/logstash/logstash.yml" << EOF
+TEMPLATE="$LAB_DIR/configs/logstash/logstash.yml.template"
+OUTPUT="$LAB_DIR/configs/logstash/logstash.yml"
+
+if [ ! -f "$TEMPLATE" ]; then
+    echo "  ⚠ Template not found — creating it..."
+    cat > "$TEMPLATE" << 'TMPL'
 # Auto-generated from .env by complete-setup-all-os.sh
-# Centralized Pipeline Management - pipelines stored in Elasticsearch
+# DO NOT EDIT directly - edit logstash.yml.template instead
 api.http.host: "0.0.0.0"
 api.http.port: 9600
 
@@ -143,12 +159,20 @@ log.level: info
 log.format: plain
 queue.type: memory
 queue.max_bytes: 1gb
-EOF
+TMPL
+    echo "  ✓ Template created: configs/logstash/logstash.yml.template"
+fi
 
-echo "  ✓ logstash.yml generated (CPM mode)"
+# Substitute variables from .env into template
+sed \
+    -e "s|\${ES_ENDPOINT}|${ES_ENDPOINT}|g" \
+    -e "s|\${ES_API_KEY}|${ES_API_KEY}|g" \
+    "$TEMPLATE" > "$OUTPUT"
+
+echo "  ✓ logstash.yml generated from template (secrets NOT committed)"
 echo "    ES: ${ES_ENDPOINT}"
 echo "    Pipelines: snmp-polling, snmp-traps (fetched from Elasticsearch)"
-echo "    Note: Pipeline configs are managed in Kibana/LogstashUI, NOT local files"
+echo "    Note: logstash.yml is in .gitignore — only template is committed"
 
 # Continue with rest of script...
 for dir in "${REQUIRED_DIRS[@]}"; do
@@ -1514,15 +1538,13 @@ LOGSTASH_STATUS=$(docker inspect --format='{{.State.Status}}' clab-ospf-network-
 if [ "$LOGSTASH_STATUS" = "running" ]; then
     echo "  ✓ Logstash: running"
     
-    # Check pipelines loaded
-    echo "  Pipeline files:"
-    docker exec clab-ospf-network-logstash ls /usr/share/logstash/pipeline/ 2>/dev/null | sed 's/^/    /'
-    
-    # Check pipelines.yml loaded
-    if docker exec clab-ospf-network-logstash cat /usr/share/logstash/config/pipelines.yml >/dev/null 2>&1; then
-        echo "  ✓ pipelines.yml loaded"
+    # CPM mode - verify logstash.yml has CPM config
+    if docker exec clab-ospf-network-logstash grep -q "xpack.management.enabled: true" \
+        /usr/share/logstash/config/logstash.yml 2>/dev/null; then
+        echo "  ✓ Centralized Pipeline Management enabled"
+        echo "  ✓ Pipelines fetched from Elasticsearch (not local files)"
     else
-        echo "  ⚠ pipelines.yml not found"
+        echo "  ⚠ CPM not detected in logstash.yml"
     fi
     
     # Wait for Logstash to fully start
@@ -1640,9 +1662,7 @@ if [ "$LOGSTASH_STATUS" = "running" ]; then
     fi
     
     # Check Logstash pipeline loaded
-    PIPELINE_CHECK=$(docker exec clab-ospf-network-logstash ls /usr/share/logstash/pipeline/ 2>/dev/null)
-    echo "  Pipeline files loaded:"
-    echo "$PIPELINE_CHECK" | sed 's/^/    /'
+    echo "  ⓘ Pipelines managed via Kibana/LogstashUI (Centralized Pipeline Management)"
     
 else
     echo "  ✗ Logstash: $LOGSTASH_STATUS"
@@ -2228,7 +2248,7 @@ echo "Quick Tests:"
 echo "  SNMP: snmpget -v2c -c public 172.20.20.28 1.3.6.1.2.1.1.1.0"
 echo "  LLDP: docker exec clab-ospf-network-csr28 lldpcli show neighbors"
 echo "  LLDP SNMP: snmpwalk -v2c -c public 172.20.20.28 1.0.8802.1.1.2.1.4.1.1.9"
-echo "  Verify Logstash: docker exec clab-ospf-network-logstash cat /usr/share/logstash/config/pipelines.yml"
+echo "  Verify Logstash CPM: docker exec clab-ospf-network-logstash grep 'xpack.management' /usr/share/logstash/config/logstash.yml"
 echo "  linux-bottom: docker exec -it clab-ospf-network-linux-bottom bash"
 echo ""
 
