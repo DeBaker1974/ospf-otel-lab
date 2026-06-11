@@ -145,6 +145,8 @@ while true; do
     echo "  111) 🟢 Bring router UP (restore ICMP)"
     echo "  112) 📊 Show router reachability status"
     echo "  113) ⚡ Flap router (down 2min → up)"
+    echo "  114) 💀 Take router FULLY down (ICMP + SNMP + LLDP)"
+    echo "  115) ❤️  Bring router fully UP (restart all daemons)"
     echo ""
     echo -e "${MAGENTA}CISCO IOS SYSLOG SIMULATION:${NC}"
     SYSLOG_SIM_STATUS="${RED}●${NC}"
@@ -1835,7 +1837,7 @@ while true; do
         timeout 1 bash -c "echo >/dev/tcp/$TARGET/$port" 2>/dev/null
     done
     echo "baseline-$(date +%s)" > /dev/udp/$TARGET/9999 2>/dev/null
-    command -v iperf3 &>/dev/null && iperf3 -c $TARGET -t 2 -b 500K > /dev/null 2>&1
+    command -v iperf3 &>/dev/null && iperf3 -c $TARGET -t 5 -b 2M > /dev/null 2>&1
     curl -s -o /dev/null --connect-timeout 2 http://$TARGET/ 2>/dev/null
     log "Cycle complete"
     sleep $INTERVAL
@@ -1843,6 +1845,20 @@ done
 EOF'
             
             docker exec clab-ospf-network-linux-top chmod +x /usr/local/bin/baseline-traffic.sh
+            
+            # Ensure iperf3 server is running on linux-bottom
+            echo "Starting iperf3 server on linux-bottom..."
+            docker exec clab-ospf-network-linux-bottom pkill -9 iperf3 2>/dev/null
+            sleep 1
+            docker exec -d clab-ospf-network-linux-bottom iperf3 -s
+            sleep 2
+            if docker exec clab-ospf-network-linux-bottom pgrep iperf3 &>/dev/null; then
+                echo -e "  ${GREEN}✓${NC} iperf3 server ready on linux-bottom:5201"
+            else
+                echo -e "  ${YELLOW}⚠${NC} iperf3 server failed — baseline will skip bandwidth tests"
+            fi
+            
+            # Start baseline traffic
             docker exec -d clab-ospf-network-linux-top /usr/local/bin/baseline-traffic.sh
             
             sleep 3
@@ -1976,33 +1992,22 @@ EOF'
                 done
             "
             
-            # 3/3: iperf bandwidth (background)
-            echo "  • iperf3 @ ${BW}"
-            docker exec -d clab-ospf-network-linux-top iperf3 -c 192.168.10.20 -t $DURATION -b $BW
-            
+            # 3/3: iperf bandwidth (FOREGROUND - shows real throughput)
+            echo "  • iperf3 @ ${BW} for ${DURATION}s"
             echo ""
-            echo -e "${YELLOW}Running burst traffic for ${DURATION} seconds...${NC}"
-            echo ""
-            
-            # Progress bar
-            for i in $(seq 1 $DURATION); do
-                PERCENT=$((i * 100 / DURATION))
-                FILLED=$((i * 40 / DURATION))
-                EMPTY=$((40 - FILLED))
-                
-                # Build progress bar
-                BAR="["
-                for j in $(seq 1 $FILLED); do BAR="${BAR}="; done
-                for j in $(seq 1 $EMPTY); do BAR="${BAR} "; done
-                BAR="${BAR}]"
-                
-                echo -ne "\r  ${BAR} ${PERCENT}% (${i}/${DURATION}s)"
-                sleep 1
-            done
-            echo ""
+            echo -e "${YELLOW}═══ iperf3 output ═══${NC}"
+            docker exec clab-ospf-network-linux-top iperf3 -c 192.168.10.20 -t $DURATION -b $BW -i 10
+            IPERF_EXIT=$?
+            echo -e "${YELLOW}═══ end iperf3 ═══${NC}"
             echo ""
             
-            echo -e "${GREEN}✓${NC} Burst complete!"
+            if [ $IPERF_EXIT -eq 0 ]; then
+                echo -e "${GREEN}✓${NC} Burst complete — traffic delivered!"
+            else
+                echo -e "${RED}✗${NC} iperf3 FAILED (exit code: $IPERF_EXIT)"
+                echo "  Check: docker exec clab-ospf-network-linux-bottom pgrep iperf3"
+                echo "  Fix:   docker exec -d clab-ospf-network-linux-bottom iperf3 -s"
+            fi
             
             # Restart baseline if it was running before
             if [ "$RESTART_BASELINE" = true ]; then
@@ -2541,6 +2546,104 @@ EOF'
         # ========================================
         # CISCO IOS SYSLOG SIMULATION (120-124)
         # ========================================
+        114)
+            clear
+            echo -e "${RED}=== Take Router Fully DOWN (block ICMP + SNMP + LLDP) ===${NC}"
+            echo ""
+            echo "Unlike option 110 (ICMP only), this disables ALL telemetry:"
+            echo "  • Blocks ICMP (Synthetics shows DOWN)"
+            echo "  • Stops SNMP daemon (no metrics polling)"
+            echo "  • Stops LLDP daemon (disappears from topology)"
+            echo ""
+            echo "Select router:"
+            echo "  1) csr23    5) csr27"
+            echo "  2) csr24    6) csr28"
+            echo "  3) csr25    7) csr29"
+            echo "  4) csr26"
+            echo ""
+            read -p "Choice (1-7): " router_choice
+            
+            case $router_choice in
+                1) ROUTER="csr23"; IP="172.20.20.23" ;;
+                2) ROUTER="csr24"; IP="172.20.20.24" ;;
+                3) ROUTER="csr25"; IP="172.20.20.25" ;;
+                4) ROUTER="csr26"; IP="172.20.20.26" ;;
+                5) ROUTER="csr27"; IP="172.20.20.27" ;;
+                6) ROUTER="csr28"; IP="172.20.20.28" ;;
+                7) ROUTER="csr29"; IP="172.20.20.29" ;;
+                *) echo "Invalid choice"; continue ;;
+            esac
+            
+            read -p "Continue? (y/n): " confirm
+            if [[ "$confirm" =~ ^[Yy]$ ]]; then
+                echo ""
+                echo "1. Stopping SNMP + LLDP daemons..."
+                docker exec clab-ospf-network-${ROUTER} pkill -9 snmpd lldpd 2>/dev/null
+                echo -e "   ${GREEN}✓${NC} snmpd and lldpd stopped"
+                
+                echo ""
+                echo "2. Blocking ICMP..."
+                docker exec clab-ospf-network-${ROUTER} which iptables >/dev/null 2>&1 || \
+                    docker exec clab-ospf-network-${ROUTER} apk add --no-cache iptables >/dev/null 2>&1
+                docker exec clab-ospf-network-${ROUTER} iptables -A INPUT -p icmp --icmp-type echo-request -j DROP 2>/dev/null
+                docker exec clab-ospf-network-${ROUTER} iptables -A OUTPUT -p icmp --icmp-type echo-reply -j DROP 2>/dev/null
+                echo -e "   ${GREEN}✓${NC} ICMP blocked"
+                
+                echo ""
+                echo -e "${RED}● ${ROUTER} is FULLY DOWN${NC}"
+                echo ""
+                echo "Effects:"
+                echo "  • Synthetics monitor → DOWN (~1 min)"
+                echo "  • LLDP topology viz → ${ROUTER} marked Offline (~3 min)"
+                echo "  • SNMP metrics → no new docs from ${ROUTER}"
+                echo ""
+                echo -e "${YELLOW}Restore with option 115${NC}"
+            fi
+            ;;
+        
+        115)
+            clear
+            echo -e "${GREEN}=== Bring Router Fully UP (restart SNMP + LLDP) ===${NC}"
+            echo ""
+            echo "Select router:"
+            echo "  1) csr23    5) csr27"
+            echo "  2) csr24    6) csr28"
+            echo "  3) csr25    7) csr29"
+            echo "  4) csr26"
+            echo ""
+            read -p "Choice (1-7): " router_choice
+            
+            case $router_choice in
+                1) ROUTER="csr23" ;;
+                2) ROUTER="csr24" ;;
+                3) ROUTER="csr25" ;;
+                4) ROUTER="csr26" ;;
+                5) ROUTER="csr27" ;;
+                6) ROUTER="csr28" ;;
+                7) ROUTER="csr29" ;;
+                *) echo "Invalid choice"; continue ;;
+            esac
+            
+            echo ""
+            echo "1. Restoring ICMP..."
+            docker exec clab-ospf-network-${ROUTER} iptables -F 2>/dev/null
+            echo -e "   ${GREEN}✓${NC} ICMP unblocked"
+            
+            echo ""
+            echo "2. Restarting SNMP + LLDP daemons..."
+            docker exec clab-ospf-network-${ROUTER} sh -c '
+                mkdir -p /var/agentx && chmod 777 /var/agentx
+                /usr/sbin/snmpd -c /etc/snmp/snmpd.conf -Lsd -Lf /dev/null udp:161
+                sleep 3
+                lldpd -x -X /var/agentx/master 2>/dev/null &
+                sleep 2
+                pgrep snmpd >/dev/null && pgrep lldpd >/dev/null && echo "OK"
+            '
+            echo -e "   ${GREEN}✓${NC} Daemons restarted"
+            
+            echo ""
+            echo -e "${GREEN}● ${ROUTER} is UP — wait 1-2 minutes for telemetry to resume${NC}"
+            ;;
         120)
             clear
             echo -e "${CYAN}=== Start Cisco IOS Syslog Simulator ===${NC}"
