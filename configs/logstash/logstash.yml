@@ -1,16 +1,25 @@
 # Auto-generated from .env by complete-setup-all-os.sh
-# Centralized Pipeline Management - pipelines stored in Elasticsearch
 api.http.host: "0.0.0.0"
 api.http.port: 9600
 
+# Centralized Pipeline Management
 xpack.management.enabled: true
-xpack.management.elasticsearch.hosts: ["https://demo-9-4-27aca9.es.us-west2.gcp.elastic-cloud.com:443"]
-xpack.management.elasticsearch.api_key: "b0dlV2pKMEJUT0JpLUlNRGpTcFo6bGdpY3FCQ0ZuQnh5dDJYNm1fTnZTUQ=="
+xpack.management.elasticsearch.hosts: ["https://observability-ca-mtl.es.northamerica-northeast1.gcp.elastic-cloud.com:443"]
+xpack.management.elasticsearch.api_key: "ZzI5Z3FxQUJtUEhkZUFMRk5KOE46b0NlakFkWGw1OHJ5UWhrUGk4eVBIUQ=="
 xpack.management.pipeline.id: ["snmp-polling", "snmp-traps"]
 xpack.management.logstash.poll_interval: 5s
 
+# ── ECH Monitoring (creates logs-logstash.log) ──────────
+# On ECH use xpack.monitoring with elasticsearch output
 xpack.monitoring.enabled: false
+# xpack.monitoring.elasticsearch.hosts: ["https://observability-ca-mtl.es.northamerica-northeast1.gcp.elastic-cloud.com:443"]
+# xpack.monitoring.elasticsearch.api_key: "ZzI5Z3FxQUJtUEhkZUFMRk5KOE46b0NlakFkWGw1OHJ5UWhrUGk4eVBIUQ=="
+# xpack.monitoring.collection.interval: 10s
+# xpack.monitoring.collection.pipeline.details.enabled: true
+
+# Logging
 log.level: info
-log.format: plain
+log.format: json
+
 queue.type: memory
 queue.max_bytes: 1gb
