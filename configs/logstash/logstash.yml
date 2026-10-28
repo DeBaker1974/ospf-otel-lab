@@ -5,7 +5,7 @@ api.http.port: 9600
 # Centralized Pipeline Management
 xpack.management.enabled: true
 xpack.management.elasticsearch.hosts: ["https://observability-ca-mtl.es.northamerica-northeast1.gcp.elastic-cloud.com:443"]
-xpack.management.elasticsearch.api_key: "ZzI5Z3FxQUJtUEhkZUFMRk5KOE46b0NlakFkWGw1OHJ5UWhrUGk4eVBIUQ=="
+xpack.management.elasticsearch.api_key: ""
 xpack.management.pipeline.id: ["snmp-polling", "snmp-traps"]
 xpack.management.logstash.poll_interval: 5s
 
@@ -13,7 +13,7 @@ xpack.management.logstash.poll_interval: 5s
 # On ECH use xpack.monitoring with elasticsearch output
 xpack.monitoring.enabled: false
 # xpack.monitoring.elasticsearch.hosts: ["https://observability-ca-mtl.es.northamerica-northeast1.gcp.elastic-cloud.com:443"]
-# xpack.monitoring.elasticsearch.api_key: "ZzI5Z3FxQUJtUEhkZUFMRk5KOE46b0NlakFkWGw1OHJ5UWhrUGk4eVBIUQ=="
+# xpack.monitoring.elasticsearch.api_key: ""
 # xpack.monitoring.collection.interval: 10s
 # xpack.monitoring.collection.pipeline.details.enabled: true
 
